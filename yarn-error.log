@@ -1,0 +1,49 @@
+Arguments: 
+  /Users/alexklarfeld/.nvm/versions/node/v18.9.0/bin/node /Users/alexklarfeld/.nvm/versions/node/v18.9.0/bin/yarn add @mswjs/intercepts
+
+PATH: 
+  /Users/alexklarfeld/.nvm/versions/node/v18.9.0/bin:/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/Users/alexklarfeld/.nvm/versions/node/v18.9.0/bin:/opt/homebrew/bin:/opt/homebrew/sbin:/Users/alexklarfeld/Library/Python/2.7/bin:/Users/alexklarfeld/Library/Python/2.7/bin
+
+Yarn version: 
+  1.22.19
+
+Node version: 
+  18.9.0
+
+Platform: 
+  darwin x64
+
+Trace: 
+  Error: https://registry.yarnpkg.com/@mswjs%2fintercepts: Not found
+      at params.callback [as _callback] (/Users/alexklarfeld/.nvm/versions/node/v18.9.0/lib/node_modules/yarn/lib/cli.js:66145:18)
+      at self.callback (/Users/alexklarfeld/.nvm/versions/node/v18.9.0/lib/node_modules/yarn/lib/cli.js:140890:22)
+      at Request.emit (node:events:513:28)
+      at Request.<anonymous> (/Users/alexklarfeld/.nvm/versions/node/v18.9.0/lib/node_modules/yarn/lib/cli.js:141862:10)
+      at Request.emit (node:events:513:28)
+      at IncomingMessage.<anonymous> (/Users/alexklarfeld/.nvm/versions/node/v18.9.0/lib/node_modules/yarn/lib/cli.js:141784:12)
+      at Object.onceWrapper (node:events:627:28)
+      at IncomingMessage.emit (node:events:525:35)
+      at endReadableNT (node:internal/streams/readable:1359:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:82:21)
+
+npm manifest: 
+  {
+    "name": "supergood",
+    "version": "1.0.0",
+    "description": "",
+    "main": "index.js",
+    "scripts": {
+      "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "author": "",
+    "license": "ISC",
+    "dependencies": {
+      "yarn": "^1.22.19"
+    }
+  }
+
+yarn manifest: 
+  No manifest
+
+Lockfile: 
+  No lockfile
