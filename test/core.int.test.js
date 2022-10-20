@@ -9,6 +9,9 @@ const router = jsonServer.router(path.join(__dirname, 'db.json'));
 const middlewares = jsonServer.defaults();
 
 let testServer;
+
+// Local JSON server configuration for sending arbitrary POST/GET requests
+// to a random CRUD server
 const HTTP_TEST_SERVER_PORT = process.env.HTTP_TEST_SERVER_PORT;
 const HTTP_TEST_SERVER = `http://localhost:${process.env.HTTP_TEST_SERVER_PORT}`;
 
@@ -72,6 +75,13 @@ test('flush cache with hanging response', async () => {
   expect(eventsPosted.length).toEqual(1);
   expect(eventsPosted[0].requestedAt).toBeTruthy();
   expect(eventsPosted[0].respondedAt).toBeFalsy();
+});
+
+test('flush cache when process suddenly exits', async () => {
+  // TODO: Got to figure out how to test this with jest
+  // perhaps add a force process.exit() to 'close'
+  // so we can test automatically?
+  // Really want to test nodeCleanup.
 });
 
 afterEach(async () => testServer.close());
