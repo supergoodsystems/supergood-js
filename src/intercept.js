@@ -16,9 +16,12 @@ const interceptor = new BatchInterceptor({
   interceptors: nodeInterceptors
 });
 
-const init = async ({ clientId, clientSecret }) => {
+const init = async (
+  { clientId, clientSecret },
+  supergoodUrl = 'https://supergood.ai'
+) => {
   const { eventPathUrl, tokenExchangeUrl, flushInterval, cacheTtl } =
-    await getConfig();
+    await getConfig({ url: supergoodUrl });
 
   const requestCache = new NodeCache({ stdTTL: cacheTtl });
   const responseCache = new NodeCache({ stdTTL: cacheTtl });

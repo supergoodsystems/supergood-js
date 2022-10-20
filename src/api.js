@@ -1,17 +1,13 @@
 const axios = require('axios');
 // const fs = require('fs');
 
-const { SUPERGOOD_SERVER_URL } = require('../config');
-
-const getConfig = async () => {
-  console.log('config');
-  const endpoint = `${SUPERGOOD_SERVER_URL}/api/config`;
+const getConfig = async ({ url }) => {
+  const endpoint = `${url}/api/config`;
   const { data } = await axios.get(endpoint);
   return data;
 };
 
 const getAccessToken = async ({ tokenExchangeUrl, clientId, clientSecret }) => {
-  console.log('access token');
   try {
     const { data } = await axios.request({
       url: tokenExchangeUrl,

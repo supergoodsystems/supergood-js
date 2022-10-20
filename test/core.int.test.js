@@ -24,8 +24,8 @@ const getEvents = (mockedPostEvents) =>
 jest.mock('../src/api', () => ({
   postEvents: jest.fn(async (data) => data),
   getConfig: jest.fn(async () => ({
-    tokenExchangeUrl: `${process.env.SUPERGOOD_SERVER_URL}/v1/token`,
-    eventPathUrl: `${process.env.SUPERGOOD_SERVER_URL}/api/events`,
+    // tokenExchangeUrl: '',
+    // eventPathUrl: '',
     // Long flush interval so we can manually flush
     flushInterval: 30000
   })),
