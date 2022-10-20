@@ -82,7 +82,9 @@ test('flush cache when process suddenly exits', async () => {
   // perhaps add a force process.exit() to 'close'
   // so we can test automatically?
   // Really want to test nodeCleanup.
-  //
 });
+
+// Perhaps even need to write a restore from disk method?
+test('write to disk when connection fails', () => {});
 
 afterEach(async () => testServer.close());
