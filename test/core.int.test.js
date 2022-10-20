@@ -82,6 +82,7 @@ test('flush cache when process suddenly exits', async () => {
   // perhaps add a force process.exit() to 'close'
   // so we can test automatically?
   // Really want to test nodeCleanup.
+  //
 });
 
 afterEach(async () => testServer.close());
