@@ -1,5 +1,5 @@
 const config = {
-  SERVER_URL: 'localhost:3000'
+  SUPERGOOD_SERVER_URL: process.env.SUPERGOOD_SERVER_URL || 'localhost:3001'
 };
 
 module.exports = config;

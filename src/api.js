@@ -1,15 +1,17 @@
 const axios = require('axios');
-const fs = require('fs');
+// const fs = require('fs');
 
-const { SERVER_URL } = require('../config');
+const { SUPERGOOD_SERVER_URL } = require('../config');
 
 const getConfig = async () => {
-  const endpoint = `${SERVER_URL}/api/config`;
+  console.log('config');
+  const endpoint = `${SUPERGOOD_SERVER_URL}/api/config`;
   const { data } = await axios.get(endpoint);
   return data;
 };
 
 const getAccessToken = async ({ tokenExchangeUrl, clientId, clientSecret }) => {
+  console.log('access token');
   try {
     const { data } = await axios.request({
       url: tokenExchangeUrl,
@@ -33,29 +35,23 @@ const getAccessToken = async ({ tokenExchangeUrl, clientId, clientSecret }) => {
   }
 };
 
-const flushCache = async ({ cache, eventPathUrl, accessToken }) => {
-  try {
-    const response = await axios.request({
-      url: eventPathUrl,
-      method: 'POST',
-      headers: {
-        authorization: `Bearer ${accessToken}`
-      },
-      data: cache
-    });
-    if (!response || response.statusCode !== 200) {
-      dumpCacheToDisk(cache);
-      return false;
-    }
-    return true;
-  } catch (e) {
-    dumpCacheToDisk(cache);
-    return false;
-  }
+const postEvents = async ({ eventPathUrl, accessToken, data }) =>
+  axios.request({
+    url: eventPathUrl,
+    method: 'POST',
+    headers: {
+      authorization: `Bearer ${accessToken}`
+    },
+    data
+  });
+
+// TODO, FIX EXIT STRATEGY
+const dumpDataToDisk = (/* data */) => {
+  // const today = new Date().toLocaleString().replace(/\/g/, '-');
+  // console.log({ today, data });
+  // fs.writeFileSync(`cached-requests-${today}.txt`, JSON.stringify(data), {
+  //   flag: 'a'
+  // });
 };
 
-const dumpCacheToDisk = (cache) => {
-  fs.writeFileSync(`cached-requests-${new Date()}`, JSON.stringify(cache));
-};
-
-module.exports = { getConfig, getAccessToken, flushCache };
+module.exports = { getConfig, getAccessToken, postEvents, dumpDataToDisk };
