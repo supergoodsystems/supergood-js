@@ -1,53 +1,17 @@
 const axios = require('axios');
-// const fs = require('fs');
 
-const getConfig = async ({ url }) => {
-  const endpoint = `${url}/api/config`;
-  const { data } = await axios.get(endpoint);
-  return data;
+const getConfig = async (baseUrl, options) =>
+  axios.get(`${baseUrl}/api/config`, options);
+
+const postEvents = async (baseUrl, data, options) =>
+  axios.post(`${baseUrl}/api/events`, data, options);
+
+const dumpDataToDisk = (data) => {
+  console.log(data);
 };
 
-const getAccessToken = async ({ tokenExchangeUrl, clientId, clientSecret }) => {
-  try {
-    const { data } = await axios.request({
-      url: tokenExchangeUrl,
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded'
-      },
-      auth: {
-        username: clientId,
-        password: clientSecret
-      },
-      data: {
-        grant_type: 'client_credentials',
-        scope: 'log_events'
-      }
-    });
-    return data.access_token;
-  } catch (e) {
-    console.log(e);
-    return null;
-  }
+module.exports = {
+  getConfig,
+  postEvents,
+  dumpDataToDisk
 };
-
-const postEvents = async ({ eventPathUrl, accessToken, data }) =>
-  axios.request({
-    url: eventPathUrl,
-    method: 'POST',
-    headers: {
-      authorization: `Bearer ${accessToken}`
-    },
-    data
-  });
-
-// TODO, FIX EXIT STRATEGY
-const dumpDataToDisk = (/* data */) => {
-  // const today = new Date().toLocaleString().replace(/\/g/, '-');
-  // console.log({ today, data });
-  // fs.writeFileSync(`cached-requests-${today}.txt`, JSON.stringify(data), {
-  //   flag: 'a'
-  // });
-};
-
-module.exports = { getConfig, getAccessToken, postEvents, dumpDataToDisk };

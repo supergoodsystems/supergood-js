@@ -1,13 +1,9 @@
 const { BatchInterceptor } = require('@mswjs/interceptors');
 const NodeCache = require('node-cache');
 const nodeCleanup = require('node-cleanup');
+const { getKeyValueByString, getOptions } = require('./utils');
+const { getConfig, postEvents, dumpDataToDisk } = require('./api');
 
-const {
-  getConfig,
-  getAccessToken,
-  dumpDataToDisk,
-  postEvents
-} = require('./api');
 const nodeInterceptors =
   require('@mswjs/interceptors/lib/presets/node').default;
 
@@ -18,31 +14,23 @@ const interceptor = new BatchInterceptor({
 
 const init = async (
   { clientId, clientSecret },
-  supergoodUrl = 'https://supergood.ai'
+  baseUrl = 'https://supergood.ai'
 ) => {
-  const { eventPathUrl, tokenExchangeUrl, flushInterval, cacheTtl } =
-    await getConfig({ url: supergoodUrl });
+  const options = getOptions(clientId, clientSecret);
+  const { keys, flushInterval, cacheTtl } = await getConfig(baseUrl, options);
 
   const requestCache = new NodeCache({ stdTTL: cacheTtl });
   const responseCache = new NodeCache({ stdTTL: cacheTtl });
-
-  const accessToken = await getAccessToken({
-    clientId,
-    clientSecret,
-    tokenExchangeUrl
-  });
 
   interceptor.apply();
   interceptor.on('request', async (request) => {
     const requestBody = await request.text();
     requestCache.set(request.id, {
-      id: request.id,
-      origin: request.url.origin,
-      protocol: request.url.protocol,
-      hostname: request.url.hostname,
-      host: request.url.host,
-      pathname: request.url.pathname,
-      searchParams: request.url.search,
+      ...keys.request.reduce((acc, k) => {
+        const { key, value } = getKeyValueByString(request, k);
+        acc[key] = value;
+        return acc;
+      }, {}),
       requestBody,
       requestedAt: new Date()
     });
@@ -51,10 +39,12 @@ const init = async (
   interceptor.on('response', async (request, response) => {
     const requestData = requestCache.get(request.id);
     responseCache.set(request.id, {
-      id: request.id,
+      ...keys.response.reduce((acc, k) => {
+        const { key, value } = getKeyValueByString(response, k);
+        acc[key] = value;
+        return acc;
+      }, {}),
       ...requestData,
-      statusCode: response.status,
-      responseBody: response.body,
       respondedAt: new Date()
     });
   });
@@ -72,8 +62,9 @@ const init = async (
       const requestKeysToFlush = requestCache.keys();
       data = { ...requestCache.mget(requestKeysToFlush), ...data };
     }
+
     try {
-      const response = await postEvents({ data, accessToken, eventPathUrl });
+      const response = await postEvents(baseUrl, data, options);
       if (!response || response.statusCode !== 200) {
         dumpDataToDisk(data); // as backup
       }

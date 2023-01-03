@@ -16,10 +16,7 @@ const HTTP_TEST_SERVER_PORT = process.env.HTTP_TEST_SERVER_PORT;
 const HTTP_TEST_SERVER = `http://localhost:${process.env.HTTP_TEST_SERVER_PORT}`;
 
 const getEvents = (mockedPostEvents) =>
-  mockedPostEvents.mock.calls
-    .flat()
-    .map((call) => Object.values(call.data))
-    .flat();
+  Object.values(mockedPostEvents.mock.calls.flat()[1]);
 
 jest.mock('../src/api', () => ({
   postEvents: jest.fn(async (data) => data),
@@ -27,14 +24,22 @@ jest.mock('../src/api', () => ({
     // tokenExchangeUrl: '',
     // eventPathUrl: '',
     // Long flush interval so we can manually flush
-    flushInterval: 30000
+    flushInterval: 30000,
+    keys: {
+      request: [
+        'id',
+        'method',
+        'url.origin',
+        'url.protocol',
+        'url.hostname',
+        'url.host',
+        'url.pathname',
+        'url.search'
+      ],
+      response: ['status', 'body']
+    }
   })),
-  getAccessToken: jest.fn(() => ({
-    token_type: 'Bearer',
-    expires_in: 3600,
-    access_token: '1234',
-    scope: 'log_events'
-  })),
+  getOptions: jest.fn(),
   dumpDataToDisk: jest.fn((data) => data)
 }));
 
