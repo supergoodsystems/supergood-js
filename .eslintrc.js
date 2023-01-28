@@ -6,12 +6,19 @@ module.exports = {
     node: true,
     'jest/globals': true
   },
-  extends: ['eslint:recommended', 'plugin:react/recommended', 'prettier'],
+  extends: [
+    'eslint:recommended',
+    'plugin:react/recommended',
+    'plugin:@typescript-eslint/eslint-recommended',
+    'plugin:@typescript-eslint/recommended',
+    'prettier'
+  ],
+  parser: '@typescript-eslint/parser',
   overrides: [],
   parserOptions: {
     ecmaVersion: 'latest'
   },
-  plugins: ['react', 'prettier', 'jest'],
+  plugins: ['react', 'prettier', 'jest', '@typescript-eslint'],
   rules: {
     // 'indent': ['error', 2],
     // 'quotes': ['error', 'single'],
