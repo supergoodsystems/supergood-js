@@ -1,12 +1,12 @@
-import Supergood from '../src';
-import { postEvents } from '../src/api';
+import Supergood from '..';
+import { postEvents } from '../api';
 import http from 'http';
 import jsonServer from 'json-server';
 import axios from 'axios';
 import path from 'path';
 
 import { beforeEach, afterEach, expect, test, jest } from '@jest/globals';
-import { SupergoodPayloadType } from '../src/types';
+import { SupergoodPayloadType } from '../types';
 
 // TODO: Move to remote server when working on other integrations like go, python, etc.
 const server = jsonServer.create();
@@ -25,7 +25,7 @@ const HTTP_TEST_SERVER = `http://localhost:${HTTP_TEST_SERVER_PORT}`;
 const getEvents = (mockedPostEvents: jest.Mock): Array<SupergoodPayloadType> =>
   Object.values(mockedPostEvents.mock.calls.flat()[1] as SupergoodPayloadType);
 
-jest.mock('../src/api', () => ({
+jest.mock('../api', () => ({
   postEvents: jest.fn(async (data) => data),
   getConfig: jest.fn(async () => ({
     // Long flush interval so we can manually flush

@@ -8,8 +8,7 @@
   "main": "index.ts",
   "scripts": {
     "test": "tsc && NODE_ENV=test jest",
-    "clean": "rm -rf build/ && rm -rf supergood_*.log",
-    "deploy": "yarn clean && npm version patch && npm publish --access public && git push origin master"
+    "clean": "rm -rf build/ && rm -rf supergood_*.log"
   },
   "author": "Alex Klarfeld",
   "license": "ISC",
