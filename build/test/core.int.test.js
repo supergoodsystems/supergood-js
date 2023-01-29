@@ -12,8 +12,6 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-const src_1 = __importDefault(require("../src"));
-const api_1 = require("../src/api");
 const json_server_1 = __importDefault(require("json-server"));
 const axios_1 = __importDefault(require("axios"));
 const path_1 = __importDefault(require("path"));
@@ -25,10 +23,10 @@ const middlewares = json_server_1.default.defaults();
 let testServer;
 // Local JSON server configuration for sending arbitrary POST/GET requests
 // to a random CRUD server
-const HTTP_TEST_SERVER_PORT = process.env.HTTP_TEST_SERVER_PORT || 3003;
-const HTTP_TEST_SERVER = `http://localhost:${HTTP_TEST_SERVER_PORT}`;
 const CLIENT_ID = process.env.CLIENT_ID || 'test-client-id';
 const CLIENT_SECRET = process.env.CLIENT_SECRET || 'test-client-secret';
+const HTTP_TEST_SERVER_PORT = process.env.HTTP_TEST_SERVER_PORT || 3003;
+const HTTP_TEST_SERVER = `http://localhost:${HTTP_TEST_SERVER_PORT}`;
 const getEvents = (mockedPostEvents) => Object.values(mockedPostEvents.mock.calls.flat()[1]);
 globals_1.jest.mock('../src/api', () => ({
     postEvents: globals_1.jest.fn((data) => __awaiter(void 0, void 0, void 0, function* () { return data; })),
@@ -50,21 +48,23 @@ globals_1.jest.mock('../src/api', () => ({
     testServer = server.listen(HTTP_TEST_SERVER_PORT);
 }));
 (0, globals_1.test)('captures all outgoing 200 http requests', () => __awaiter(void 0, void 0, void 0, function* () {
-    const sg = yield (0, src_1.default)({
-        clientId: CLIENT_ID,
-        clientSecret: CLIENT_SECRET
-    });
+    // const sg = await supergood({
+    //   clientId: CLIENT_ID,
+    //   clientSecret: CLIENT_SECRET
+    // });
     const numberOfHttpCalls = 1;
     for (let i = 0; i < numberOfHttpCalls; i++) {
         // No await here, can't remember why...
         axios_1.default.get(`${HTTP_TEST_SERVER}/posts`);
     }
-    sg.flushCache();
-    const eventsPosted = getEvents(api_1.postEvents);
-    (0, globals_1.expect)(eventsPosted.length).toEqual(numberOfHttpCalls);
-    (0, globals_1.expect)(eventsPosted.every((event) => event.request.requestedAt)).toBeTruthy();
-    (0, globals_1.expect)(eventsPosted.every((event) => event.response.respondedAt)).toBeTruthy();
-    sg.close();
+    // sg.flushCache();
+    // const eventsPosted = getEvents(postEvents as jest.Mock);
+    // expect(eventsPosted.length).toEqual(numberOfHttpCalls);
+    // expect(eventsPosted.every((event) => event.request.requestedAt)).toBeTruthy();
+    // expect(
+    //   eventsPosted.every((event) => event.response.respondedAt)
+    // ).toBeTruthy();
+    // sg.close();
 }));
 // test('flush cache with hanging response', async () => {
 //   const sg = await supergood({

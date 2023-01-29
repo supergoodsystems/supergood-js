@@ -14,7 +14,7 @@ const interceptor = new BatchInterceptor({
   interceptors: nodeInterceptors
 });
 
-const supergood = async (
+const Supergood = async (
   { clientId, clientSecret }: { clientId: string; clientSecret: string },
   baseUrl = 'https://supergood.ai'
 ) => {
@@ -29,7 +29,6 @@ const supergood = async (
 
   interceptor.apply();
   interceptor.on('request', async (request: InteractiveIsomorphicRequest) => {
-    console.log({ baseUrl, url: request.url.origin });
     if (baseUrl !== request.url.origin) {
       const requestBody = await request.text();
       requestCache.set(request.id, {
@@ -67,21 +66,23 @@ const supergood = async (
   // Force flush cache means don't wait for responses
   const flushCache = async ({ force } = { force: false }) => {
     // Only flush keys that have a response
-    let data = [] as Array<SupergoodPayloadType>;
     const responseCacheKeys = responseCache.keys();
     const requestCacheKeys = requestCache.keys();
+
+    const responseArray = Object.values(
+      responseCache.mget(responseCacheKeys)
+    ) as Array<SupergoodPayloadType>;
 
     if (responseCacheKeys.length === 0 && !force) {
       return;
     }
 
+    let data = [...responseArray];
+
     // If force, then we need to flush everything, even uncompleted requests
     if (force) {
       const requestArray = Object.values(
         requestCache.mget(requestCacheKeys)
-      ) as Array<SupergoodPayloadType>;
-      const responseArray = Object.values(
-        responseCache.mget(responseCacheKeys)
       ) as Array<SupergoodPayloadType>;
       data = [...requestArray, ...responseArray];
     }
@@ -104,7 +105,7 @@ const supergood = async (
   // Flush cache at a given interval
   // TODO: Perhaps write a check to flush
   // when exceeding a certain POST threshold size?
-  const interval = setInterval(flushCache, 1000);
+  const interval = setInterval(flushCache, config.flushInterval);
 
   const close = async () => {
     clearInterval(interval);
@@ -129,4 +130,4 @@ const supergood = async (
   return { requestCache, responseCache, close, flushCache };
 };
 
-export default supergood;
+export default Supergood;

@@ -4,7 +4,7 @@
     "type": "git",
     "url": "git://github.com/aklarfeld/supergood-js.git"
   },
-  "version": "1.0.0",
+  "version": "1.0.3",
   "main": "index.ts",
   "scripts": {
     "test": "tsc && NODE_ENV=test jest",
@@ -41,9 +41,9 @@
     "yarn": "^1.22.19"
   },
   "bugs": {
-    "url": "https://github.com/supergoodsystems/supergood-js/issues"
+    "url": "https://github.com/aklarfeld/supergood-js/issues"
   },
-  "homepage": "https://github.com/supergoodsystems/supergood-js#readme",
+  "homepage": "https://github.com/aklarfeld/supergood-js#readme",
   "directories": {
     "test": "test"
   },
