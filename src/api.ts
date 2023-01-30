@@ -16,11 +16,16 @@ const postEvents = async (
 };
 
 const dumpDataToDisk = (data: Array<SupergoodPayloadType>) => {
+  // Only create a logfile once a day
   const logFileName = `supergood_${new Date()
     .toISOString()
+    .split('T')[0]
     .replace(/[:|.]/g, '-')}.log`;
-  const dataStr = JSON.stringify(data, null, 2);
-  fs.writeFileSync(logFileName, dataStr, {});
+  data.forEach((payload) =>
+    fs.writeFileSync(logFileName, JSON.stringify(payload, null, 2), {
+      flag: 'wx'
+    })
+  );
 };
 
 export { postEvents, dumpDataToDisk };
