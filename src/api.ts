@@ -17,7 +17,7 @@ const postEvents = async (
 
 const dumpDataToDisk = (data: Array<SupergoodPayloadType>) => {
   // Only create a logfile once a day
-  const logFileName = `supergood_${new Date()
+  const logFileName = `supergood-${new Date()
     .toISOString()
     .split('T')[0]
     .replace(/[:|.]/g, '-')}.log`;
