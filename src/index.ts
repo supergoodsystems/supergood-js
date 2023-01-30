@@ -3,29 +3,38 @@ import {
   InteractiveIsomorphicRequest
 } from '@mswjs/interceptors';
 import NodeCache from 'node-cache';
-import nodeCleanup from 'node-cleanup';
 import { getHeaderOptions } from './utils';
-import { postEvents, getConfig, dumpDataToDisk } from './api';
+import { postEvents, dumpDataToDisk } from './api';
 import nodeInterceptors from '@mswjs/interceptors/lib/presets/node';
-import { SupergoodPayloadType } from './types';
+import { HeaderOptionType, SupergoodPayloadType } from './index.d';
+import { signals } from './constants';
 
 const interceptor = new BatchInterceptor({
   name: 'supergood-interceptor',
   interceptors: nodeInterceptors
 });
 
-const Supergood = async (
+const defaultConfig = {
+  keysToHash: ['request.body', 'response.body'],
+  flushInterval: 1000,
+  cacheTtl: 0,
+  baseUrl: 'https://supergood.ai',
+  eventSinkUrl: 'https://supergood.ai/api/events'
+};
+
+const Supergood = (
   { clientId, clientSecret }: { clientId: string; clientSecret: string },
-  baseUrl = 'https://supergood.ai'
+  config = defaultConfig
 ) => {
-  const options = getHeaderOptions(clientId, clientSecret);
-  const config = await getConfig(baseUrl, options);
-  const eventSinkUrl = config.eventSinkUrl || `${baseUrl}/api/events`;
+  const { cacheTtl, baseUrl, flushInterval, eventSinkUrl } = config;
+
+  const options: HeaderOptionType = getHeaderOptions(clientId, clientSecret);
+  const requestCache: NodeCache = new NodeCache({ stdTTL: cacheTtl });
+  const responseCache: NodeCache = new NodeCache({ stdTTL: cacheTtl });
+
   // Why two caches? To quickly only flush the cache with
   // completed responses without having to pull all the keys from one
   // cache and filter out the ones without responses.
-  const requestCache = new NodeCache({ stdTTL: config.cacheTtl });
-  const responseCache = new NodeCache({ stdTTL: config.cacheTtl });
 
   interceptor.apply();
   interceptor.on('request', async (request: InteractiveIsomorphicRequest) => {
@@ -49,7 +58,7 @@ const Supergood = async (
   });
 
   interceptor.on('response', async (request, response) => {
-    if (baseUrl !== request.url.origin) {
+    if (config.baseUrl !== request.url.origin) {
       const requestData = requestCache.get(request.id) || {};
       responseCache.set(request.id, {
         response: {
@@ -73,7 +82,19 @@ const Supergood = async (
       responseCache.mget(responseCacheKeys)
     ) as Array<SupergoodPayloadType>;
 
+    // If there's nothing in the response cache, and we're not forcing a flush,
+    // just exit here
+
     if (responseCacheKeys.length === 0 && !force) {
+      return;
+    }
+
+    // If we're forcing a flush but there's nothing in the cache, exit here
+    if (
+      force &&
+      responseCacheKeys.length === 0 &&
+      requestCacheKeys.length === 0
+    ) {
       return;
     }
 
@@ -102,32 +123,35 @@ const Supergood = async (
     }
   };
 
-  // Flush cache at a given interval
-  // TODO: Perhaps write a check to flush
-  // when exceeding a certain POST threshold size?
-  const interval = setInterval(flushCache, config.flushInterval);
+  // Flushes the cache every <flushInterval> milliseconds
+  const interval = setInterval(flushCache, flushInterval);
 
-  const close = async () => {
+  // Stops the interval and disposes of the interceptor
+  const close = async (force = true) => {
     clearInterval(interval);
     interceptor.dispose();
-    await flushCache({ force: true });
+    await flushCache({ force });
   };
 
   // If program ends abruptly, it'll send out
   // whatever logs it already collected
   // TODO Test Manually with CTRL-C ... can't seem to
   // get this to work with Jest
-  nodeCleanup((exitCode, signal) => {
+
+  const cleanup = (exitCode: number, signal: NodeJS.Signals) => {
     if (signal) {
       flushCache({ force: true }).then(() => {
         process.kill(process.pid, signal);
       });
     }
-    nodeCleanup.uninstall();
+    // Remove listeners on cleanup
+    signals.forEach((signal) => process.removeListener(signal, cleanup));
     return false;
-  });
+  };
 
-  return { requestCache, responseCache, close, flushCache };
+  signals.forEach((signal) => process.on(signal, cleanup));
+
+  return { close };
 };
 
 export default Supergood;

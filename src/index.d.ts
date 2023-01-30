@@ -29,6 +29,7 @@ interface SupergoodConfigType {
   flushInterval: number;
   cacheTtl: number;
   eventSinkUrl: string; // Defaults to {baseUrl}/api/events if not provided
+  baseUrl: string; // Defaults to https://supergood.ai if not provided
 }
 
 interface SupergoodPayloadType {

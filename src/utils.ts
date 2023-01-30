@@ -1,4 +1,4 @@
-import { HeaderOptionType } from './types';
+import { HeaderOptionType } from './index.d';
 
 const getHeaderOptions = (
   clientId: string,
