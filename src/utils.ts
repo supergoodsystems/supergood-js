@@ -9,10 +9,11 @@ import { errors } from './constants';
 import fs from 'fs';
 import crypto from 'crypto';
 import { postError } from './api';
+import pkg from '../package.json';
 
 const logger = (errorSinkUrl: string, headerOptions: HeaderOptionType) => {
-  const packageName = process.env.npm_package_name || 'unknown';
-  const packageVersion = process.env.npm_package_version || 'unknown';
+  const packageName = pkg.name;
+  const packageVersion = pkg.version;
   return {
     error: (msg: string, payload: InfoPayloadType, e: Error) => {
       console.error(
