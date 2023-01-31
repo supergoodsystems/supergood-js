@@ -20,11 +20,15 @@ const logger = (errorSinkUrl: string, headerOptions: HeaderOptionType) => {
         JSON.stringify(payload, null, 2),
         e
       );
-      postError(
-        errorSinkUrl,
-        { ...payload, packageName, packageVersion },
-        headerOptions
-      );
+      try {
+        postError(
+          errorSinkUrl,
+          { ...payload, packageName, packageVersion },
+          headerOptions
+        );
+      } catch (e) {
+        // Ignore
+      }
     },
     info: (msg: string, payload: InfoPayloadType) => {
       console.log(
