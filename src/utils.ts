@@ -27,7 +27,7 @@ const logger = (errorSinkUrl: string, headerOptions: HeaderOptionType) => {
           headerOptions
         );
       } catch (e) {
-        // Ignore
+        console.warn(`Failing to report errors to ${errorSinkUrl}`);
       }
     },
     info: (msg: string, payload: InfoPayloadType) => {
