@@ -6,11 +6,12 @@ const postError = async (
   errorPayload: InfoPayloadType,
   options: HeaderOptionType
 ) => {
-  const response = await axios.post(errorSinkUrl, errorPayload, options);
-  if (response.status === 200) {
+  try {
+    const response = await axios.post(errorSinkUrl, errorPayload, options);
     return response.data;
-  } else {
-    return {};
+  } catch (e) {
+    console.warn(`Failed to report error to ${errorSinkUrl}`);
+    return null;
   }
 };
 
@@ -19,11 +20,12 @@ const postEvents = async (
   data: Array<HttpPayloadType>,
   options: HeaderOptionType
 ) => {
-  const response = await axios.post(eventSinkUrl, data, options);
-  if (response.status === 200) {
+  try {
+    const response = await axios.post(eventSinkUrl, data, options);
     return response.data;
-  } else {
-    return {};
+  } catch (e) {
+    console.warn(`Failed to report events to ${eventSinkUrl}`);
+    return null;
   }
 };
 
