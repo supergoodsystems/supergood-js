@@ -34,11 +34,12 @@ const logger = (errorSinkUrl: string, headerOptions: HeaderOptionType) => {
       );
     },
     debug: (msg: string, payload?: InfoPayloadType) => {
-      process.env.SUPERGOOD_LOG_LEVEL === 'debug' ??
+      if (process.env.SUPERGOOD_LOG_LEVEL === 'debug') {
         console.log(
           `${packageName}@${packageVersion}: ${msg}`,
           payload ?? JSON.stringify(payload, null, 2)
         );
+      }
     }
   };
 };
