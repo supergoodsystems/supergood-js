@@ -35,30 +35,40 @@ interface OptionsType {
   errorSinkUrl: string; // Defaults to {baseUrl}/api/errors if not provided
 }
 
-interface HttpPayloadType {
+interface EventRequestType {
   request: RequestType;
   response: ResponseType;
 }
+
+// interface EventResponseType {}
+
+interface ErrorRequestType {
+  error: Error;
+  payload: InfoPayloadType;
+  message: string;
+}
+
+// interface ErrorResponseType {}
 
 interface InfoPayloadType {
   options: OptionsType;
   request?: IsomorphicRequest;
   response?: IsomorphicResponse;
-  data?: HttpPayloadType[];
+  data?: EventRequestType[];
   packageName?: string;
   packageVersion?: string;
 }
 
 interface LoggerType {
   error: (message: string, payload: InfoPayloadType, error: Error) => void;
-  info: (message: string, payload: InfoPayloadType) => void;
+  info: (message: string, payload?: InfoPayloadType) => void;
 }
 
 export {
   HeaderOptionType,
   RequestType,
   ResponseType,
-  HttpPayloadType,
+  EventRequestType,
   InfoPayloadType,
   LoggerType,
   OptionsType

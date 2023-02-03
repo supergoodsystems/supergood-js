@@ -6,7 +6,7 @@ import NodeCache from 'node-cache';
 import { getHeaderOptions, hashValue, logger, dumpDataToDisk } from './utils';
 import { postEvents } from './api';
 import nodeInterceptors from '@mswjs/interceptors/lib/presets/node';
-import { HeaderOptionType, HttpPayloadType, OptionsType } from './index.d';
+import { HeaderOptionType, EventRequestType, OptionsType } from './types';
 import { signals, defaultOptions, errors } from './constants';
 
 const interceptor = new BatchInterceptor({
@@ -52,7 +52,7 @@ const Supergood = (
             host: request.url.host,
             pathname: request.url.pathname,
             search: request.url.search,
-            body: options.hashBody ? hashValue(body) : body,
+            body: options.hashBody ? { hashed: hashValue(body) } : body,
             requestedAt: new Date()
           }
         });
@@ -69,7 +69,9 @@ const Supergood = (
         responseCache.set(request.id, {
           response: {
             status: response.status,
-            body: options.hashBody ? hashValue(response.body) : response.body,
+            body: options.hashBody
+              ? { hashed: hashValue(response.body) }
+              : response.body,
             respondedAt: new Date()
           },
           ...requestData
@@ -87,12 +89,23 @@ const Supergood = (
 
   // Force flush cache means don't wait for responses
   const flushCache = async ({ force } = { force: false }) => {
+    log.debug(
+      `Preflush memory usage: ${
+        ((process.memoryUsage().heapUsed * 1.0) /
+          process.memoryUsage().heapTotal) *
+        1.0 *
+        100.0
+      }`,
+      {
+        options
+      }
+    );
     const responseCacheKeys = responseCache.keys();
     const requestCacheKeys = requestCache.keys();
 
     const responseArray = Object.values(
       responseCache.mget(responseCacheKeys)
-    ) as Array<HttpPayloadType>;
+    ) as Array<EventRequestType>;
 
     // If there's nothing in the response cache, and we're not forcing a flush,
     // just exit here
@@ -116,7 +129,7 @@ const Supergood = (
     if (force) {
       const requestArray = Object.values(
         requestCache.mget(requestCacheKeys)
-      ) as Array<HttpPayloadType>;
+      ) as Array<EventRequestType>;
       data = [...requestArray, ...responseArray];
     }
 
@@ -138,6 +151,17 @@ const Supergood = (
       responseCache.del(responseCacheKeys);
       requestCache.del(requestCacheKeys);
     }
+    log.debug(
+      `Postflush memory usage: ${
+        ((process.memoryUsage().heapUsed * 1.0) /
+          process.memoryUsage().heapTotal) *
+        1.0 *
+        100.0
+      }`,
+      {
+        options
+      }
+    );
   };
 
   // Flushes the cache every <flushInterval> milliseconds

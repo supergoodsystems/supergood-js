@@ -4,11 +4,13 @@
     "type": "git",
     "url": "git://github.com/aklarfeld/supergood-js.git"
   },
+  "types": "src/types.ts",
   "version": "1.0.19",
   "main": "build/index.js",
   "scripts": {
     "test": "yarn run clean && tsc && NODE_ENV=test jest",
-    "clean": "rm -rf build/ && rm -rf supergood_*.log"
+    "clean": "rm -rf build/ && rm -rf supergood-*.log",
+    "build": "yarn run clean && tsc"
   },
   "author": "Alex Klarfeld",
   "license": "ISC",

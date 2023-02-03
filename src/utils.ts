@@ -2,18 +2,18 @@ import {
   HeaderOptionType,
   InfoPayloadType,
   LoggerType,
-  HttpPayloadType,
+  EventRequestType,
   OptionsType
-} from './index.d';
+} from './types';
 import { errors } from './constants';
 import fs from 'fs';
 import crypto from 'crypto';
 import { postError } from './api';
-import pkg from '../package.json';
+import { name, version } from '../package.json';
 
 const logger = (errorSinkUrl: string, headerOptions: HeaderOptionType) => {
-  const packageName = pkg.name;
-  const packageVersion = pkg.version;
+  const packageName = name;
+  const packageVersion = version;
   return {
     error: (msg: string, payload: InfoPayloadType, e: Error) => {
       console.error(
@@ -27,11 +27,18 @@ const logger = (errorSinkUrl: string, headerOptions: HeaderOptionType) => {
         headerOptions
       );
     },
-    info: (msg: string, payload: InfoPayloadType) => {
+    info: (msg: string, payload?: InfoPayloadType) => {
       console.log(
         `${packageName}@${packageVersion}: ${msg}`,
-        JSON.stringify(payload, null, 2)
+        payload ?? JSON.stringify(payload, null, 2)
       );
+    },
+    debug: (msg: string, payload?: InfoPayloadType) => {
+      process.env.DEBUG ??
+        console.log(
+          `${packageName}@${packageVersion}: ${msg}`,
+          payload ?? JSON.stringify(payload, null, 2)
+        );
     }
   };
 };
@@ -64,7 +71,7 @@ const hashValue = (input: string | Record<string, string> | undefined) => {
 // If the service is down, save the log files locally to
 // be recovered later
 const dumpDataToDisk = (
-  data: Array<HttpPayloadType>,
+  data: Array<EventRequestType>,
   log: LoggerType,
   options: OptionsType
 ) => {

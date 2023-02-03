@@ -14,7 +14,7 @@ import {
   jest,
   describe
 } from '@jest/globals';
-import { HttpPayloadType } from '../index.d';
+import { EventRequestType } from '../types';
 
 const base64Regex =
   /^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/;
@@ -47,8 +47,8 @@ const testOptions = {
   hashBody: false
 };
 
-const getEvents = (mockedPostEvents: jest.Mock): Array<HttpPayloadType> =>
-  Object.values(mockedPostEvents.mock.calls.flat()[1] as HttpPayloadType);
+const getEvents = (mockedPostEvents: jest.Mock): Array<EventRequestType> =>
+  Object.values(mockedPostEvents.mock.calls.flat()[1] as EventRequestType);
 
 jest.mock('../api', () => ({
   postEvents: jest.fn(async (eventSinkUrl, data) => ({ data })),
