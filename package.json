@@ -6,7 +6,7 @@
   },
   "types": "src/types.ts",
   "version": "1.0.20",
-  "main": "build/index.js",
+  "main": "build/src/index.js",
   "scripts": {
     "test": "yarn run clean && tsc && NODE_ENV=test jest",
     "clean": "rm -rf build/ && rm -rf supergood-*.log",
