@@ -16,8 +16,9 @@ const interceptor = new BatchInterceptor({
 
 const Supergood = (
   { clientId, clientSecret }: { clientId: string; clientSecret: string },
-  options: OptionsType = defaultOptions
+  inputOptions: OptionsType
 ) => {
+  const options = { ...defaultOptions, ...inputOptions };
   // This can update if new config is available after posting events or posting errors
   const headerOptions: HeaderOptionType = getHeaderOptions(
     clientId,
