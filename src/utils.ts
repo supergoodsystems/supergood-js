@@ -26,7 +26,7 @@ const logger = (errorSinkUrl: string, headerOptions: HeaderOptionType) => {
         errorSinkUrl,
         {
           payload: { ...payload, packageName, packageVersion },
-          error,
+          error: error.toString(),
           message
         },
         headerOptions

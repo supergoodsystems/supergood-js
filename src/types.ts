@@ -46,7 +46,7 @@ interface EventRequestType {
 
 type ErrorPayloadType = {
   payload: InfoPayloadType;
-  error: Error;
+  error: string;
   message: string;
 };
 
