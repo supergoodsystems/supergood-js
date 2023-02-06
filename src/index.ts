@@ -41,6 +41,7 @@ const Supergood = (
   interceptor.apply();
   interceptor.on('request', async (request: InteractiveIsomorphicRequest) => {
     try {
+      log.debug('Request', { request, options });
       // Meant for debug and testing purposes
       if (request.url.pathname === TestErrorPath) {
         throw new Error(errors.TEST_ERROR);
@@ -70,6 +71,7 @@ const Supergood = (
 
   interceptor.on('response', async (request, response) => {
     try {
+      log.debug('Response', { request, response, options });
       if (options.baseUrl !== request.url.origin) {
         const requestData = requestCache.get(request.id) || {};
         responseCache.set(request.id, {
