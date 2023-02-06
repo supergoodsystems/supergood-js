@@ -97,17 +97,6 @@ const Supergood = (
 
   // Force flush cache means don't wait for responses
   const flushCache = async ({ force } = { force: false }) => {
-    log.debug(
-      `Preflush memory usage: ${
-        ((process.memoryUsage().heapUsed * 1.0) /
-          process.memoryUsage().heapTotal) *
-        1.0 *
-        100.0
-      }`,
-      {
-        options
-      }
-    );
     const responseCacheKeys = responseCache.keys();
     const requestCacheKeys = requestCache.keys();
 
@@ -159,17 +148,6 @@ const Supergood = (
       responseCache.del(responseCacheKeys);
       requestCache.del(requestCacheKeys);
     }
-    log.debug(
-      `Postflush memory usage: ${
-        ((process.memoryUsage().heapUsed * 1.0) /
-          process.memoryUsage().heapTotal) *
-        1.0 *
-        100.0
-      }`,
-      {
-        options
-      }
-    );
   };
 
   // Flushes the cache every <flushInterval> milliseconds
