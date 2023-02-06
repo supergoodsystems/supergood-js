@@ -164,7 +164,9 @@ const Supergood = (
       // Delete only the keys sent
       // cache might have been updated
       responseCache.del(responseCacheKeys);
-      requestCache.del(requestCacheKeys);
+
+      // Only flush the request cache if we're forcing a flush
+      if (force) requestCache.del(requestCacheKeys);
     }
   };
 
