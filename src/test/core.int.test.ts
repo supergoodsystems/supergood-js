@@ -3,6 +3,7 @@ import { postEvents, postError } from '../api';
 import { dumpDataToDisk } from '../utils';
 import axios from 'axios';
 import { initialize } from './json-server-config';
+import { errors } from '../constants';
 import {
   afterAll,
   expect,
@@ -11,7 +12,7 @@ import {
   describe,
   beforeAll
 } from '@jest/globals';
-import { EventRequestType } from '../types';
+import { ErrorPayloadType, EventRequestType } from '../types';
 import http from 'http';
 
 const base64Regex =
@@ -49,9 +50,17 @@ afterAll(async () => {
 const getEvents = (mockedPostEvents: jest.Mock): Array<EventRequestType> =>
   Object.values(mockedPostEvents.mock.calls.flat()[1] as EventRequestType);
 
+const getErrors = (mockedPostError: jest.Mock): ErrorPayloadType => {
+  return Object.values(
+    mockedPostError.mock.calls.flat()
+  )[1] as ErrorPayloadType;
+};
+
 jest.mock('../api', () => ({
   postEvents: jest.fn(async (eventSinkUrl, data) => ({ data })),
-  postError: jest.fn(async (errorSinkUrl, payload) => payload)
+  postError: jest.fn(async (errorSinkUrl, payload, options) => ({
+    payload
+  }))
 }));
 
 jest.mock('../utils', () => {
@@ -136,7 +145,7 @@ describe('testing failure states', () => {
 
   test('posting errors', async () => {
     (postEvents as jest.Mock).mockImplementation(() => {
-      throw new Error('[TEST]: Failed to post events (Expected)');
+      throw new Error();
     });
     const sg = Supergood(
       {
@@ -147,8 +156,11 @@ describe('testing failure states', () => {
     );
     await axios.get(`${HTTP_OUTBOUND_TEST_SERVER}/posts`);
     await sg.close();
+    const postedErrors = getErrors(postError as jest.Mock);
+    console.log({ errors });
     expect(dumpDataToDisk as jest.Mock).toBeCalled();
     expect(postError as jest.Mock).toBeCalled();
+    expect(postedErrors.message).toEqual(errors.POSTING_EVENTS);
   });
 });
 
@@ -165,7 +177,6 @@ describe('hashing request and response bodies', () => {
     await sg.close();
     const eventsPosted = getEvents(postEvents as jest.Mock);
     const firstEvent = eventsPosted[0] as EventRequestType;
-    console.log({ firstEvent });
     expect(firstEvent.response.body.hashed.match(base64Regex)).toBeTruthy();
   });
 
