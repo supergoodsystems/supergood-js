@@ -48,8 +48,22 @@ const Supergood = (
 
       if (options.baseUrl !== request.url.origin) {
         const body = await request.text();
-        log.debug('Request', { request, options });
         requestCache.set(request.id, {
+          request: {
+            id: request.id,
+            method: request.method,
+            origin: request.url.origin,
+            protocol: request.url.protocol,
+            hostname: request.url.hostname,
+            host: request.url.host,
+            pathname: request.url.pathname,
+            search: request.url.search,
+            body: options.hashBody ? { hashed: hashValue(body) } : body,
+            requestedAt: new Date()
+          }
+        });
+        log.debug('Setting Request Cache', {
+          id: request.id,
           request: {
             id: request.id,
             method: request.method,
@@ -72,7 +86,6 @@ const Supergood = (
   interceptor.on('response', async (request, response) => {
     try {
       if (options.baseUrl !== request.url.origin) {
-        log.debug('Response', { request, response, options });
         const requestData = requestCache.get(request.id) || {};
         responseCache.set(request.id, {
           response: {
@@ -84,7 +97,19 @@ const Supergood = (
           },
           ...requestData
         });
+        log.debug('Setting Response Cache', {
+          id: request.id,
+          response: {
+            status: response.status,
+            body: options.hashBody
+              ? { hashed: hashValue(response.body) }
+              : response.body,
+            respondedAt: new Date()
+          },
+          ...requestData
+        });
         requestCache.del(request.id);
+        log.debug('Deleting Request Cache', { id: request.id });
       }
     } catch (e) {
       log.error(

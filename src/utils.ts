@@ -37,7 +37,7 @@ const logger = (errorSinkUrl: string, headerOptions: HeaderOptionType) => {
         payload ?? JSON.stringify(payload, null, 2)
       );
     },
-    debug: (message: string, payload?: InfoPayloadType) => {
+    debug: (message: string, payload?: any) => {
       if (process.env.SUPERGOOD_LOG_LEVEL === 'debug') {
         console.log(
           `${packageName}@${packageVersion}: ${message}`,
