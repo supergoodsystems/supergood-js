@@ -3,8 +3,7 @@ import {
   InfoPayloadType,
   LoggerType,
   EventRequestType,
-  OptionsType,
-  ErrorPayloadType
+  OptionsType
 } from './types';
 import { errors } from './constants';
 import fs from 'fs';
@@ -40,11 +39,10 @@ const logger = (errorSinkUrl: string, headerOptions: HeaderOptionType) => {
     },
     debug: (message: string, payload?: InfoPayloadType) => {
       if (process.env.SUPERGOOD_LOG_LEVEL === 'debug') {
-        process.env.SUPERGOOD_LOG_LEVEL === 'debug' ??
-          console.log(
-            `${packageName}@${packageVersion}: ${message}`,
-            payload ?? JSON.stringify(payload, null, 2)
-          );
+        console.log(
+          `${packageName}@${packageVersion}: ${message}`,
+          payload ?? JSON.stringify(payload, null, 2)
+        );
       }
     }
   };
