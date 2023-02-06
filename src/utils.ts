@@ -3,7 +3,8 @@ import {
   InfoPayloadType,
   LoggerType,
   EventRequestType,
-  OptionsType
+  OptionsType,
+  ErrorPayloadType
 } from './types';
 import { errors } from './constants';
 import fs from 'fs';
@@ -15,29 +16,33 @@ const logger = (errorSinkUrl: string, headerOptions: HeaderOptionType) => {
   const packageName = name;
   const packageVersion = version;
   return {
-    error: (msg: string, payload: InfoPayloadType, e: Error) => {
+    error: (message: string, payload: InfoPayloadType, error: Error) => {
       console.error(
-        `${packageName}@${packageVersion}: ${msg}`,
+        `${packageName}@${packageVersion}: ${message}`,
         JSON.stringify(payload, null, 2),
-        e
+        error
       );
       postError(
         errorSinkUrl,
-        { ...payload, packageName, packageVersion },
+        {
+          payload: { ...payload, packageName, packageVersion },
+          error,
+          message
+        },
         headerOptions
       );
     },
-    info: (msg: string, payload?: InfoPayloadType) => {
+    info: (message: string, payload?: InfoPayloadType) => {
       console.log(
-        `${packageName}@${packageVersion}: ${msg}`,
+        `${packageName}@${packageVersion}: ${message}`,
         payload ?? JSON.stringify(payload, null, 2)
       );
     },
-    debug: (msg: string, payload?: InfoPayloadType) => {
+    debug: (message: string, payload?: InfoPayloadType) => {
       if (process.env.SUPERGOOD_LOG_LEVEL === 'debug') {
         process.env.SUPERGOOD_LOG_LEVEL === 'debug' ??
           console.log(
-            `${packageName}@${packageVersion}: ${msg}`,
+            `${packageName}@${packageVersion}: ${message}`,
             payload ?? JSON.stringify(payload, null, 2)
           );
       }

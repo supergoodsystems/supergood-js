@@ -7,6 +7,8 @@ interface HeaderOptionType {
   };
 }
 
+type BodyType = Record<string, string>;
+
 interface RequestType {
   id: string;
   method: string;
@@ -16,13 +18,13 @@ interface RequestType {
   host: string;
   pathname: string;
   search: string;
-  body: string;
+  body: BodyType;
   requestedAt: Date;
 }
 
 interface ResponseType {
   status: number;
-  body: string;
+  body: BodyType;
   respondedAt: Date;
 }
 
@@ -42,11 +44,11 @@ interface EventRequestType {
 
 // interface EventResponseType {}
 
-interface ErrorRequestType {
-  error: Error;
+type ErrorPayloadType = {
   payload: InfoPayloadType;
+  error: Error;
   message: string;
-}
+};
 
 // interface ErrorResponseType {}
 
@@ -71,5 +73,6 @@ export {
   EventRequestType,
   InfoPayloadType,
   LoggerType,
-  OptionsType
+  OptionsType,
+  ErrorPayloadType
 };

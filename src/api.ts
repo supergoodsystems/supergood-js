@@ -1,9 +1,9 @@
-import { InfoPayloadType, HeaderOptionType, EventRequestType } from './types';
+import { HeaderOptionType, EventRequestType, ErrorPayloadType } from './types';
 import axios from 'axios';
 
 const postError = async (
   errorSinkUrl: string,
-  errorPayload: InfoPayloadType,
+  errorPayload: ErrorPayloadType,
   options: HeaderOptionType
 ) => {
   try {
