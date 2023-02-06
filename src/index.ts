@@ -122,6 +122,7 @@ const Supergood = (
 
   // Force flush cache means don't wait for responses
   const flushCache = async ({ force } = { force: false }) => {
+    log.debug('Flushing Cache ...', { force });
     const responseCacheKeys = responseCache.keys();
     const requestCacheKeys = requestCache.keys();
 
@@ -133,6 +134,7 @@ const Supergood = (
     // just exit here
 
     if (responseCacheKeys.length === 0 && !force) {
+      log.debug('Nothing to flush', { force });
       return;
     }
 
@@ -142,6 +144,7 @@ const Supergood = (
       responseCacheKeys.length === 0 &&
       requestCacheKeys.length === 0
     ) {
+      log.debug('Nothing to flush', { force });
       return;
     }
 
@@ -157,6 +160,7 @@ const Supergood = (
 
     try {
       await postEvents(options.eventSinkUrl, data, headerOptions);
+      log.debug(`Flushed ${data.length} events`, { force });
     } catch (e) {
       log.error(errors.POSTING_EVENTS, { data, options }, e as Error);
       dumpDataToDisk(data, log, options); // as backup
