@@ -7,7 +7,7 @@ import { getHeaderOptions, hashValue, logger, dumpDataToDisk } from './utils';
 import { postEvents } from './api';
 import nodeInterceptors from '@mswjs/interceptors/lib/presets/node';
 import { HeaderOptionType, EventRequestType, OptionsType } from './types';
-import { signals, defaultOptions, errors } from './constants';
+import { signals, defaultOptions, errors, TestErrorPath } from './constants';
 
 const interceptor = new BatchInterceptor({
   name: 'supergood-interceptor',
@@ -41,6 +41,11 @@ const Supergood = (
   interceptor.apply();
   interceptor.on('request', async (request: InteractiveIsomorphicRequest) => {
     try {
+      // Meant for debug and testing purposes
+      if (request.url.pathname === TestErrorPath) {
+        throw new Error(errors.TEST_ERROR);
+      }
+
       if (options.baseUrl !== request.url.origin) {
         const body = await request.text();
         requestCache.set(request.id, {

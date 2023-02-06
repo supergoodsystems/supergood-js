@@ -22,7 +22,10 @@ const errors = {
   POSTING_EVENTS: 'Error Posting Events',
   POSTING_ERRORS: 'Error Posting Errors',
   GETTING_CONFIG: 'Error Getting Config',
-  WRITING_TO_DISK: 'Error writing to disk'
+  WRITING_TO_DISK: 'Error writing to disk',
+  TEST_ERROR: 'Test Error for Testing Purposes'
 };
 
-export { signals, defaultOptions, errors };
+const TestErrorPath = '/api/supergood-test-error';
+
+export { signals, defaultOptions, errors, TestErrorPath };
