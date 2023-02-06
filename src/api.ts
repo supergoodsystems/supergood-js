@@ -1,4 +1,5 @@
 import { HeaderOptionType, EventRequestType, ErrorPayloadType } from './types';
+import { errors } from './constants';
 import axios from 'axios';
 
 const postError = async (
@@ -20,13 +21,11 @@ const postEvents = async (
   data: Array<EventRequestType>,
   options: HeaderOptionType
 ) => {
-  try {
-    const response = await axios.post(eventSinkUrl, data, options);
-    return response.data;
-  } catch (e) {
-    console.warn(`Failed to report events to ${eventSinkUrl}`);
-    return null;
+  const response = await axios.post(eventSinkUrl, data, options);
+  if (!response || response.status !== 200) {
+    throw new Error(errors.POSTING_EVENTS);
   }
+  return response.data;
 };
 
 export { postError, postEvents };

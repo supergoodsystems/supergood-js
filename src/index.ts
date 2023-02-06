@@ -156,14 +156,7 @@ const Supergood = (
     }
 
     try {
-      const response = await postEvents(
-        options.eventSinkUrl,
-        data,
-        headerOptions
-      );
-      if (!response) {
-        dumpDataToDisk(data, log, options); // as backup
-      }
+      await postEvents(options.eventSinkUrl, data, headerOptions);
     } catch (e) {
       log.error(errors.POSTING_EVENTS, { data, options }, e as Error);
       dumpDataToDisk(data, log, options); // as backup

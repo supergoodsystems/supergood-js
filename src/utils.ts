@@ -17,6 +17,7 @@ const logger = (errorSinkUrl: string, headerOptions: HeaderOptionType) => {
   return {
     error: (message: string, payload: InfoPayloadType, error: Error) => {
       console.error(
+        new Date().toISOString(),
         `${packageName}@${packageVersion}: ${message}`,
         JSON.stringify(payload, null, 2),
         error
@@ -33,6 +34,7 @@ const logger = (errorSinkUrl: string, headerOptions: HeaderOptionType) => {
     },
     info: (message: string, payload?: InfoPayloadType) => {
       console.log(
+        new Date().toISOString(),
         `${packageName}@${packageVersion}: ${message}`,
         payload ?? JSON.stringify(payload, null, 2)
       );
@@ -40,6 +42,7 @@ const logger = (errorSinkUrl: string, headerOptions: HeaderOptionType) => {
     debug: (message: string, payload?: any) => {
       if (process.env.SUPERGOOD_LOG_LEVEL === 'debug') {
         console.log(
+          new Date().toISOString(),
           `${packageName}@${packageVersion}: ${message}`,
           payload ?? JSON.stringify(payload, null, 2)
         );
