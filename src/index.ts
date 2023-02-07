@@ -16,9 +16,9 @@ const interceptor = new BatchInterceptor({
 
 const Supergood = (
   { clientId, clientSecret }: { clientId: string; clientSecret: string },
-  inputOptions: OptionsType
+  inputOptions = {}
 ) => {
-  const options = { ...defaultOptions, ...inputOptions };
+  const options = { ...defaultOptions, ...inputOptions } as OptionsType;
   // This can update if new config is available after posting events or posting errors
   const headerOptions: HeaderOptionType = getHeaderOptions(
     clientId,
@@ -37,6 +37,7 @@ const Supergood = (
   });
 
   const log = logger(options.errorSinkUrl, headerOptions);
+  log.debug('Supergood Options', options);
 
   interceptor.apply();
   interceptor.on('request', async (request: InteractiveIsomorphicRequest) => {
