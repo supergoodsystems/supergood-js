@@ -22,6 +22,9 @@ const postEvents = async (
   options: HeaderOptionType
 ) => {
   const response = await axios.post(eventSinkUrl, data, options);
+  if (response.status === 401) {
+    throw new Error(errors.UNAUTHORIZED);
+  }
   if (!response || response.status !== 200) {
     throw new Error(errors.POSTING_EVENTS);
   }

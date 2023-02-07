@@ -162,8 +162,17 @@ const Supergood = (
       await postEvents(options.eventSinkUrl, data, headerOptions);
       log.debug(`Flushed ${data.length} events`, { force });
     } catch (e) {
-      log.error(errors.POSTING_EVENTS, { data, options }, e as Error);
-      dumpDataToDisk(data, log, options); // as backup
+      const error = e as Error;
+      if (error.message === errors.UNAUTHORIZED) {
+        log.error(errors.UNAUTHORIZED, { data, options }, error, {
+          reportOut: false
+        });
+        clearInterval(interval);
+        interceptor.dispose();
+      } else {
+        log.error(errors.POSTING_EVENTS, { data, options }, error);
+        dumpDataToDisk(data, log, options); // as backup
+      }
     } finally {
       // Delete only the keys sent
       // cache might have been updated

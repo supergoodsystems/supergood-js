@@ -157,7 +157,6 @@ describe('testing failure states', () => {
     await axios.get(`${HTTP_OUTBOUND_TEST_SERVER}/posts`);
     await sg.close();
     const postedErrors = getErrors(postError as jest.Mock);
-    console.log({ errors });
     expect(dumpDataToDisk as jest.Mock).toBeCalled();
     expect(postError as jest.Mock).toBeCalled();
     expect(postedErrors.message).toEqual(errors.POSTING_EVENTS);

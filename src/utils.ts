@@ -15,22 +15,29 @@ const logger = (errorSinkUrl: string, headerOptions: HeaderOptionType) => {
   const packageName = name;
   const packageVersion = version;
   return {
-    error: (message: string, payload: InfoPayloadType, error: Error) => {
+    error: (
+      message: string,
+      payload: InfoPayloadType,
+      error: Error,
+      { reportOut }: { reportOut: boolean } = { reportOut: true }
+    ) => {
       console.error(
         new Date().toISOString(),
         `${packageName}@${packageVersion}: ${message}`,
         JSON.stringify(payload, null, 2),
         error
       );
-      postError(
-        errorSinkUrl,
-        {
-          payload: { ...payload, packageName, packageVersion },
-          error: JSON.stringify(error, Object.getOwnPropertyNames(error)),
-          message
-        },
-        headerOptions
-      );
+      if (reportOut) {
+        postError(
+          errorSinkUrl,
+          {
+            payload: { ...payload, packageName, packageVersion },
+            error: JSON.stringify(error, Object.getOwnPropertyNames(error)),
+            message
+          },
+          headerOptions
+        );
+      }
     },
     info: (message: string, payload?: InfoPayloadType) => {
       console.log(
