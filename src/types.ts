@@ -33,8 +33,8 @@ interface OptionsType {
   cacheTtl: number;
   baseUrl: string;
   hashBody: boolean;
-  eventSinkUrl: string; // Defaults to {baseUrl}/api/events if not provided
-  errorSinkUrl: string; // Defaults to {baseUrl}/api/errors if not provided
+  eventSinkEndpoint: string; // Defaults to {baseUrl}/api/events if not provided
+  errorSinkEndpoint: string; // Defaults to {baseUrl}/api/errors if not provided
 }
 
 interface EventRequestType {

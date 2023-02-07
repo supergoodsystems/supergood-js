@@ -10,8 +10,8 @@ const defaultOptions = {
   flushInterval: process.env.SUPERGOOD_FLUSH_INTERVAL || 1000,
   cacheTtl: process.env.SUPERGOOD_CACHE_TTL || 0,
   baseUrl: process.env.SUPERGOOD_BASE_URL || 'https://supergood.ai',
-  eventSinkUrl: `${process.env.SUPERGOOD_BASE_URL}/api/events`,
-  errorSinkUrl: `${process.env.SUPERGOOD_BASE_URL}/api/errors`,
+  eventSinkEndpoint: '/api/events',
+  errorSinkEndpoint: '/api/errors',
   hashBody: process.env.SUPERGOOD_HASH_BODY || false
 };
 

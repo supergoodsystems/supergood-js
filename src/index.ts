@@ -19,6 +19,9 @@ const Supergood = (
   inputOptions = {}
 ) => {
   const options = { ...defaultOptions, ...inputOptions } as OptionsType;
+  const errorSinkUrl = `${options.baseUrl}${options.errorSinkEndpoint}`;
+  const eventSinkUrl = `${options.baseUrl}${options.eventSinkEndpoint}`;
+
   // This can update if new config is available after posting events or posting errors
   const headerOptions: HeaderOptionType = getHeaderOptions(
     clientId,
@@ -36,7 +39,7 @@ const Supergood = (
     stdTTL: options.cacheTtl
   });
 
-  const log = logger(options.errorSinkUrl, headerOptions);
+  const log = logger(errorSinkUrl, headerOptions);
   log.debug('Supergood Options', options);
 
   interceptor.apply();
@@ -160,7 +163,7 @@ const Supergood = (
     }
 
     try {
-      await postEvents(options.eventSinkUrl, data, headerOptions);
+      await postEvents(eventSinkUrl, data, headerOptions);
       log.debug(`Flushed ${data.length} events`, { force });
     } catch (e) {
       const error = e as Error;

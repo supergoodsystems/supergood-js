@@ -32,8 +32,8 @@ const testOptions = {
   flushInterval: 30000,
   cacheTtl: 0,
   baseUrl: INTERNAL_SUPERGOOD_SERVER,
-  eventSinkUrl: `${INTERNAL_SUPERGOOD_SERVER}/api/events`,
-  errorSinkUrl: `${INTERNAL_SUPERGOOD_SERVER}/api/errors`,
+  eventSinkEndpoint: `/api/events`,
+  errorSinkEndpoint: `/api/errors`,
   hashBody: false
 };
 
