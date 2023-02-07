@@ -6,19 +6,16 @@ const signals = [
   'SIGWINCH'
 ] as const;
 
-// If the sink endpoints aren't provided, default to base URL
-const getUrl = (endpoint: string, defaultUrl?: string) => {
-  if (defaultUrl) return defaultUrl;
-  const baseUrl = process.env.SUPERGOOD_BASE_URL || 'https://supergood.ai';
-  return `${baseUrl}${endpoint}`;
-};
-
 const defaultOptions = {
   flushInterval: process.env.SUPERGOOD_FLUSH_INTERVAL || 1000,
   cacheTtl: process.env.SUPERGOOD_CACHE_TTL || 0,
-  baseUrl: getUrl('/', process.env.SUPERGOOD_BASE_URL),
-  eventSinkUrl: getUrl('/api/events', process.env.SUPERGOOD_EVENT_SINK_URL),
-  errorSinkUrl: getUrl('/api/errors', process.env.SUPERGOOD_ERROR_SINK_URL),
+  baseUrl: process.env.SUPERGOOD_BASE_URL || 'https://supergood.ai',
+  eventSinkUrl:
+    process.env.SUPERGOOD_EVENT_SINK_URL ||
+    `${process.env.SUPERGOOD_BASE_URL}/api/events`,
+  errorSinkUrl:
+    process.env.SUPERGOOD_ERROR_SINK_URL ||
+    `${process.env.SUPERGOOD_BASE_URL}/api/errors`,
   hashBody: process.env.SUPERGOOD_HASH_BODY || false
 };
 
