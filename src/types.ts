@@ -66,7 +66,7 @@ interface LoggerType {
   info: (message: string, payload?: InfoPayloadType) => void;
 }
 
-export {
+export type {
   HeaderOptionType,
   RequestType,
   ResponseType,
