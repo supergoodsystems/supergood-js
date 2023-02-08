@@ -12,11 +12,10 @@ type BodyType = Record<string, string>;
 interface RequestType {
   id: string;
   method: string;
-  origin: string;
+  url: string;
   protocol: string;
-  hostname: string;
-  host: string;
-  pathname: string;
+  domain: string;
+  path: string;
   search: string;
   body: BodyType;
   requestedAt: Date;
@@ -24,6 +23,7 @@ interface RequestType {
 
 interface ResponseType {
   status: number;
+  statusText: string;
   body: BodyType;
   respondedAt: Date;
 }

@@ -3,3 +3,5 @@ process.env.CLIENT_SECRET = 'e3pYeKQkm8g6PBPi8jjeydymvCsR-3z39S-4spi3';
 
 process.env.HTTP_OUTBOUND_TEST_SERVER_PORT = 3001;
 process.env.SUPERGOOD_SERVER_PORT = 9001;
+
+process.env.SUPERGOOD_LOG_LEVEL = 'debug';

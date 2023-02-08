@@ -56,11 +56,10 @@ const Supergood = (
           request: {
             id: request.id,
             method: request.method,
-            origin: request.url.origin,
+            url: request.url.href,
             protocol: request.url.protocol,
-            hostname: request.url.hostname,
-            host: request.url.host,
-            pathname: request.url.pathname,
+            domain: request.url.host,
+            endpoint: request.url.pathname,
             search: request.url.search,
             body: options.hashBody ? { hashed: hashValue(body) } : body,
             requestedAt: new Date()
@@ -71,11 +70,10 @@ const Supergood = (
           request: {
             id: request.id,
             method: request.method,
-            origin: request.url.origin,
+            url: request.url.href,
             protocol: request.url.protocol,
-            hostname: request.url.hostname,
-            host: request.url.host,
-            pathname: request.url.pathname,
+            domain: request.url.host,
+            endpoint: request.url.pathname,
             search: request.url.search,
             body: options.hashBody ? { hashed: hashValue(body) } : body,
             requestedAt: new Date()
@@ -91,9 +89,11 @@ const Supergood = (
     try {
       if (options.baseUrl !== request.url.origin) {
         const requestData = requestCache.get(request.id) || {};
+        log.debug('Full Response', response);
         responseCache.set(request.id, {
           response: {
             status: response.status,
+            statusText: response.statusText,
             body: options.hashBody
               ? { hashed: hashValue(response.body) }
               : response.body,
@@ -105,6 +105,7 @@ const Supergood = (
           id: request.id,
           response: {
             status: response.status,
+            statusText: response.statusText,
             body: options.hashBody
               ? { hashed: hashValue(response.body) }
               : response.body,
