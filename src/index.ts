@@ -59,7 +59,7 @@ const Supergood = (
             url: request.url.href,
             protocol: request.url.protocol,
             domain: request.url.host,
-            endpoint: request.url.pathname,
+            path: request.url.pathname,
             search: request.url.search,
             body: options.hashBody ? { hashed: hashValue(body) } : body,
             requestedAt: new Date()
