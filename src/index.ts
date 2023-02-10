@@ -89,7 +89,6 @@ const Supergood = (
     try {
       if (options.baseUrl !== request.url.origin) {
         const requestData = requestCache.get(request.id) || {};
-        log.debug('Full Response', response);
         responseCache.set(request.id, {
           response: {
             status: response.status,
@@ -166,6 +165,7 @@ const Supergood = (
     try {
       await postEvents(eventSinkUrl, data, headerOptions);
       log.debug(`Flushed ${data.length} events`, { force });
+      log.debug(`Flushed`, JSON.stringify(data, null, 2));
     } catch (e) {
       const error = e as Error;
       if (error.message === errors.UNAUTHORIZED) {

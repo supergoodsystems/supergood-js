@@ -1,7 +1,6 @@
 import Supergood from '..';
 import { postEvents, postError } from '../api';
 import { dumpDataToDisk } from '../utils';
-import axios from 'axios';
 import { initialize } from './json-server-config';
 import { errors } from '../constants';
 import {
@@ -10,10 +9,19 @@ import {
   test,
   jest,
   describe,
-  beforeAll
+  beforeAll,
+  beforeEach
 } from '@jest/globals';
 import { ErrorPayloadType, EventRequestType } from '../types';
+import initialDB from './initial-db';
 import http from 'http';
+import fs from 'fs';
+import path from 'path';
+
+// HTTP libraries
+import superagent from 'superagent';
+import axios from 'axios';
+import fetch from 'node-fetch';
 
 const base64Regex =
   /^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/;
@@ -40,11 +48,27 @@ const testOptions = {
 let server: http.Server;
 
 beforeAll(async () => {
+  fs.writeFileSync(
+    path.join(__dirname, 'db.json'),
+    JSON.stringify(initialDB, null, 2),
+    {
+      encoding: 'utf8',
+      flag: 'w'
+    }
+  );
   server = await initialize();
 });
 
 afterAll(async () => {
   server.close();
+  fs.writeFileSync(
+    path.join(__dirname, 'db.json'),
+    JSON.stringify(initialDB, null, 2),
+    {
+      encoding: 'utf8',
+      flag: 'w'
+    }
+  );
 });
 
 const getEvents = (mockedPostEvents: jest.Mock): Array<EventRequestType> =>
@@ -192,6 +216,85 @@ describe('hashing request and response bodies', () => {
     const eventsPosted = getEvents(postEvents as jest.Mock);
     const firstEvent = eventsPosted[0] as EventRequestType;
     expect(firstEvent.response.body.hashed).toBeFalsy();
+  });
+});
+
+describe('testing various endpoints and libraries basic functionality', () => {
+  let sg: { close: () => Promise<void>; flushCache: () => Promise<void> };
+
+  beforeEach(() => {
+    sg = Supergood(
+      {
+        clientId: CLIENT_ID,
+        clientSecret: CLIENT_SECRET
+      },
+      testOptions
+    );
+  });
+
+  test('axios get', async () => {
+    const response = await axios.get(`${HTTP_OUTBOUND_TEST_SERVER}/posts`);
+    expect(response.status).toEqual(200);
+    await sg.close();
+    const eventsPosted = getEvents(postEvents as jest.Mock);
+    expect(eventsPosted.length).toEqual(1);
+  });
+
+  test('axios post', async () => {
+    const response = await axios.post(`${HTTP_OUTBOUND_TEST_SERVER}/posts`, {
+      title: 'axios-post',
+      author: 'alex-klarfeld'
+    });
+    expect(response.status).toEqual(201);
+    await sg.close();
+    const eventsPosted = getEvents(postEvents as jest.Mock);
+    expect(eventsPosted.length).toEqual(1);
+  });
+
+  test('superagent get', async () => {
+    const response = await superagent.get(`${HTTP_OUTBOUND_TEST_SERVER}/posts`);
+    expect(response.status).toEqual(200);
+    await sg.close();
+    const eventsPosted = getEvents(postEvents as jest.Mock);
+    expect(eventsPosted.length).toEqual(1);
+  });
+
+  test('superagent post', async () => {
+    const response = await superagent
+      .post(`${HTTP_OUTBOUND_TEST_SERVER}/posts`)
+      .send({
+        title: 'superagent-post',
+        author: 'alex-klarfeld'
+      });
+    expect(response.status).toEqual(201);
+    await sg.close();
+    const eventsPosted = getEvents(postEvents as jest.Mock);
+    expect(eventsPosted.length).toEqual(1);
+  });
+
+  test('node-fetch get', async () => {
+    const response = await fetch(`${HTTP_OUTBOUND_TEST_SERVER}/posts`);
+    const body = await response.text();
+    expect(response.status).toEqual(200);
+    expect(body).toBeTruthy();
+    await sg.close();
+    const eventsPosted = getEvents(postEvents as jest.Mock);
+    expect(eventsPosted.length).toEqual(1);
+  });
+
+  test('node-fetch post', async () => {
+    const response = await fetch(`${HTTP_OUTBOUND_TEST_SERVER}/posts`, {
+      method: 'POST',
+      body: JSON.stringify({
+        title: 'node-fetch-post'
+      })
+    });
+    const responseJson = await response.json();
+    expect(response.status).toEqual(201);
+    expect(responseJson.id).toBeTruthy();
+    await sg.close();
+    const eventsPosted = getEvents(postEvents as jest.Mock);
+    expect(eventsPosted.length).toEqual(1);
   });
 });
 
