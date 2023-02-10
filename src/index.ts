@@ -51,7 +51,7 @@ const Supergood = (
       }
 
       if (options.baseUrl !== request.url.origin) {
-        const body = await request.text();
+        const body = await request.clone().text();
         requestCache.set(request.id, {
           request: {
             id: request.id,
