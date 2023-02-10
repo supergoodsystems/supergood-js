@@ -165,7 +165,6 @@ const Supergood = (
     try {
       await postEvents(eventSinkUrl, data, headerOptions);
       log.debug(`Flushed ${data.length} events`, { force });
-      log.debug(`Flushed`, JSON.stringify(data, null, 2));
     } catch (e) {
       const error = e as Error;
       if (error.message === errors.UNAUTHORIZED) {
