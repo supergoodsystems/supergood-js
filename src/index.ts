@@ -5,7 +5,6 @@ import {
 import NodeCache from 'node-cache';
 import {
   getHeaderOptions,
-  hashValue,
   logger,
   dumpDataToDisk,
   hashValuesFromkeys,
@@ -23,7 +22,7 @@ const interceptor = new BatchInterceptor({
 
 const Supergood = async (
   { clientId, clientSecret }: { clientId: string; clientSecret: string },
-  baseUrl: string
+  baseUrl = 'https://supergood.ai'
 ) => {
   const headerOptions: HeaderOptionType = getHeaderOptions(
     clientId,
