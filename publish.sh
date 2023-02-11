@@ -1,1 +1,1 @@
-yarn run clean && npx tsc && npm version minor && npm publish --access public
+yarn run clean && npx tsc && npm version patch && npm publish --access public

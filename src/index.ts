@@ -28,7 +28,7 @@ const Supergood = async (
     clientId,
     clientSecret
   );
-  const config = await fetchConfig(`${baseUrl}/config`, headerOptions);
+  const config = await fetchConfig(`${baseUrl}/api/config`, headerOptions);
 
   const errorSinkUrl = `${baseUrl}${config.errorSinkEndpoint}`;
   const eventSinkUrl = `${baseUrl}${config.eventSinkEndpoint}`;
