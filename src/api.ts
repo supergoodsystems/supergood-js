@@ -1,4 +1,9 @@
-import { HeaderOptionType, EventRequestType, ErrorPayloadType } from './types';
+import {
+  HeaderOptionType,
+  EventRequestType,
+  ErrorPayloadType,
+  ConfigType
+} from './types';
 import { errors } from './constants';
 import axios from 'axios';
 
@@ -31,4 +36,18 @@ const postEvents = async (
   return response.data;
 };
 
-export { postError, postEvents };
+const fetchConfig = async (
+  fetchConfigUrl: string,
+  options: HeaderOptionType
+): Promise<ConfigType> => {
+  const response = await axios.get(fetchConfigUrl, options);
+  if (response.status === 401) {
+    throw new Error(errors.UNAUTHORIZED);
+  }
+  if (!response || response.status !== 200) {
+    throw new Error(errors.FETCHING_CONFIG);
+  }
+  return response.data;
+};
+
+export { postError, postEvents, fetchConfig };

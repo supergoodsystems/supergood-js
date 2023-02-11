@@ -1,5 +1,5 @@
 import Supergood from '..';
-import { postEvents, postError } from '../api';
+import { postEvents, postError, fetchConfig } from '../api';
 import { dumpDataToDisk } from '../utils';
 import { initialize } from './json-server-config';
 import { errors } from '../constants';
@@ -17,6 +17,7 @@ import initialDB from './initial-db';
 import http from 'http';
 import fs from 'fs';
 import path from 'path';
+import get from 'lodash.get';
 
 // HTTP libraries
 import superagent from 'superagent';
@@ -36,13 +37,12 @@ const HTTP_OUTBOUND_TEST_SERVER = `http://localhost:${process.env.HTTP_OUTBOUND_
 const SUPERGOOD_SERVER_PORT = process.env.SUPERGOOD_SERVER_PORT || 9001;
 const INTERNAL_SUPERGOOD_SERVER = `http://localhost:${SUPERGOOD_SERVER_PORT}`;
 
-const testOptions = {
+const defaultConfig = {
   flushInterval: 30000,
   cacheTtl: 0,
-  baseUrl: INTERNAL_SUPERGOOD_SERVER,
   eventSinkEndpoint: `/api/events`,
   errorSinkEndpoint: `/api/errors`,
-  hashBody: false
+  keysToHash: ['request.body', 'response.body']
 };
 
 let server: http.Server;
@@ -82,9 +82,10 @@ const getErrors = (mockedPostError: jest.Mock): ErrorPayloadType => {
 
 jest.mock('../api', () => ({
   postEvents: jest.fn(async (eventSinkUrl, data) => ({ data })),
-  postError: jest.fn(async (errorSinkUrl, payload, options) => ({
+  postError: jest.fn(async (errorSinkUrl, payload) => ({
     payload
-  }))
+  })),
+  fetchConfig: jest.fn(async () => defaultConfig)
 }));
 
 jest.mock('../utils', () => {
@@ -97,12 +98,12 @@ jest.mock('../utils', () => {
 
 describe('testing success states', () => {
   test('captures all outgoing 200 http requests', async () => {
-    const sg = Supergood(
+    const sg = await Supergood(
       {
         clientId: CLIENT_ID,
         clientSecret: CLIENT_SECRET
       },
-      testOptions
+      INTERNAL_SUPERGOOD_SERVER
     );
 
     const numberOfHttpCalls = 5;
@@ -123,12 +124,12 @@ describe('testing success states', () => {
 
   test('captures non-success status and errors', async () => {
     const httpErrorCodes = [400, 401, 403, 404, 500, 501, 502, 503, 504];
-    const sg = Supergood(
+    const sg = await Supergood(
       {
         clientId: CLIENT_ID,
         clientSecret: CLIENT_SECRET
       },
-      testOptions
+      INTERNAL_SUPERGOOD_SERVER
     );
     for (let i = 0; i < httpErrorCodes.length; i++) {
       try {
@@ -150,12 +151,12 @@ describe('testing success states', () => {
 
 describe('testing failure states', () => {
   test('hanging response', async () => {
-    const sg = Supergood(
+    const sg = await Supergood(
       {
         clientId: CLIENT_ID,
         clientSecret: CLIENT_SECRET
       },
-      testOptions
+      INTERNAL_SUPERGOOD_SERVER
     );
     axios.get(`${HTTP_OUTBOUND_TEST_SERVER}/200?sleep=2000`);
     await new Promise((resolve) => setTimeout(resolve, 1000));
@@ -171,12 +172,12 @@ describe('testing failure states', () => {
     (postEvents as jest.Mock).mockImplementation(() => {
       throw new Error();
     });
-    const sg = Supergood(
+    const sg = await Supergood(
       {
         clientId: CLIENT_ID,
         clientSecret: CLIENT_SECRET
       },
-      testOptions
+      INTERNAL_SUPERGOOD_SERVER
     );
     await axios.get(`${HTTP_OUTBOUND_TEST_SERVER}/posts`);
     await sg.close();
@@ -189,46 +190,86 @@ describe('testing failure states', () => {
 
 describe('hashing request and response bodies', () => {
   test('hashing', async () => {
-    const sg = Supergood(
+    (fetchConfig as jest.Mock).mockImplementation(() => {
+      return {
+        ...defaultConfig,
+        keysToHash: ['response.body']
+      };
+    });
+    const sg = await Supergood(
       {
         clientId: CLIENT_ID,
         clientSecret: CLIENT_SECRET
       },
-      { ...testOptions, hashBody: true }
+      INTERNAL_SUPERGOOD_SERVER
     );
     await axios.get(`${HTTP_OUTBOUND_TEST_SERVER}/posts`);
     await sg.close();
     const eventsPosted = getEvents(postEvents as jest.Mock);
     const firstEvent = eventsPosted[0] as EventRequestType;
-    expect(firstEvent.response.body.hashed.match(base64Regex)).toBeTruthy();
+    const hashedBodyValue = get(firstEvent, ['response', 'body', '0']);
+    expect(hashedBodyValue && hashedBodyValue.match(base64Regex)).toBeTruthy();
   });
 
   test('not hashing', async () => {
-    const sg = Supergood(
+    (fetchConfig as jest.Mock).mockImplementation(() => {
+      return {
+        ...defaultConfig,
+        keysToHash: []
+      };
+    });
+    const sg = await Supergood(
       {
         clientId: CLIENT_ID,
         clientSecret: CLIENT_SECRET
       },
-      testOptions
+      INTERNAL_SUPERGOOD_SERVER
     );
     await axios.get(`${HTTP_OUTBOUND_TEST_SERVER}/posts`);
     await sg.close();
     const eventsPosted = getEvents(postEvents as jest.Mock);
     const firstEvent = eventsPosted[0] as EventRequestType;
-    expect(firstEvent.response.body.hashed).toBeFalsy();
+    expect(
+      typeof get(firstEvent, ['response', 'body']) === 'object'
+    ).toBeTruthy();
+    expect(get(firstEvent, ['response', 'body', 'hashed'])).toBeFalsy();
+  });
+
+  test('keys to hash not in config', async () => {
+    (fetchConfig as jest.Mock).mockImplementation(() => {
+      return {
+        ...defaultConfig,
+        keysToHash: ['thisKeyDoesNotExist', 'response.thisKeyDoesNotExist']
+      };
+    });
+    const sg = await Supergood(
+      {
+        clientId: CLIENT_ID,
+        clientSecret: CLIENT_SECRET
+      },
+      INTERNAL_SUPERGOOD_SERVER
+    );
+    await axios.get(`${HTTP_OUTBOUND_TEST_SERVER}/posts`);
+    await sg.close();
+    const eventsPosted = getEvents(postEvents as jest.Mock);
+    const firstEvent = eventsPosted[0] as EventRequestType;
+    expect(
+      typeof get(firstEvent, ['response', 'body']) === 'object'
+    ).toBeTruthy();
+    expect(get(firstEvent, ['response', 'body', 'hashed'])).toBeFalsy();
   });
 });
 
 describe('testing various endpoints and libraries basic functionality', () => {
   let sg: { close: () => Promise<void>; flushCache: () => Promise<void> };
 
-  beforeEach(() => {
-    sg = Supergood(
+  beforeEach(async () => {
+    sg = await Supergood(
       {
         clientId: CLIENT_ID,
         clientSecret: CLIENT_SECRET
       },
-      testOptions
+      INTERNAL_SUPERGOOD_SERVER
     );
   });
 
