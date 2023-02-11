@@ -3,13 +3,18 @@ import {
   InfoPayloadType,
   LoggerType,
   EventRequestType,
-  OptionsType
+  ConfigType,
+  RequestType,
+  ResponseType
 } from './types';
 import { errors } from './constants';
 import fs from 'fs';
 import crypto from 'crypto';
 import { postError } from './api';
 import { name, version } from '../package.json';
+
+import set from 'lodash.set';
+import get from 'lodash.get';
 
 const logger = (errorSinkUrl: string, headerOptions: HeaderOptionType) => {
   const packageName = name;
@@ -72,11 +77,38 @@ const getHeaderOptions = (
   };
 };
 
+const hashValuesFromkeys = (
+  obj: { request?: RequestType; response?: ResponseType },
+  keysToHash: Array<string>
+) => {
+  let objCopy = { ...obj };
+  for (let i = 0; i < keysToHash.length; i++) {
+    const keyString = keysToHash[i];
+    const value = get(objCopy, keyString);
+    if (value) {
+      objCopy = set(objCopy, keyString, hashValue(value));
+    }
+  }
+  return objCopy;
+};
+
+const safeParseJson = (json: string) => {
+  try {
+    return JSON.parse(json);
+  } catch (e) {
+    return json;
+  }
+};
+
 const hashValue = (input: string | Record<string, string> | undefined) => {
   const hash = crypto.createHash('sha1');
   if (!input) return '';
+
+  if (Array.isArray(input)) {
+    return [hash.update(JSON.stringify(input)).digest('base64')];
+  }
   if (typeof input === 'object') {
-    return hash.update(JSON.stringify(input)).digest('base64');
+    return { hashed: hash.update(JSON.stringify(input)).digest('base64') };
   }
   if (typeof input === 'string') {
     return hash.update(input).digest('base64');
@@ -88,7 +120,7 @@ const hashValue = (input: string | Record<string, string> | undefined) => {
 const dumpDataToDisk = (
   data: Array<EventRequestType>,
   log: LoggerType,
-  options: OptionsType
+  config: ConfigType
 ) => {
   // Only create a logfile once a day
   try {
@@ -96,15 +128,22 @@ const dumpDataToDisk = (
       .toISOString()
       .split('T')[0]
       .replace(/[:|.]/g, '-')}.log`;
-    log.info(`Writing to disk: "${logFileName}"`, { data, options });
+    log.info(`Writing to disk: "${logFileName}"`, { data, config });
     data.forEach((payload) =>
       fs.writeFileSync(logFileName, JSON.stringify(payload, null, 2), {
         flag: 'a+'
       })
     );
   } catch (e) {
-    log.error(errors.WRITING_TO_DISK, { data, options }, e as Error);
+    log.error(errors.WRITING_TO_DISK, { data, config }, e as Error);
   }
 };
 
-export { getHeaderOptions, hashValue, logger, dumpDataToDisk };
+export {
+  getHeaderOptions,
+  hashValue,
+  hashValuesFromkeys,
+  logger,
+  dumpDataToDisk,
+  safeParseJson
+};

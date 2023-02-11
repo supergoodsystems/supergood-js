@@ -3,44 +3,51 @@ import {
   InteractiveIsomorphicRequest
 } from '@mswjs/interceptors';
 import NodeCache from 'node-cache';
-import { getHeaderOptions, hashValue, logger, dumpDataToDisk } from './utils';
-import { postEvents } from './api';
+import {
+  getHeaderOptions,
+  logger,
+  dumpDataToDisk,
+  hashValuesFromkeys,
+  safeParseJson
+} from './utils';
+import { fetchConfig, postEvents } from './api';
 import nodeInterceptors from '@mswjs/interceptors/lib/presets/node';
-import { HeaderOptionType, EventRequestType, OptionsType } from './types';
-import { signals, defaultOptions, errors, TestErrorPath } from './constants';
+import { HeaderOptionType, EventRequestType } from './types';
+import { signals, errors, TestErrorPath } from './constants';
 
 const interceptor = new BatchInterceptor({
   name: 'supergood-interceptor',
   interceptors: nodeInterceptors
 });
 
-const Supergood = (
+const Supergood = async (
   { clientId, clientSecret }: { clientId: string; clientSecret: string },
-  inputOptions = {}
+  baseUrl = 'https://supergood.ai'
 ) => {
-  const options = { ...defaultOptions, ...inputOptions } as OptionsType;
-  const errorSinkUrl = `${options.baseUrl}${options.errorSinkEndpoint}`;
-  const eventSinkUrl = `${options.baseUrl}${options.eventSinkEndpoint}`;
-
-  // This can update if new config is available after posting events or posting errors
   const headerOptions: HeaderOptionType = getHeaderOptions(
     clientId,
     clientSecret
   );
+  const config = await fetchConfig(`${baseUrl}/config`, headerOptions);
+
+  const errorSinkUrl = `${baseUrl}${config.errorSinkEndpoint}`;
+  const eventSinkUrl = `${baseUrl}${config.eventSinkEndpoint}`;
+
+  // This can update if new config is available after posting events or posting errors
 
   // Why two caches? To quickly only flush the cache with
   // completed responses without having to pull all the keys from one
   // cache and filter out the ones without responses.
 
   const requestCache: NodeCache = new NodeCache({
-    stdTTL: options.cacheTtl
+    stdTTL: config.cacheTtl
   });
   const responseCache: NodeCache = new NodeCache({
-    stdTTL: options.cacheTtl
+    stdTTL: config.cacheTtl
   });
 
   const log = logger(errorSinkUrl, headerOptions);
-  log.debug('Supergood Options', options);
+  log.debug('Supergood Config', config);
 
   interceptor.apply();
   interceptor.on('request', async (request: InteractiveIsomorphicRequest) => {
@@ -50,67 +57,52 @@ const Supergood = (
         throw new Error(errors.TEST_ERROR);
       }
 
-      if (options.baseUrl !== request.url.origin) {
+      if (baseUrl !== request.url.origin) {
         const body = await request.clone().text();
-        requestCache.set(request.id, {
-          request: {
-            id: request.id,
-            method: request.method,
-            url: request.url.href,
-            protocol: request.url.protocol,
-            domain: request.url.host,
-            path: request.url.pathname,
-            search: request.url.search,
-            body: options.hashBody ? { hashed: hashValue(body) } : body,
-            requestedAt: new Date()
-          }
-        });
-        log.debug('Setting Request Cache', {
-          id: request.id,
-          request: {
-            id: request.id,
-            method: request.method,
-            url: request.url.href,
-            protocol: request.url.protocol,
-            domain: request.url.host,
-            endpoint: request.url.pathname,
-            search: request.url.search,
-            body: options.hashBody ? { hashed: hashValue(body) } : body,
-            requestedAt: new Date()
-          }
-        });
+        const requestData = hashValuesFromkeys(
+          {
+            request: {
+              id: request.id,
+              method: request.method,
+              url: request.url.href,
+              protocol: request.url.protocol,
+              domain: request.url.host,
+              path: request.url.pathname,
+              search: request.url.search,
+              body: safeParseJson(body),
+              requestedAt: new Date()
+            }
+          },
+          config.keysToHash
+        );
+        requestCache.set(request.id, requestData);
+        log.debug('Setting Request Cache', { id: request.id, ...requestData });
       }
     } catch (e) {
-      log.error(errors.CACHING_REQUEST, { request, options }, e as Error);
+      log.error(errors.CACHING_REQUEST, { request, config }, e as Error);
     }
   });
 
   interceptor.on('response', async (request, response) => {
     try {
-      if (options.baseUrl !== request.url.origin) {
+      if (baseUrl !== request.url.origin) {
         const requestData = requestCache.get(request.id) || {};
-        responseCache.set(request.id, {
-          response: {
-            status: response.status,
-            statusText: response.statusText,
-            body: options.hashBody
-              ? { hashed: hashValue(response.body) }
-              : response.body,
-            respondedAt: new Date()
+        const responseData = hashValuesFromkeys(
+          {
+            response: {
+              status: response.status,
+              statusText: response.statusText,
+              body: response.body && safeParseJson(response.body),
+              respondedAt: new Date()
+            },
+            ...requestData
           },
-          ...requestData
-        });
+          config.keysToHash
+        );
+        responseCache.set(request.id, responseData);
         log.debug('Setting Response Cache', {
           id: request.id,
-          response: {
-            status: response.status,
-            statusText: response.statusText,
-            body: options.hashBody
-              ? { hashed: hashValue(response.body) }
-              : response.body,
-            respondedAt: new Date()
-          },
-          ...requestData
+          ...responseData
         });
         requestCache.del(request.id);
         log.debug('Deleting Request Cache', { id: request.id });
@@ -118,7 +110,7 @@ const Supergood = (
     } catch (e) {
       log.error(
         errors.CACHING_RESPONSE,
-        { request, response, options },
+        { request, response, config },
         e as Error
       );
     }
@@ -168,14 +160,14 @@ const Supergood = (
     } catch (e) {
       const error = e as Error;
       if (error.message === errors.UNAUTHORIZED) {
-        log.error(errors.UNAUTHORIZED, { data, options }, error, {
+        log.error(errors.UNAUTHORIZED, { data, config }, error, {
           reportOut: false
         });
         clearInterval(interval);
         interceptor.dispose();
       } else {
-        log.error(errors.POSTING_EVENTS, { data, options }, error);
-        dumpDataToDisk(data, log, options); // as backup
+        log.error(errors.POSTING_EVENTS, { data, config }, error);
+        dumpDataToDisk(data, log, config); // as backup
       }
     } finally {
       // Delete only the keys sent
@@ -188,7 +180,7 @@ const Supergood = (
   };
 
   // Flushes the cache every <flushInterval> milliseconds
-  const interval = setInterval(flushCache, options.flushInterval);
+  const interval = setInterval(flushCache, config.flushInterval);
 
   // Stops the interval and disposes of the interceptor
   const close = async (force = true) => {

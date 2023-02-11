@@ -17,22 +17,21 @@ interface RequestType {
   domain: string;
   path: string;
   search: string;
-  body: BodyType;
+  body?: string | BodyType | [BodyType];
   requestedAt: Date;
 }
 
 interface ResponseType {
   status: number;
   statusText: string;
-  body: BodyType;
+  body?: string | BodyType | [BodyType];
   respondedAt: Date;
 }
 
-interface OptionsType {
+interface ConfigType {
   flushInterval: number;
   cacheTtl: number;
-  baseUrl: string;
-  hashBody: boolean;
+  keysToHash: string[];
   eventSinkEndpoint: string; // Defaults to {baseUrl}/api/events if not provided
   errorSinkEndpoint: string; // Defaults to {baseUrl}/api/errors if not provided
 }
@@ -53,7 +52,7 @@ type ErrorPayloadType = {
 // interface ErrorResponseType {}
 
 interface InfoPayloadType {
-  options: OptionsType;
+  config: ConfigType;
   request?: IsomorphicRequest;
   response?: IsomorphicResponse;
   data?: EventRequestType[];
@@ -73,6 +72,6 @@ export type {
   EventRequestType,
   InfoPayloadType,
   LoggerType,
-  OptionsType,
+  ConfigType,
   ErrorPayloadType
 };
