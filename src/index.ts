@@ -57,7 +57,10 @@ const Supergood = async (
         throw new Error(errors.TEST_ERROR);
       }
 
-      if (baseUrl !== request.url.origin) {
+      if (
+        baseUrl !== request.url.origin &&
+        !config.ignoredDomains.includes(request.url.host)
+      ) {
         const body = await request.clone().text();
         const requestData = hashValuesFromkeys(
           {
@@ -85,7 +88,10 @@ const Supergood = async (
 
   interceptor.on('response', async (request, response) => {
     try {
-      if (baseUrl !== request.url.origin) {
+      if (
+        baseUrl !== request.url.origin &&
+        !config.ignoredDomains.includes(request.url.host)
+      ) {
         const requestData = requestCache.get(request.id) || {};
         const responseData = hashValuesFromkeys(
           {
