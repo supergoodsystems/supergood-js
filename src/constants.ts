@@ -23,7 +23,11 @@ const errors = {
   FETCHING_CONFIG: 'Error Fetching Config',
   WRITING_TO_DISK: 'Error writing to disk',
   TEST_ERROR: 'Test Error for Testing Purposes',
-  UNAUTHORIZED: 'Unauthorized: Invalid Client ID or Secret. Exiting.'
+  UNAUTHORIZED: 'Unauthorized: Invalid Client ID or Secret. Exiting.',
+  NO_CLIENT_ID:
+    'No Client ID Provided, set SUPERGOOD_CLIENT_ID or pass it as an argument',
+  NO_CLIENT_SECRET:
+    'No Client Secret Provided, set SUPERGOOD_CLIENT_SECRET or pass it as an argument'
 };
 
 const TestErrorPath = '/api/supergood-test-error';

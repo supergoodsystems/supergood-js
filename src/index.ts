@@ -21,9 +21,15 @@ const interceptor = new BatchInterceptor({
 });
 
 const Supergood = async (
-  { clientId, clientSecret }: { clientId: string; clientSecret: string },
+  { clientId, clientSecret } = {
+    clientId: process.env.SUPERGOOD_CLIENT_ID,
+    clientSecret: process.env.SUPERGOOD_CLIENT_SECRET
+  },
   baseUrl = 'https://supergood.ai'
 ) => {
+  if (!clientId) throw new Error(errors.NO_CLIENT_ID);
+  if (!clientSecret) throw new Error(errors.NO_CLIENT_SECRET);
+
   const headerOptions: HeaderOptionType = getHeaderOptions(
     clientId,
     clientSecret
