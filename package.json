@@ -10,7 +10,10 @@
   "scripts": {
     "test": "yarn run clean && tsc && NODE_ENV=test jest",
     "clean": "rm -rf build/ && rm -rf supergood-*.log",
-    "build": "yarn run clean && tsc"
+    "build": "yarn run clean && tsc",
+    "patch": "./publish.sh patch",
+    "minor": "./publish.sh minor",
+    "major": "./publish.sh major"
   },
   "author": "Alex Klarfeld",
   "license": "ISC",
