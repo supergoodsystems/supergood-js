@@ -30,6 +30,7 @@ interface ResponseType {
 
 interface ConfigType {
   flushInterval: number;
+  ignoredDomains: string[];
   cacheTtl: number;
   keysToHash: string[];
   eventSinkEndpoint: string; // Defaults to {baseUrl}/api/events if not provided

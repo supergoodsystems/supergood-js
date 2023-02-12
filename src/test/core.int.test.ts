@@ -42,7 +42,8 @@ const defaultConfig = {
   cacheTtl: 0,
   eventSinkEndpoint: `/api/events`,
   errorSinkEndpoint: `/api/errors`,
-  keysToHash: ['request.body', 'response.body']
+  keysToHash: ['request.body', 'response.body'],
+  ignoredDomains: []
 };
 
 let server: http.Server;
@@ -188,7 +189,7 @@ describe('testing failure states', () => {
   });
 });
 
-describe('hashing request and response bodies', () => {
+describe('config specifications', () => {
   test('hashing', async () => {
     (fetchConfig as jest.Mock).mockImplementation(() => {
       return {
@@ -257,6 +258,44 @@ describe('hashing request and response bodies', () => {
       typeof get(firstEvent, ['response', 'body']) === 'object'
     ).toBeTruthy();
     expect(get(firstEvent, ['response', 'body', 'hashed'])).toBeFalsy();
+  });
+
+  test('ignores requests to ignored domains', async () => {
+    (fetchConfig as jest.Mock).mockImplementation(() => {
+      return {
+        ...defaultConfig,
+        ignoredDomains: ['supergood-testbed.herokuapp.com']
+      };
+    });
+    const sg = await Supergood(
+      {
+        clientId: CLIENT_ID,
+        clientSecret: CLIENT_SECRET
+      },
+      INTERNAL_SUPERGOOD_SERVER
+    );
+    await axios.get('https://supergood-testbed.herokuapp.com/200');
+    await sg.close();
+    expect(postEvents).toBeCalledTimes(0);
+  });
+
+  test('operates normally when ignored domains is empty', async () => {
+    (fetchConfig as jest.Mock).mockImplementation(() => {
+      return {
+        ...defaultConfig,
+        ignoredDomains: []
+      };
+    });
+    const sg = await Supergood(
+      {
+        clientId: CLIENT_ID,
+        clientSecret: CLIENT_SECRET
+      },
+      INTERNAL_SUPERGOOD_SERVER
+    );
+    await axios.get('https://supergood-testbed.herokuapp.com/200');
+    await sg.close();
+    expect(postEvents).toBeCalledTimes(1);
   });
 });
 
