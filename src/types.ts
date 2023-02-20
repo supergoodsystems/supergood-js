@@ -62,8 +62,14 @@ interface InfoPayloadType {
 }
 
 interface LoggerType {
-  error: (message: string, payload: InfoPayloadType, error: Error) => void;
+  error: (
+    message: string,
+    payload: InfoPayloadType,
+    error: Error,
+    extra?: any
+  ) => void;
   info: (message: string, payload?: InfoPayloadType) => void;
+  debug: (message: string, payload?: any) => void;
 }
 
 export type {
