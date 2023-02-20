@@ -99,7 +99,7 @@ jest.mock('../utils', () => {
 
 describe('testing success states', () => {
   test('captures all outgoing 200 http requests', async () => {
-    const sg = await Supergood(
+    const sg = await Supergood.init(
       {
         clientId: CLIENT_ID,
         clientSecret: CLIENT_SECRET
@@ -111,7 +111,7 @@ describe('testing success states', () => {
     for (let i = 0; i < numberOfHttpCalls; i++) {
       await axios.get(`${HTTP_OUTBOUND_TEST_SERVER}/posts`);
     }
-    await sg.close();
+    await Supergood.close();
     const eventsPosted = getEvents(postEvents as jest.Mock);
     expect(eventsPosted.length).toEqual(numberOfHttpCalls);
     expect(
@@ -120,12 +120,12 @@ describe('testing success states', () => {
     expect(
       eventsPosted.every((event) => event.response.respondedAt)
     ).toBeTruthy();
-    await sg.close();
+    await Supergood.close();
   });
 
   test('captures non-success status and errors', async () => {
     const httpErrorCodes = [400, 401, 403, 404, 500, 501, 502, 503, 504];
-    const sg = await Supergood(
+    await Supergood.init(
       {
         clientId: CLIENT_ID,
         clientSecret: CLIENT_SECRET
@@ -139,7 +139,7 @@ describe('testing success states', () => {
         // ignore
       }
     }
-    await sg.close();
+    await Supergood.close();
     const eventsPosted = getEvents(postEvents as jest.Mock);
     expect(eventsPosted.length).toEqual(httpErrorCodes.length);
     expect(
@@ -152,7 +152,7 @@ describe('testing success states', () => {
 
 describe('testing failure states', () => {
   test('hanging response', async () => {
-    const sg = await Supergood(
+    await Supergood.init(
       {
         clientId: CLIENT_ID,
         clientSecret: CLIENT_SECRET
@@ -161,7 +161,7 @@ describe('testing failure states', () => {
     );
     axios.get(`${HTTP_OUTBOUND_TEST_SERVER}/200?sleep=2000`);
     await new Promise((resolve) => setTimeout(resolve, 1000));
-    await sg.close();
+    await Supergood.close();
     const eventsPosted = getEvents(postEvents as jest.Mock);
     const firstEvent = eventsPosted[0];
     expect(eventsPosted.length).toEqual(1);
@@ -173,7 +173,7 @@ describe('testing failure states', () => {
     (postEvents as jest.Mock).mockImplementation(() => {
       throw new Error();
     });
-    const sg = await Supergood(
+    await Supergood.init(
       {
         clientId: CLIENT_ID,
         clientSecret: CLIENT_SECRET
@@ -181,7 +181,7 @@ describe('testing failure states', () => {
       INTERNAL_SUPERGOOD_SERVER
     );
     await axios.get(`${HTTP_OUTBOUND_TEST_SERVER}/posts`);
-    await sg.close();
+    await Supergood.close();
     const postedErrors = getErrors(postError as jest.Mock);
     expect(dumpDataToDisk as jest.Mock).toBeCalled();
     expect(postError as jest.Mock).toBeCalled();
@@ -197,7 +197,7 @@ describe('config specifications', () => {
         keysToHash: ['response.body']
       };
     });
-    const sg = await Supergood(
+    await Supergood.init(
       {
         clientId: CLIENT_ID,
         clientSecret: CLIENT_SECRET
@@ -205,7 +205,7 @@ describe('config specifications', () => {
       INTERNAL_SUPERGOOD_SERVER
     );
     await axios.get(`${HTTP_OUTBOUND_TEST_SERVER}/posts`);
-    await sg.close();
+    await Supergood.close();
     const eventsPosted = getEvents(postEvents as jest.Mock);
     const firstEvent = eventsPosted[0] as EventRequestType;
     const hashedBodyValue = get(firstEvent, ['response', 'body', '0']);
@@ -219,7 +219,7 @@ describe('config specifications', () => {
         keysToHash: []
       };
     });
-    const sg = await Supergood(
+    const sg = await Supergood.init(
       {
         clientId: CLIENT_ID,
         clientSecret: CLIENT_SECRET
@@ -227,7 +227,7 @@ describe('config specifications', () => {
       INTERNAL_SUPERGOOD_SERVER
     );
     await axios.get(`${HTTP_OUTBOUND_TEST_SERVER}/posts`);
-    await sg.close();
+    await Supergood.close();
     const eventsPosted = getEvents(postEvents as jest.Mock);
     const firstEvent = eventsPosted[0] as EventRequestType;
     expect(
@@ -243,7 +243,7 @@ describe('config specifications', () => {
         keysToHash: ['thisKeyDoesNotExist', 'response.thisKeyDoesNotExist']
       };
     });
-    const sg = await Supergood(
+    const sg = await Supergood.init(
       {
         clientId: CLIENT_ID,
         clientSecret: CLIENT_SECRET
@@ -251,7 +251,7 @@ describe('config specifications', () => {
       INTERNAL_SUPERGOOD_SERVER
     );
     await axios.get(`${HTTP_OUTBOUND_TEST_SERVER}/posts`);
-    await sg.close();
+    await Supergood.close();
     const eventsPosted = getEvents(postEvents as jest.Mock);
     const firstEvent = eventsPosted[0] as EventRequestType;
     expect(
@@ -267,7 +267,7 @@ describe('config specifications', () => {
         ignoredDomains: ['supergood-testbed.herokuapp.com']
       };
     });
-    const sg = await Supergood(
+    await Supergood.init(
       {
         clientId: CLIENT_ID,
         clientSecret: CLIENT_SECRET
@@ -275,7 +275,7 @@ describe('config specifications', () => {
       INTERNAL_SUPERGOOD_SERVER
     );
     await axios.get('https://supergood-testbed.herokuapp.com/200');
-    await sg.close();
+    await Supergood.close();
     expect(postEvents).toBeCalledTimes(0);
   });
 
@@ -286,7 +286,7 @@ describe('config specifications', () => {
         ignoredDomains: []
       };
     });
-    const sg = await Supergood(
+    await Supergood.init(
       {
         clientId: CLIENT_ID,
         clientSecret: CLIENT_SECRET
@@ -294,16 +294,14 @@ describe('config specifications', () => {
       INTERNAL_SUPERGOOD_SERVER
     );
     await axios.get('https://supergood-testbed.herokuapp.com/200');
-    await sg.close();
+    await Supergood.close();
     expect(postEvents).toBeCalledTimes(1);
   });
 });
 
 describe('testing various endpoints and libraries basic functionality', () => {
-  let sg: { close: () => Promise<void>; flushCache: () => Promise<void> };
-
   beforeEach(async () => {
-    sg = await Supergood(
+    await Supergood.init(
       {
         clientId: CLIENT_ID,
         clientSecret: CLIENT_SECRET
@@ -315,7 +313,7 @@ describe('testing various endpoints and libraries basic functionality', () => {
   test('axios get', async () => {
     const response = await axios.get(`${HTTP_OUTBOUND_TEST_SERVER}/posts`);
     expect(response.status).toEqual(200);
-    await sg.close();
+    await Supergood.close();
     const eventsPosted = getEvents(postEvents as jest.Mock);
     expect(eventsPosted.length).toEqual(1);
   });
@@ -326,7 +324,7 @@ describe('testing various endpoints and libraries basic functionality', () => {
       author: 'alex-klarfeld'
     });
     expect(response.status).toEqual(201);
-    await sg.close();
+    await Supergood.close();
     const eventsPosted = getEvents(postEvents as jest.Mock);
     expect(eventsPosted.length).toEqual(1);
   });
@@ -334,7 +332,7 @@ describe('testing various endpoints and libraries basic functionality', () => {
   test('superagent get', async () => {
     const response = await superagent.get(`${HTTP_OUTBOUND_TEST_SERVER}/posts`);
     expect(response.status).toEqual(200);
-    await sg.close();
+    await Supergood.close();
     const eventsPosted = getEvents(postEvents as jest.Mock);
     expect(eventsPosted.length).toEqual(1);
   });
@@ -347,7 +345,7 @@ describe('testing various endpoints and libraries basic functionality', () => {
         author: 'alex-klarfeld'
       });
     expect(response.status).toEqual(201);
-    await sg.close();
+    await Supergood.close();
     const eventsPosted = getEvents(postEvents as jest.Mock);
     expect(eventsPosted.length).toEqual(1);
   });
@@ -357,7 +355,7 @@ describe('testing various endpoints and libraries basic functionality', () => {
     const body = await response.text();
     expect(response.status).toEqual(200);
     expect(body).toBeTruthy();
-    await sg.close();
+    await Supergood.close();
     const eventsPosted = getEvents(postEvents as jest.Mock);
     expect(eventsPosted.length).toEqual(1);
   });
@@ -372,7 +370,7 @@ describe('testing various endpoints and libraries basic functionality', () => {
     const responseJson = await response.json();
     expect(response.status).toEqual(201);
     expect(responseJson.id).toBeTruthy();
-    await sg.close();
+    await Supergood.close();
     const eventsPosted = getEvents(postEvents as jest.Mock);
     expect(eventsPosted.length).toEqual(1);
   });
