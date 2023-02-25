@@ -89,10 +89,9 @@ const Supergood = () => {
             {
               request: {
                 id: request.id,
+                headers: request.headers,
                 method: request.method,
                 url: request.url.href,
-                protocol: request.url.protocol,
-                domain: request.url.host,
                 path: request.url.pathname,
                 search: request.url.search,
                 body: safeParseJson(body),
@@ -122,6 +121,7 @@ const Supergood = () => {
           const responseData = hashValuesFromkeys(
             {
               response: {
+                headers: response.headers,
                 status: response.status,
                 statusText: response.statusText,
                 body: response.body && safeParseJson(response.body),

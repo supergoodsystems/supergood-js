@@ -11,10 +11,9 @@ type BodyType = Record<string, string>;
 
 interface RequestType {
   id: string;
+  headers: typeof IsomorphicRequest.prototype.headers;
   method: string;
   url: string;
-  protocol: string;
-  domain: string;
   path: string;
   search: string;
   body?: string | BodyType | [BodyType];
@@ -22,10 +21,12 @@ interface RequestType {
 }
 
 interface ResponseType {
+  headers: typeof IsomorphicRequest.prototype.headers;
   status: number;
   statusText: string;
   body?: string | BodyType | [BodyType];
   respondedAt: Date;
+  duration?: number;
 }
 
 interface ConfigType {

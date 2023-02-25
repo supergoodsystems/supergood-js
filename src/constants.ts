@@ -11,7 +11,8 @@ const defaultConfig = {
   cacheTtl: process.env.SUPERGOOD_CACHE_TTL || 0,
   eventSinkEndpoint: '/api/events',
   errorSinkEndpoint: '/api/errors',
-  keysToHash: ['request.body', 'response.body']
+  keysToHash: ['request.body', 'response.body'],
+  ignoredDomains: []
 };
 
 const errors = {
