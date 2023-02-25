@@ -1,4 +1,5 @@
 import { IsomorphicRequest, IsomorphicResponse } from '@mswjs/interceptors';
+import { Headers } from 'headers-polyfill';
 
 interface HeaderOptionType {
   headers: {
@@ -11,7 +12,7 @@ type BodyType = Record<string, string>;
 
 interface RequestType {
   id: string;
-  headers: typeof IsomorphicRequest.prototype.headers;
+  headers: Headers;
   method: string;
   url: string;
   path: string;
@@ -21,7 +22,7 @@ interface RequestType {
 }
 
 interface ResponseType {
-  headers: typeof IsomorphicRequest.prototype.headers;
+  headers: Headers;
   status: number;
   statusText: string;
   body?: string | BodyType | [BodyType];
