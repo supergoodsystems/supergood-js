@@ -1,6 +1,5 @@
 import Supergood from '..';
 import { postEvents, postError, fetchConfig } from '../api';
-import { dumpDataToDisk } from '../utils';
 import { initialize } from './json-server-config';
 import { errors } from '../constants';
 import {
@@ -89,14 +88,6 @@ jest.mock('../api', () => ({
   fetchConfig: jest.fn(async () => defaultConfig)
 }));
 
-jest.mock('../utils', () => {
-  const originalFunctions = Object(jest.requireActual('../utils'));
-  return {
-    ...originalFunctions,
-    dumpDataToDisk: jest.fn((data, log, config) => ({ data, config }))
-  };
-});
-
 describe('testing success states', () => {
   test('captures all outgoing 200 http requests', async () => {
     const sg = await Supergood.init(
@@ -183,7 +174,6 @@ describe('testing failure states', () => {
     await axios.get(`${HTTP_OUTBOUND_TEST_SERVER}/posts`);
     await Supergood.close();
     const postedErrors = getErrors(postError as jest.Mock);
-    expect(dumpDataToDisk as jest.Mock).toBeCalled();
     expect(postError as jest.Mock).toBeCalled();
     expect(postedErrors.message).toEqual(errors.POSTING_EVENTS);
   });

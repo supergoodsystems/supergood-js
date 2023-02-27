@@ -1,14 +1,9 @@
 import {
   HeaderOptionType,
   InfoPayloadType,
-  LoggerType,
-  EventRequestType,
-  ConfigType,
   RequestType,
   ResponseType
 } from './types';
-import { errors } from './constants';
-import fs from 'fs';
 import crypto from 'crypto';
 import { postError } from './api';
 import { name, version } from '../package.json';
@@ -115,35 +110,10 @@ const hashValue = (input: string | Record<string, string> | undefined) => {
   }
 };
 
-// If the service is down, save the log files locally to
-// be recovered later
-const dumpDataToDisk = (
-  data: Array<EventRequestType>,
-  log: LoggerType,
-  config: ConfigType
-) => {
-  // Only create a logfile once a day
-  try {
-    const logFileName = `supergood-${new Date()
-      .toISOString()
-      .split('T')[0]
-      .replace(/[:|.]/g, '-')}.log`;
-    log.info(`Writing to disk: "${logFileName}"`, { data, config });
-    data.forEach((payload) =>
-      fs.writeFileSync(logFileName, JSON.stringify(payload, null, 2), {
-        flag: 'a+'
-      })
-    );
-  } catch (e) {
-    log.error(errors.WRITING_TO_DISK, { data, config }, e as Error);
-  }
-};
-
 export {
   getHeaderOptions,
   hashValue,
   hashValuesFromkeys,
   logger,
-  dumpDataToDisk,
   safeParseJson
 };
