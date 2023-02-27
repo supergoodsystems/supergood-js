@@ -6,7 +6,6 @@ import NodeCache from 'node-cache';
 import {
   getHeaderOptions,
   logger,
-  dumpDataToDisk,
   hashValuesFromkeys,
   safeParseJson
 } from './utils';
@@ -200,7 +199,6 @@ const Supergood = () => {
         interceptor.dispose();
       } else {
         log.error(errors.POSTING_EVENTS, { data, config }, error);
-        dumpDataToDisk(data, log, config); // as backup
       }
     } finally {
       // Delete only the keys sent
