@@ -362,9 +362,100 @@ describe('testing various endpoints and libraries basic functionality', () => {
     expect(responseJson.id).toBeTruthy();
     await Supergood.close();
     const eventsPosted = getEvents(postEvents as jest.Mock);
+    console.log(eventsPosted);
     expect(eventsPosted.length).toEqual(1);
   });
 });
 
+describe('non-standard payloads', () => {
+  test('not automatically hashing sub 500kb payload', async () => {
+    // Double quotes and other strings take up space in the payload
+    const payloadSize = 400000;
+    // const payloadSize = 10;
+    (fetchConfig as jest.Mock).mockImplementation(() => {
+      return {
+        ...defaultConfig,
+        ignoredDomains: [],
+        keysToHash: []
+      };
+    });
+    await Supergood.init(
+      {
+        clientId: CLIENT_ID,
+        clientSecret: CLIENT_SECRET
+      },
+      INTERNAL_SUPERGOOD_SERVER
+    );
+
+    const response = await axios.get(
+      `${HTTP_OUTBOUND_TEST_SERVER}/massive-response?payloadSize=${payloadSize}`
+    );
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+    expect(response.status).toEqual(200);
+    await Supergood.close();
+    const eventsPosted = getEvents(postEvents as jest.Mock);
+    expect(eventsPosted.length).toEqual(1);
+    expect(
+      get(eventsPosted, '[0].response.body.massiveResponse', false)
+    ).toEqual('X'.repeat(payloadSize));
+  });
+
+  test('automatically hashing 500kb+ payload', async () => {
+    const payloadSize = 500001;
+    (fetchConfig as jest.Mock).mockImplementation(() => {
+      return {
+        ...defaultConfig,
+        ignoredDomains: [],
+        keysToHash: []
+      };
+    });
+    await Supergood.init(
+      {
+        clientId: CLIENT_ID,
+        clientSecret: CLIENT_SECRET
+      },
+      INTERNAL_SUPERGOOD_SERVER
+    );
+    const response = await axios.get(
+      `${HTTP_OUTBOUND_TEST_SERVER}/massive-response?payloadSize=${payloadSize}`
+    );
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+    expect(response.status).toEqual(200);
+    await Supergood.close();
+    const eventsPosted = getEvents(postEvents as jest.Mock);
+    expect(eventsPosted.length).toEqual(1);
+    expect(get(eventsPosted, '[0].response.body.hashed', false)).toBeTruthy();
+  });
+
+  test('gzipped response', async () => {
+    (fetchConfig as jest.Mock).mockImplementation(() => {
+      return {
+        ...defaultConfig,
+        ignoredDomains: [],
+        keysToHash: []
+      };
+    });
+    await Supergood.init(
+      {
+        clientId: CLIENT_ID,
+        clientSecret: CLIENT_SECRET
+      },
+      INTERNAL_SUPERGOOD_SERVER
+    );
+    const response = await fetch(
+      `${HTTP_OUTBOUND_TEST_SERVER}/gzipped-response`
+    );
+    const body = await response.text();
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+    expect(response.status).toEqual(200);
+    expect(body).toBeTruthy();
+    await Supergood.close();
+    const eventsPosted = getEvents(postEvents as jest.Mock);
+    expect(eventsPosted.length).toEqual(1);
+    expect(get(eventsPosted, '[0]response.body.gzippedResponse')).toEqual(
+      'this-is-gzipped'
+    );
+  });
+});
 // Perhaps even need to write a restore from disk method?
 // test('write to disk when connection fails', () => {});

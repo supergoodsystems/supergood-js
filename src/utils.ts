@@ -1,3 +1,4 @@
+import { SupergoodByteLimit } from './constants';
 import {
   HeaderOptionType,
   InfoPayloadType,
@@ -77,6 +78,23 @@ const hashValuesFromkeys = (
   keysToHash: Array<string>
 ) => {
   let objCopy = { ...obj };
+
+  if (!keysToHash.includes('response.body')) {
+    const payload = get(obj, 'response.body');
+    const payloadSize = getPayloadSize(payload);
+    if (payloadSize && payloadSize >= SupergoodByteLimit) {
+      objCopy = set(objCopy, 'response.body', hashValue(payload));
+    }
+  }
+
+  if (!keysToHash.includes('request.body')) {
+    const payload = get(obj, 'request.body');
+    const payloadSize = getPayloadSize(payload);
+    if (payloadSize && payloadSize >= SupergoodByteLimit) {
+      objCopy = set(objCopy, 'request.body', hashValue(payload));
+    }
+  }
+
   for (let i = 0; i < keysToHash.length; i++) {
     const keyString = keysToHash[i];
     const value = get(objCopy, keyString);
@@ -95,7 +113,9 @@ const safeParseJson = (json: string) => {
   }
 };
 
-const hashValue = (input: string | Record<string, string> | undefined) => {
+const hashValue = (
+  input: string | Record<string, string> | [Record<string, string>] | undefined
+) => {
   const hash = crypto.createHash('sha1');
   if (!input) return '';
 
@@ -107,6 +127,22 @@ const hashValue = (input: string | Record<string, string> | undefined) => {
   }
   if (typeof input === 'string') {
     return hash.update(input).digest('base64');
+  }
+};
+
+const getPayloadSize = (
+  input: string | Record<string, string> | [Record<string, string>] | undefined
+) => {
+  if (!input) return 0;
+
+  if (Array.isArray(input)) {
+    return JSON.stringify(input).length;
+  }
+  if (typeof input === 'object') {
+    return JSON.stringify(input).length;
+  }
+  if (typeof input === 'string') {
+    return input.length;
   }
 };
 

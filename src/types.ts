@@ -82,5 +82,6 @@ export type {
   InfoPayloadType,
   LoggerType,
   ConfigType,
-  ErrorPayloadType
+  ErrorPayloadType,
+  BodyType
 };

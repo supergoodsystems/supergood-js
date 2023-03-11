@@ -32,5 +32,6 @@ const errors = {
 };
 
 const TestErrorPath = '/api/supergood-test-error';
+const SupergoodByteLimit = 500000;
 
-export { signals, defaultConfig, errors, TestErrorPath };
+export { signals, defaultConfig, errors, TestErrorPath, SupergoodByteLimit };

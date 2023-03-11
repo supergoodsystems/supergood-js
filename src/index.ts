@@ -211,10 +211,10 @@ const Supergood = () => {
   };
 
   // Stops the interval and disposes of the interceptor
-  const close = async (force = true) => {
+  const close = (force = true) => {
     clearInterval(interval);
     interceptor.dispose();
-    await flushCache({ force });
+    return flushCache({ force });
   };
 
   // If program ends abruptly, it'll send out
