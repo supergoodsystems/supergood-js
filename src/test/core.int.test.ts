@@ -362,7 +362,6 @@ describe('testing various endpoints and libraries basic functionality', () => {
     expect(responseJson.id).toBeTruthy();
     await Supergood.close();
     const eventsPosted = getEvents(postEvents as jest.Mock);
-    console.log(eventsPosted);
     expect(eventsPosted.length).toEqual(1);
   });
 });
