@@ -18,6 +18,7 @@ import {
   LoggerType
 } from './types';
 import { signals, errors, TestErrorPath } from './constants';
+import onExit from 'signal-exit';
 
 const interceptor = new BatchInterceptor({
   name: 'supergood-interceptor',
@@ -67,9 +68,10 @@ const Supergood = () => {
     });
 
     log = logger(errorSinkUrl, headerOptions);
-    log.debug('Supergood Config', config);
+
     // Flushes the cache every <flushInterval> milliseconds
     interval = setInterval(flushCache, config.flushInterval);
+    interval.unref();
 
     interceptor.apply();
     interceptor.on('request', async (request: InteractiveIsomorphicRequest) => {
@@ -220,20 +222,19 @@ const Supergood = () => {
   // If program ends abruptly, it'll send out
   // whatever logs it already collected.
 
-  const cleanup = (exitCode: number, signal: NodeJS.Signals) => {
+  const cleanup = (exitCode: number | null, signal: string | null) => {
+    log.debug('Cleaning up, flushing cache gracefully.');
     if (signal) {
+      interceptor.dispose();
       flushCache({ force: true }).then(() => {
         process.kill(process.pid, signal);
       });
     }
-    // Remove listeners on cleanup
-    signals.forEach((signal) => process.removeListener(signal, cleanup));
     return false;
   };
 
   // Set up cleanup catch for exit signals
-  signals.forEach((signal) => process.on(signal, cleanup));
-
+  onExit((code, signal) => cleanup(code, signal), { alwaysLast: true });
   return { close, flushCache, init };
 };
 

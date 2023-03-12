@@ -24,12 +24,14 @@
     "lodash.get": "^4.4.2",
     "lodash.set": "^4.3.2",
     "node-cache": "^5.1.2",
-    "path": "^0.12.7"
+    "path": "^0.12.7",
+    "signal-exit": "^3.0.7"
   },
   "devDependencies": {
     "@jest/globals": "^29.4.1",
     "@types/json-server": "^0.14.4",
     "@types/node-fetch": "^2.6.2",
+    "@types/signal-exit": "^3.0.1",
     "@types/superagent": "^4.1.16",
     "@typescript-eslint/eslint-plugin": "^5.49.0",
     "@typescript-eslint/parser": "^5.49.0",
