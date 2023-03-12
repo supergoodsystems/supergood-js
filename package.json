@@ -53,9 +53,9 @@
     "yarn": "^1.22.19"
   },
   "bugs": {
-    "url": "https://github.com/aklarfeld/supergood-js/issues"
+    "url": "https://github.com/supergoodsystems/supergood-js/issues"
   },
-  "homepage": "https://github.com/aklarfeld/supergood-js#readme",
+  "homepage": "https://supergood.ai/",
   "directories": {
     "test": "test"
   },
