@@ -5,7 +5,7 @@
     "url": "git://github.com/supergoodsystems/supergood-js.git"
   },
   "types": "src/types.ts",
-  "version": "1.1.14",
+  "version": "1.1.15",
   "main": "build/src/index.js",
   "scripts": {
     "test": "yarn run clean && tsc && NODE_ENV=test jest",
