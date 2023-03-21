@@ -43,7 +43,7 @@ const Supergood = () => {
       clientId: process.env.SUPERGOOD_CLIENT_ID,
       clientSecret: process.env.SUPERGOOD_CLIENT_SECRET
     },
-    baseUrl = process.env.SUPERGOOD_BASE_URL || 'https://supergood.ai'
+    baseUrl = process.env.SUPERGOOD_BASE_URL || 'https://dashboard.supergood.ai'
   ) => {
     if (!clientId) throw new Error(errors.NO_CLIENT_ID);
     if (!clientSecret) throw new Error(errors.NO_CLIENT_SECRET);
