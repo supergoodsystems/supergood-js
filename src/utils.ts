@@ -3,7 +3,8 @@ import {
   HeaderOptionType,
   InfoPayloadType,
   RequestType,
-  ResponseType
+  ResponseType,
+  EventRequestType
 } from './types';
 import crypto from 'crypto';
 import { postError } from './api';
@@ -12,7 +13,13 @@ import { name, version } from '../package.json';
 import set from 'lodash.set';
 import get from 'lodash.get';
 
-const logger = (errorSinkUrl: string, headerOptions: HeaderOptionType) => {
+const logger = ({
+  errorSinkUrl,
+  headerOptions
+}: {
+  errorSinkUrl?: string;
+  headerOptions: HeaderOptionType;
+}) => {
   const packageName = name;
   const packageVersion = version;
   return {
@@ -28,7 +35,7 @@ const logger = (errorSinkUrl: string, headerOptions: HeaderOptionType) => {
         JSON.stringify(payload, null, 2),
         error
       );
-      if (reportOut) {
+      if (reportOut && errorSinkUrl) {
         postError(
           errorSinkUrl,
           {
@@ -73,7 +80,7 @@ const getHeaderOptions = (
   };
 };
 
-const hashValuesFromkeys = (
+const hashValuesFromKeys = (
   obj: { request?: RequestType; response?: ResponseType },
   keysToHash: Array<string>
 ) => {
@@ -146,10 +153,26 @@ const getPayloadSize = (
   }
 };
 
+const prepareData = (
+  events: Array<EventRequestType>,
+  ignoredDomains: Array<string>,
+  keysToHash: Array<string>
+) => {
+  return events.filter((e) => {
+    const url = new URL(e.request.url);
+    if (ignoredDomains.includes(url.host)) {
+      return false;
+    } else {
+      return hashValuesFromKeys(e, keysToHash);
+    }
+  });
+};
+
 export {
   getHeaderOptions,
   hashValue,
-  hashValuesFromkeys,
+  hashValuesFromKeys,
   logger,
-  safeParseJson
+  safeParseJson,
+  prepareData
 };
