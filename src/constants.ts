@@ -1,11 +1,3 @@
-const signals = [
-  'SIGTERM',
-  'SIGINT',
-  'SIGHUP',
-  'SIGBREAK',
-  'SIGWINCH'
-] as const;
-
 const defaultConfig = {
   flushInterval: process.env.SUPERGOOD_FLUSH_INTERVAL || 1000,
   cacheTtl: process.env.SUPERGOOD_CACHE_TTL || 0,
@@ -34,4 +26,4 @@ const errors = {
 const TestErrorPath = '/api/supergood-test-error';
 const SupergoodByteLimit = 500000;
 
-export { signals, defaultConfig, errors, TestErrorPath, SupergoodByteLimit };
+export { defaultConfig, errors, TestErrorPath, SupergoodByteLimit };

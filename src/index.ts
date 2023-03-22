@@ -6,8 +6,9 @@ import NodeCache from 'node-cache';
 import {
   getHeaderOptions,
   logger,
-  hashValuesFromkeys,
-  safeParseJson
+  hashValuesFromKeys,
+  safeParseJson,
+  prepareData
 } from './utils';
 import { fetchConfig, postEvents } from './api';
 import nodeInterceptors from '@mswjs/interceptors/lib/presets/node';
@@ -15,9 +16,10 @@ import {
   HeaderOptionType,
   EventRequestType,
   ConfigType,
-  LoggerType
+  LoggerType,
+  RequestType
 } from './types';
-import { signals, errors, TestErrorPath } from './constants';
+import { errors, TestErrorPath } from './constants';
 import onExit from 'signal-exit';
 
 const interceptor = new BatchInterceptor({
@@ -48,30 +50,15 @@ const Supergood = () => {
     if (!clientId) throw new Error(errors.NO_CLIENT_ID);
     if (!clientSecret) throw new Error(errors.NO_CLIENT_SECRET);
 
-    headerOptions = getHeaderOptions(clientId, clientSecret);
-    config = await fetchConfig(`${baseUrl}/api/config`, headerOptions);
-
-    errorSinkUrl = `${baseUrl}${config.errorSinkEndpoint}`;
-    eventSinkUrl = `${baseUrl}${config.eventSinkEndpoint}`;
-
-    // This can update if new config is available after posting events or posting errors
-
-    // Why two caches? To quickly only flush the cache with
-    // completed responses without having to pull all the keys from one
-    // cache and filter out the ones without responses.
-
     requestCache = new NodeCache({
-      stdTTL: config.cacheTtl
+      stdTTL: 0
     });
     responseCache = new NodeCache({
-      stdTTL: config.cacheTtl
+      stdTTL: 0
     });
 
-    log = logger(errorSinkUrl, headerOptions);
-
-    // Flushes the cache every <flushInterval> milliseconds
-    interval = setInterval(flushCache, config.flushInterval);
-    interval.unref();
+    headerOptions = getHeaderOptions(clientId, clientSecret);
+    log = logger({ headerOptions });
 
     interceptor.apply();
     interceptor.on('request', async (request: InteractiveIsomorphicRequest) => {
@@ -80,33 +67,18 @@ const Supergood = () => {
         if (request.url.pathname === TestErrorPath) {
           throw new Error(errors.TEST_ERROR);
         }
-
-        if (
-          baseUrl !== request.url.origin &&
-          !config.ignoredDomains.includes(request.url.host)
-        ) {
-          const body = await request.clone().text();
-          const requestData = hashValuesFromkeys(
-            {
-              request: {
-                id: request.id,
-                headers: request.headers,
-                method: request.method,
-                url: request.url.href,
-                path: request.url.pathname,
-                search: request.url.search,
-                body: safeParseJson(body),
-                requestedAt: new Date()
-              }
-            },
-            config.keysToHash
-          );
-          requestCache.set(request.id, requestData);
-          log.debug('Setting Request Cache', {
-            id: request.id,
-            ...requestData
-          });
-        }
+        const body = await request.clone().text();
+        const requestData = {
+          id: request.id,
+          headers: request.headers,
+          method: request.method,
+          url: request.url.href,
+          path: request.url.pathname,
+          search: request.url.search,
+          body: safeParseJson(body),
+          requestedAt: new Date()
+        };
+        cacheRequest(requestData, baseUrl);
       } catch (e) {
         log.error(errors.CACHING_REQUEST, { request, config }, e as Error);
       }
@@ -114,31 +86,21 @@ const Supergood = () => {
 
     interceptor.on('response', async (request, response) => {
       try {
-        if (
-          baseUrl !== request.url.origin &&
-          !config.ignoredDomains.includes(request.url.host)
-        ) {
-          const requestData = requestCache.get(request.id) || {};
-          const responseData = hashValuesFromkeys(
-            {
-              response: {
-                headers: response.headers,
-                status: response.status,
-                statusText: response.statusText,
-                body: response.body && safeParseJson(response.body),
-                respondedAt: new Date()
-              },
-              ...requestData
+        const requestData = requestCache.get(request.id) as {
+          request: RequestType;
+        };
+        if (requestData) {
+          const responseData = {
+            response: {
+              headers: response.headers,
+              status: response.status,
+              statusText: response.statusText,
+              body: response.body && safeParseJson(response.body),
+              respondedAt: new Date()
             },
-            config.keysToHash
-          );
-          responseCache.set(request.id, responseData);
-          log.debug('Setting Response Cache', {
-            id: request.id,
-            ...responseData
-          });
-          requestCache.del(request.id);
-          log.debug('Deleting Request Cache', { id: request.id });
+            ...requestData
+          };
+          cacheResponse(responseData, baseUrl);
         }
       } catch (e) {
         log.error(
@@ -148,44 +110,79 @@ const Supergood = () => {
         );
       }
     });
+
+    headerOptions = getHeaderOptions(clientId, clientSecret);
+    config = await fetchConfig(`${baseUrl}/api/config`, headerOptions);
+
+    errorSinkUrl = `${baseUrl}${config.errorSinkEndpoint}`;
+    eventSinkUrl = `${baseUrl}${config.eventSinkEndpoint}`;
+    log = logger({ errorSinkUrl, headerOptions });
+
+    // Flushes the cache every <flushInterval> milliseconds
+    interval = setInterval(flushCache, config.flushInterval);
+    interval.unref();
+  };
+
+  const cacheRequest = async (request: RequestType, baseUrl: string) => {
+    const url = new URL(request.url);
+    if (baseUrl !== url.origin) {
+      requestCache.set(request.id, { request });
+      log.debug('Setting Request Cache', {
+        request
+      });
+    }
+  };
+
+  const cacheResponse = async (event: EventRequestType, baseUrl: string) => {
+    const url = new URL(event.request.url);
+    if (baseUrl !== url.origin) {
+      responseCache.set(
+        event.request.id,
+        hashValuesFromKeys(event, config.keysToHash)
+      );
+      log.debug('Setting Response Cache', {
+        id: event.request.id,
+        ...event
+      });
+      requestCache.del(event.request.id);
+      log.debug('Deleting Request Cache', { id: event.request.id });
+    }
   };
 
   // Force flush cache means don't wait for responses
   const flushCache = async ({ force } = { force: false }) => {
+    if (!config) {
+      log.debug(
+        'Config not loaded, waiting for config to load before flushing cache',
+        { force }
+      );
+    }
+
     log.debug('Flushing Cache ...', { force });
     const responseCacheKeys = responseCache.keys();
     const requestCacheKeys = requestCache.keys();
 
-    const responseArray = Object.values(
-      responseCache.mget(responseCacheKeys)
+    const responseArray = prepareData(
+      Object.values(responseCache.mget(responseCacheKeys)),
+      config.ignoredDomains,
+      config.keysToHash
     ) as Array<EventRequestType>;
-
-    // If there's nothing in the response cache, and we're not forcing a flush,
-    // just exit here
-
-    if (responseCacheKeys.length === 0 && !force) {
-      log.debug('Nothing to flush', { force });
-      return;
-    }
-
-    // If we're forcing a flush but there's nothing in the cache, exit here
-    if (
-      force &&
-      responseCacheKeys.length === 0 &&
-      requestCacheKeys.length === 0
-    ) {
-      log.debug('Nothing to flush', { force });
-      return;
-    }
 
     let data = [...responseArray];
 
     // If force, then we need to flush everything, even uncompleted requests
     if (force) {
-      const requestArray = Object.values(
-        requestCache.mget(requestCacheKeys)
+      const requestArray = prepareData(
+        Object.values(requestCache.mget(requestCacheKeys)),
+        config.ignoredDomains,
+        config.keysToHash
       ) as Array<EventRequestType>;
       data = [...requestArray, ...responseArray];
+    }
+
+    if (data.length === 0) {
+      log.debug('Nothing to flush', { force });
+      return;
     }
 
     try {
@@ -222,19 +219,17 @@ const Supergood = () => {
   // If program ends abruptly, it'll send out
   // whatever logs it already collected.
 
-  const cleanup = (exitCode: number | null, signal: string | null) => {
+  const cleanup = async () => {
     log.debug('Cleaning up, flushing cache gracefully.');
-    if (signal) {
-      interceptor.dispose();
-      flushCache({ force: true }).then(() => {
-        process.kill(process.pid, signal);
-      });
-    }
+    clearInterval(interval);
+    interceptor.dispose();
+    await flushCache({ force: true });
+
     return false;
   };
 
   // Set up cleanup catch for exit signals
-  onExit((code, signal) => cleanup(code, signal), { alwaysLast: true });
+  onExit(() => cleanup(), { alwaysLast: true });
   return { close, flushCache, init };
 };
 
