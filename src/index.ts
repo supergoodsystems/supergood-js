@@ -125,7 +125,9 @@ const Supergood = () => {
 
   const cacheRequest = async (request: RequestType, baseUrl: string) => {
     const url = new URL(request.url);
-    if (baseUrl !== url.origin) {
+    const baseOrigin = new URL(baseUrl).origin;
+
+    if (baseOrigin !== url.origin) {
       requestCache.set(request.id, { request });
       log.debug('Setting Request Cache', {
         request
@@ -135,11 +137,10 @@ const Supergood = () => {
 
   const cacheResponse = async (event: EventRequestType, baseUrl: string) => {
     const url = new URL(event.request.url);
-    if (baseUrl !== url.origin) {
-      responseCache.set(
-        event.request.id,
-        hashValuesFromKeys(event, config.keysToHash)
-      );
+    const baseOrigin = new URL(baseUrl).origin;
+
+    if (baseOrigin !== url.origin) {
+      responseCache.set(event.request.id, event);
       log.debug('Setting Response Cache', {
         id: event.request.id,
         ...event
@@ -156,6 +157,7 @@ const Supergood = () => {
         'Config not loaded, waiting for config to load before flushing cache',
         { force }
       );
+      return;
     }
 
     log.debug('Flushing Cache ...', { force });
