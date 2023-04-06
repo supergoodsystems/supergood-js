@@ -1,11 +1,12 @@
 import Supergood from '..';
-import { test, describe, expect } from '@jest/globals';
+import { jest, test, describe, expect } from '@jest/globals';
 import postgres from 'postgres';
 import axios from 'axios';
 import { v4 as uuid } from 'uuid';
 
 describe('end-to-end tests', () => {
   test('log to the staging database after a simple get request', async () => {
+    jest.setTimeout(30000);
     await Supergood.init(
       {
         clientId: process.env.SUPERGOOD_CLIENT_ID,
@@ -26,7 +27,7 @@ describe('end-to-end tests', () => {
         FROM events
         WHERE organization_id = ${organizationId} AND
         search = ${queryId}`;
-
+    await sql.end({ timeout: 5 });
     expect(events[0].count).toEqual('1');
-  }, 30000);
+  });
 });
