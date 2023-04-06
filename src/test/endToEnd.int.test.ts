@@ -6,6 +6,11 @@ import { v4 as uuid } from 'uuid';
 
 describe('end-to-end tests', () => {
   test('log to the staging database after a simple get request', async () => {
+    console.log('SUPERGOOD_BASE_URL: ', process.env.SUPERGOOD_BASE_URL);
+    console.log(
+      'SUPERGOOD_ORGANIZATION_ID: ',
+      process.env.SUPERGOOD_ORGANIZATION_ID
+    );
     await Supergood.init(
       {
         clientId: process.env.SUPERGOOD_CLIENT_ID,
