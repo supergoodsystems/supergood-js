@@ -1,4 +1,10 @@
 name: Unit Tests
+env:
+  DATABASE_URL: ${{ secrets.STAGING_DATABASE_URL }}
+  SUPERGOOD_CLIENT_ID: ${{ secrets.STAGING_SUPERGOOD_CLIENT_ID }}
+  SUPERGOOD_CLIENT_SECRET: ${{ secrets.STAGING_SUPERGOOD_CLIENT_SECRET }}
+  SUPERGOOD_BASE_URL: ${{ env.SUPERGOOD_BASE_URL }}
+  SUPERGOOD_ORGANIZATION_ID: ${{ env.SUPERGOOD_ORGANIZATION_ID }}
 on:
   push:
     branches:
@@ -6,7 +12,7 @@ on:
   pull_request:
     branches: [master]
 jobs:
-  Jest:
+  test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2

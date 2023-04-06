@@ -1,0 +1,32 @@
+import Supergood from '..';
+import { test, describe, expect } from '@jest/globals';
+import postgres from 'postgres';
+import axios from 'axios';
+import { v4 as uuid } from 'uuid';
+
+describe('end-to-end tests', () => {
+  test('log to the staging database after a simple get request', async () => {
+    await Supergood.init(
+      {
+        clientId: process.env.SUPERGOOD_CLIENT_ID,
+        clientSecret: process.env.SUPERGOOD_CLIENT_SECRET
+      },
+      process.env.SUPERGOOD_BASE_URL
+    );
+    const queryId = `?id=${uuid()}`;
+    const organizationId = process.env.SUPERGOOD_ORGANIZATION_ID as string;
+    await axios.get(`https://supergood-testbed.herokuapp.com/200${queryId}`);
+    await Supergood.close();
+    // Sleep for 5 seconds as event is processed
+    await new Promise((resolve) => setTimeout(resolve, 5000));
+    const sql = postgres(process.env.DATABASE_URL as string);
+    const events = await sql`
+        SELECT
+          COUNT(*)
+        FROM events
+        WHERE organization_id = ${organizationId} AND
+        search = ${queryId}`;
+
+    expect(events[0].count).toEqual('1');
+  }, 30000);
+});

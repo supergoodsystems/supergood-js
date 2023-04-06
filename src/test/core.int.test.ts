@@ -28,12 +28,12 @@ const base64Regex =
 
 // Local JSON server configuration for sending arbitrary POST/GET requests
 // to a random CRUD server
-const CLIENT_ID = process.env.CLIENT_ID || 'test-client-id';
-const CLIENT_SECRET = process.env.CLIENT_SECRET || 'test-client-secret';
+const CLIENT_ID = 'test-client-id';
+const CLIENT_SECRET = 'test-client-secret';
+const HTTP_OUTBOUND_TEST_SERVER_PORT = 3001;
+const HTTP_OUTBOUND_TEST_SERVER = `http://localhost:${HTTP_OUTBOUND_TEST_SERVER_PORT}`;
 
-const HTTP_OUTBOUND_TEST_SERVER = `http://localhost:${process.env.HTTP_OUTBOUND_TEST_SERVER_PORT}`;
-
-const SUPERGOOD_SERVER_PORT = process.env.SUPERGOOD_SERVER_PORT || 9001;
+const SUPERGOOD_SERVER_PORT = 9001;
 const INTERNAL_SUPERGOOD_SERVER = `http://localhost:${SUPERGOOD_SERVER_PORT}`;
 
 const defaultConfig = {
