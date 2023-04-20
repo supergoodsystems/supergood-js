@@ -8,10 +8,9 @@ describe('end-to-end tests', () => {
   test('log to the staging database after a simple get request', async () => {
     await Supergood.init(
       {
-        clientId: process.env.SUPERGOOD_CLIENT_ID,
-        clientSecret: process.env.SUPERGOOD_CLIENT_SECRET
+        clientId: process.env.SUPERGOOD_CLIENT_ID as string,
+        clientSecret: process.env.SUPERGOOD_CLIENT_SECRET as string
       },
-      {},
       process.env.SUPERGOOD_BASE_URL
     );
     const queryId = `?id=${uuid()}`;

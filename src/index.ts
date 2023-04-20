@@ -26,7 +26,7 @@ const Supergood = () => {
   let errorSinkUrl: string;
 
   let headerOptions: HeaderOptionType;
-  let config: ConfigType;
+  let supergoodConfig: ConfigType;
 
   let requestCache: NodeCache;
   let responseCache: NodeCache;
@@ -35,17 +35,28 @@ const Supergood = () => {
   let interval: NodeJS.Timeout;
 
   const init = async (
-    { clientId, clientSecret } = {
-      clientId: process.env.SUPERGOOD_CLIENT_ID,
-      clientSecret: process.env.SUPERGOOD_CLIENT_SECRET
+    {
+      clientId,
+      clientSecret,
+      config
+    }: {
+      clientId: string;
+      clientSecret: string;
+      config?: Partial<ConfigType>;
+    } = {
+      clientId: process.env.SUPERGOOD_CLIENT_ID as string,
+      clientSecret: process.env.SUPERGOOD_CLIENT_SECRET as string,
+      config: {} as Partial<ConfigType>
     },
-    initialConfig = {} as Partial<ConfigType>,
     baseUrl = process.env.SUPERGOOD_BASE_URL || 'https://dashboard.supergood.ai'
   ) => {
     if (!clientId) throw new Error(errors.NO_CLIENT_ID);
     if (!clientSecret) throw new Error(errors.NO_CLIENT_SECRET);
 
-    config = { ...defaultConfig, ...initialConfig } as ConfigType;
+    supergoodConfig = {
+      ...defaultConfig,
+      ...config
+    } as ConfigType;
     requestCache = new NodeCache({
       stdTTL: 0
     });
@@ -76,7 +87,11 @@ const Supergood = () => {
         };
         cacheRequest(requestData, baseUrl);
       } catch (e) {
-        log.error(errors.CACHING_REQUEST, { request, config }, e as Error);
+        log.error(
+          errors.CACHING_REQUEST,
+          { request, config: supergoodConfig },
+          e as Error
+        );
       }
     });
 
@@ -101,19 +116,19 @@ const Supergood = () => {
       } catch (e) {
         log.error(
           errors.CACHING_RESPONSE,
-          { request, response, config },
+          { request, response, config: supergoodConfig },
           e as Error
         );
       }
     });
 
     headerOptions = getHeaderOptions(clientId, clientSecret);
-    errorSinkUrl = `${baseUrl}${config.errorSinkEndpoint}`;
-    eventSinkUrl = `${baseUrl}${config.eventSinkEndpoint}`;
+    errorSinkUrl = `${baseUrl}${supergoodConfig.errorSinkEndpoint}`;
+    eventSinkUrl = `${baseUrl}${supergoodConfig.eventSinkEndpoint}`;
     log = logger({ errorSinkUrl, headerOptions });
 
     // Flushes the cache every <flushInterval> milliseconds
-    interval = setInterval(flushCache, config.flushInterval);
+    interval = setInterval(flushCache, supergoodConfig.flushInterval);
     interval.unref();
   };
 
@@ -122,7 +137,7 @@ const Supergood = () => {
     const baseOrigin = new URL(baseUrl).origin;
     if (
       baseOrigin !== url.origin &&
-      !config.ignoredDomains.includes(url.hostname)
+      !supergoodConfig.ignoredDomains.includes(url.hostname)
     ) {
       requestCache.set(request.id, { request });
       log.debug('Setting Request Cache', {
@@ -137,7 +152,7 @@ const Supergood = () => {
 
     if (
       baseOrigin !== url.origin &&
-      !config.ignoredDomains.includes(url.hostname)
+      !supergoodConfig.ignoredDomains.includes(url.hostname)
     ) {
       responseCache.set(event.request.id, event);
       log.debug('Setting Response Cache', {
@@ -157,7 +172,7 @@ const Supergood = () => {
 
     const responseArray = prepareData(
       Object.values(responseCache.mget(responseCacheKeys)),
-      config.keysToHash
+      supergoodConfig.keysToHash
     ) as Array<EventRequestType>;
 
     let data = [...responseArray];
@@ -166,7 +181,7 @@ const Supergood = () => {
     if (force) {
       const requestArray = prepareData(
         Object.values(requestCache.mget(requestCacheKeys)),
-        config.keysToHash
+        supergoodConfig.keysToHash
       ) as Array<EventRequestType>;
       data = [...requestArray, ...responseArray];
     }
@@ -182,13 +197,22 @@ const Supergood = () => {
     } catch (e) {
       const error = e as Error;
       if (error.message === errors.UNAUTHORIZED) {
-        log.error(errors.UNAUTHORIZED, { data, config }, error, {
-          reportOut: false
-        });
+        log.error(
+          errors.UNAUTHORIZED,
+          { data, config: supergoodConfig },
+          error,
+          {
+            reportOut: false
+          }
+        );
         clearInterval(interval);
         interceptor.dispose();
       } else {
-        log.error(errors.POSTING_EVENTS, { data, config }, error);
+        log.error(
+          errors.POSTING_EVENTS,
+          { data, config: supergoodConfig },
+          error
+        );
       }
     } finally {
       // Delete only the keys sent

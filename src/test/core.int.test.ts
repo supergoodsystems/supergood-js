@@ -91,10 +91,10 @@ describe('testing success states', () => {
   test('captures all outgoing 200 http requests', async () => {
     await Supergood.init(
       {
+        config: defaultConfig,
         clientId: CLIENT_ID,
         clientSecret: CLIENT_SECRET
       },
-      defaultConfig,
       INTERNAL_SUPERGOOD_SERVER
     );
 
@@ -118,10 +118,10 @@ describe('testing success states', () => {
     const httpErrorCodes = [400, 401, 403, 404, 500, 501, 502, 503, 504];
     await Supergood.init(
       {
+        config: defaultConfig,
         clientId: CLIENT_ID,
         clientSecret: CLIENT_SECRET
       },
-      defaultConfig,
       INTERNAL_SUPERGOOD_SERVER
     );
     for (let i = 0; i < httpErrorCodes.length; i++) {
@@ -146,10 +146,10 @@ describe('testing failure states', () => {
   test('hanging response', async () => {
     await Supergood.init(
       {
+        config: defaultConfig,
         clientId: CLIENT_ID,
         clientSecret: CLIENT_SECRET
       },
-      defaultConfig,
       INTERNAL_SUPERGOOD_SERVER
     );
     axios.get(`${HTTP_OUTBOUND_TEST_SERVER}/200?sleep=2000`);
@@ -169,10 +169,10 @@ describe('testing failure states', () => {
     });
     await Supergood.init(
       {
+        config: defaultConfig,
         clientId: CLIENT_ID,
         clientSecret: CLIENT_SECRET
       },
-      defaultConfig,
       INTERNAL_SUPERGOOD_SERVER
     );
     await axios.get(`${HTTP_OUTBOUND_TEST_SERVER}/posts`);
@@ -187,11 +187,11 @@ describe('config specifications', () => {
   test('hashing', async () => {
     await Supergood.init(
       {
+        config: {
+          keysToHash: ['response.body']
+        },
         clientId: CLIENT_ID,
         clientSecret: CLIENT_SECRET
-      },
-      {
-        keysToHash: ['response.body']
       },
       INTERNAL_SUPERGOOD_SERVER
     );
@@ -206,11 +206,9 @@ describe('config specifications', () => {
   test('not hashing', async () => {
     await Supergood.init(
       {
+        config: { keysToHash: [] },
         clientId: CLIENT_ID,
         clientSecret: CLIENT_SECRET
-      },
-      {
-        keysToHash: []
       },
       INTERNAL_SUPERGOOD_SERVER
     );
@@ -227,10 +225,12 @@ describe('config specifications', () => {
   test('keys to hash not in config', async () => {
     await Supergood.init(
       {
+        config: {
+          keysToHash: ['thisKeyDoesNotExist', 'response.thisKeyDoesNotExist']
+        },
         clientId: CLIENT_ID,
         clientSecret: CLIENT_SECRET
       },
-      { keysToHash: ['thisKeyDoesNotExist', 'response.thisKeyDoesNotExist'] },
       INTERNAL_SUPERGOOD_SERVER
     );
     await axios.get(`${HTTP_OUTBOUND_TEST_SERVER}/posts`);
@@ -246,10 +246,10 @@ describe('config specifications', () => {
   test('ignores requests to ignored domains', async () => {
     await Supergood.init(
       {
+        config: { ignoredDomains: ['supergood-testbed.herokuapp.com'] },
         clientId: CLIENT_ID,
         clientSecret: CLIENT_SECRET
       },
-      { ignoredDomains: ['supergood-testbed.herokuapp.com'] },
       INTERNAL_SUPERGOOD_SERVER
     );
     await axios.get('https://supergood-testbed.herokuapp.com/200');
@@ -260,10 +260,10 @@ describe('config specifications', () => {
   test('operates normally when ignored domains is empty', async () => {
     await Supergood.init(
       {
+        config: { ignoredDomains: [] },
         clientId: CLIENT_ID,
         clientSecret: CLIENT_SECRET
       },
-      { ignoredDomains: [] },
       INTERNAL_SUPERGOOD_SERVER
     );
     await axios.get('https://supergood-testbed.herokuapp.com/200');
@@ -279,7 +279,6 @@ describe('testing various endpoints and libraries basic functionality', () => {
         clientId: CLIENT_ID,
         clientSecret: CLIENT_SECRET
       },
-      {},
       INTERNAL_SUPERGOOD_SERVER
     );
   });
@@ -359,7 +358,6 @@ describe('non-standard payloads', () => {
         clientId: CLIENT_ID,
         clientSecret: CLIENT_SECRET
       },
-      {},
       INTERNAL_SUPERGOOD_SERVER
     );
 
@@ -383,7 +381,6 @@ describe('non-standard payloads', () => {
         clientId: CLIENT_ID,
         clientSecret: CLIENT_SECRET
       },
-      {},
       INTERNAL_SUPERGOOD_SERVER
     );
     const response = await axios.get(
@@ -403,7 +400,6 @@ describe('non-standard payloads', () => {
         clientId: CLIENT_ID,
         clientSecret: CLIENT_SECRET
       },
-      {},
       INTERNAL_SUPERGOOD_SERVER
     );
     const response = await fetch(
