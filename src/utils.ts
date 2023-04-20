@@ -155,17 +155,9 @@ const getPayloadSize = (
 
 const prepareData = (
   events: Array<EventRequestType>,
-  ignoredDomains: Array<string>,
   keysToHash: Array<string>
 ) => {
-  return events.filter((e) => {
-    const url = new URL(e.request.url);
-    if (ignoredDomains.includes(url.host)) {
-      return false;
-    } else {
-      return hashValuesFromKeys(e, keysToHash);
-    }
-  });
+  return events.filter((e) => hashValuesFromKeys(e, keysToHash));
 };
 
 export {

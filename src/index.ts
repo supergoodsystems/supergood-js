@@ -3,14 +3,8 @@ import {
   InteractiveIsomorphicRequest
 } from '@mswjs/interceptors';
 import NodeCache from 'node-cache';
-import {
-  getHeaderOptions,
-  logger,
-  hashValuesFromKeys,
-  safeParseJson,
-  prepareData
-} from './utils';
-import { fetchConfig, postEvents } from './api';
+import { getHeaderOptions, logger, safeParseJson, prepareData } from './utils';
+import { postEvents } from './api';
 import nodeInterceptors from '@mswjs/interceptors/lib/presets/node';
 import {
   HeaderOptionType,
@@ -19,7 +13,7 @@ import {
   LoggerType,
   RequestType
 } from './types';
-import { errors, TestErrorPath } from './constants';
+import { defaultConfig, errors, TestErrorPath } from './constants';
 import onExit from 'signal-exit';
 
 const interceptor = new BatchInterceptor({
@@ -45,11 +39,13 @@ const Supergood = () => {
       clientId: process.env.SUPERGOOD_CLIENT_ID,
       clientSecret: process.env.SUPERGOOD_CLIENT_SECRET
     },
+    initialConfig = {} as Partial<ConfigType>,
     baseUrl = process.env.SUPERGOOD_BASE_URL || 'https://dashboard.supergood.ai'
   ) => {
     if (!clientId) throw new Error(errors.NO_CLIENT_ID);
     if (!clientSecret) throw new Error(errors.NO_CLIENT_SECRET);
 
+    config = { ...defaultConfig, ...initialConfig } as ConfigType;
     requestCache = new NodeCache({
       stdTTL: 0
     });
@@ -112,8 +108,6 @@ const Supergood = () => {
     });
 
     headerOptions = getHeaderOptions(clientId, clientSecret);
-    config = await fetchConfig(`${baseUrl}/api/config`, headerOptions);
-
     errorSinkUrl = `${baseUrl}${config.errorSinkEndpoint}`;
     eventSinkUrl = `${baseUrl}${config.eventSinkEndpoint}`;
     log = logger({ errorSinkUrl, headerOptions });
@@ -126,8 +120,10 @@ const Supergood = () => {
   const cacheRequest = async (request: RequestType, baseUrl: string) => {
     const url = new URL(request.url);
     const baseOrigin = new URL(baseUrl).origin;
-
-    if (baseOrigin !== url.origin) {
+    if (
+      baseOrigin !== url.origin &&
+      !config.ignoredDomains.includes(url.hostname)
+    ) {
       requestCache.set(request.id, { request });
       log.debug('Setting Request Cache', {
         request
@@ -139,7 +135,10 @@ const Supergood = () => {
     const url = new URL(event.request.url);
     const baseOrigin = new URL(baseUrl).origin;
 
-    if (baseOrigin !== url.origin) {
+    if (
+      baseOrigin !== url.origin &&
+      !config.ignoredDomains.includes(url.hostname)
+    ) {
       responseCache.set(event.request.id, event);
       log.debug('Setting Response Cache', {
         id: event.request.id,
@@ -152,21 +151,12 @@ const Supergood = () => {
 
   // Force flush cache means don't wait for responses
   const flushCache = async ({ force } = { force: false }) => {
-    if (!config) {
-      log.debug(
-        'Config not loaded, waiting for config to load before flushing cache',
-        { force }
-      );
-      return;
-    }
-
     log.debug('Flushing Cache ...', { force });
     const responseCacheKeys = responseCache.keys();
     const requestCacheKeys = requestCache.keys();
 
     const responseArray = prepareData(
       Object.values(responseCache.mget(responseCacheKeys)),
-      config.ignoredDomains,
       config.keysToHash
     ) as Array<EventRequestType>;
 
@@ -176,7 +166,6 @@ const Supergood = () => {
     if (force) {
       const requestArray = prepareData(
         Object.values(requestCache.mget(requestCacheKeys)),
-        config.ignoredDomains,
         config.keysToHash
       ) as Array<EventRequestType>;
       data = [...requestArray, ...responseArray];

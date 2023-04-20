@@ -1,9 +1,8 @@
 const defaultConfig = {
-  flushInterval: process.env.SUPERGOOD_FLUSH_INTERVAL || 1000,
-  cacheTtl: process.env.SUPERGOOD_CACHE_TTL || 0,
+  flushInterval: 1000,
   eventSinkEndpoint: '/api/events',
   errorSinkEndpoint: '/api/errors',
-  keysToHash: ['request.body', 'response.body'],
+  keysToHash: [],
   ignoredDomains: []
 };
 

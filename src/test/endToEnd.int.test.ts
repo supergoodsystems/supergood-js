@@ -11,6 +11,7 @@ describe('end-to-end tests', () => {
         clientId: process.env.SUPERGOOD_CLIENT_ID,
         clientSecret: process.env.SUPERGOOD_CLIENT_SECRET
       },
+      {},
       process.env.SUPERGOOD_BASE_URL
     );
     const queryId = `?id=${uuid()}`;

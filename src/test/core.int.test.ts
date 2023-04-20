@@ -1,5 +1,5 @@
 import Supergood from '..';
-import { postEvents, postError, fetchConfig } from '../api';
+import { postEvents, postError } from '../api';
 import { initialize } from './json-server-config';
 import { errors } from '../constants';
 import {
@@ -84,17 +84,17 @@ jest.mock('../api', () => ({
   postEvents: jest.fn(async (eventSinkUrl, data) => ({ data })),
   postError: jest.fn(async (errorSinkUrl, payload) => ({
     payload
-  })),
-  fetchConfig: jest.fn(async () => defaultConfig)
+  }))
 }));
 
 describe('testing success states', () => {
   test('captures all outgoing 200 http requests', async () => {
-    const sg = await Supergood.init(
+    await Supergood.init(
       {
         clientId: CLIENT_ID,
         clientSecret: CLIENT_SECRET
       },
+      defaultConfig,
       INTERNAL_SUPERGOOD_SERVER
     );
 
@@ -121,6 +121,7 @@ describe('testing success states', () => {
         clientId: CLIENT_ID,
         clientSecret: CLIENT_SECRET
       },
+      defaultConfig,
       INTERNAL_SUPERGOOD_SERVER
     );
     for (let i = 0; i < httpErrorCodes.length; i++) {
@@ -148,6 +149,7 @@ describe('testing failure states', () => {
         clientId: CLIENT_ID,
         clientSecret: CLIENT_SECRET
       },
+      defaultConfig,
       INTERNAL_SUPERGOOD_SERVER
     );
     axios.get(`${HTTP_OUTBOUND_TEST_SERVER}/200?sleep=2000`);
@@ -160,7 +162,7 @@ describe('testing failure states', () => {
     expect(firstEvent?.response?.respondedAt).toBeFalsy();
   });
 
-  test.skip('posting errors', async () => {
+  test('posting errors', async () => {
     (postEvents as jest.Mock).mockImplementation(() => {
       throw new Error();
     });
@@ -169,6 +171,7 @@ describe('testing failure states', () => {
         clientId: CLIENT_ID,
         clientSecret: CLIENT_SECRET
       },
+      defaultConfig,
       INTERNAL_SUPERGOOD_SERVER
     );
     await axios.get(`${HTTP_OUTBOUND_TEST_SERVER}/posts`);
@@ -181,16 +184,13 @@ describe('testing failure states', () => {
 
 describe('config specifications', () => {
   test('hashing', async () => {
-    (fetchConfig as jest.Mock).mockImplementation(() => {
-      return {
-        ...defaultConfig,
-        keysToHash: ['response.body']
-      };
-    });
     await Supergood.init(
       {
         clientId: CLIENT_ID,
         clientSecret: CLIENT_SECRET
+      },
+      {
+        keysToHash: ['response.body']
       },
       INTERNAL_SUPERGOOD_SERVER
     );
@@ -203,16 +203,13 @@ describe('config specifications', () => {
   });
 
   test('not hashing', async () => {
-    (fetchConfig as jest.Mock).mockImplementation(() => {
-      return {
-        ...defaultConfig,
-        keysToHash: []
-      };
-    });
-    const sg = await Supergood.init(
+    await Supergood.init(
       {
         clientId: CLIENT_ID,
         clientSecret: CLIENT_SECRET
+      },
+      {
+        keysToHash: []
       },
       INTERNAL_SUPERGOOD_SERVER
     );
@@ -227,17 +224,12 @@ describe('config specifications', () => {
   });
 
   test('keys to hash not in config', async () => {
-    (fetchConfig as jest.Mock).mockImplementation(() => {
-      return {
-        ...defaultConfig,
-        keysToHash: ['thisKeyDoesNotExist', 'response.thisKeyDoesNotExist']
-      };
-    });
-    const sg = await Supergood.init(
+    await Supergood.init(
       {
         clientId: CLIENT_ID,
         clientSecret: CLIENT_SECRET
       },
+      { keysToHash: ['thisKeyDoesNotExist', 'response.thisKeyDoesNotExist'] },
       INTERNAL_SUPERGOOD_SERVER
     );
     await axios.get(`${HTTP_OUTBOUND_TEST_SERVER}/posts`);
@@ -251,17 +243,12 @@ describe('config specifications', () => {
   });
 
   test('ignores requests to ignored domains', async () => {
-    (fetchConfig as jest.Mock).mockImplementation(() => {
-      return {
-        ...defaultConfig,
-        ignoredDomains: ['supergood-testbed.herokuapp.com']
-      };
-    });
     await Supergood.init(
       {
         clientId: CLIENT_ID,
         clientSecret: CLIENT_SECRET
       },
+      { ignoredDomains: ['supergood-testbed.herokuapp.com'] },
       INTERNAL_SUPERGOOD_SERVER
     );
     await axios.get('https://supergood-testbed.herokuapp.com/200');
@@ -270,17 +257,12 @@ describe('config specifications', () => {
   });
 
   test('operates normally when ignored domains is empty', async () => {
-    (fetchConfig as jest.Mock).mockImplementation(() => {
-      return {
-        ...defaultConfig,
-        ignoredDomains: []
-      };
-    });
     await Supergood.init(
       {
         clientId: CLIENT_ID,
         clientSecret: CLIENT_SECRET
       },
+      { ignoredDomains: [] },
       INTERNAL_SUPERGOOD_SERVER
     );
     await axios.get('https://supergood-testbed.herokuapp.com/200');
@@ -296,6 +278,7 @@ describe('testing various endpoints and libraries basic functionality', () => {
         clientId: CLIENT_ID,
         clientSecret: CLIENT_SECRET
       },
+      {},
       INTERNAL_SUPERGOOD_SERVER
     );
   });
@@ -370,19 +353,12 @@ describe('non-standard payloads', () => {
   test('not automatically hashing sub 500kb payload', async () => {
     // Double quotes and other strings take up space in the payload
     const payloadSize = 400000;
-    // const payloadSize = 10;
-    (fetchConfig as jest.Mock).mockImplementation(() => {
-      return {
-        ...defaultConfig,
-        ignoredDomains: [],
-        keysToHash: []
-      };
-    });
     await Supergood.init(
       {
         clientId: CLIENT_ID,
         clientSecret: CLIENT_SECRET
       },
+      {},
       INTERNAL_SUPERGOOD_SERVER
     );
 
@@ -401,18 +377,12 @@ describe('non-standard payloads', () => {
 
   test('automatically hashing 500kb+ payload', async () => {
     const payloadSize = 500001;
-    (fetchConfig as jest.Mock).mockImplementation(() => {
-      return {
-        ...defaultConfig,
-        ignoredDomains: [],
-        keysToHash: []
-      };
-    });
     await Supergood.init(
       {
         clientId: CLIENT_ID,
         clientSecret: CLIENT_SECRET
       },
+      {},
       INTERNAL_SUPERGOOD_SERVER
     );
     const response = await axios.get(
@@ -427,18 +397,12 @@ describe('non-standard payloads', () => {
   });
 
   test('gzipped response', async () => {
-    (fetchConfig as jest.Mock).mockImplementation(() => {
-      return {
-        ...defaultConfig,
-        ignoredDomains: [],
-        keysToHash: []
-      };
-    });
     await Supergood.init(
       {
         clientId: CLIENT_ID,
         clientSecret: CLIENT_SECRET
       },
+      {},
       INTERNAL_SUPERGOOD_SERVER
     );
     const response = await fetch(
