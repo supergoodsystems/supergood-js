@@ -13,7 +13,13 @@ import {
   LoggerType,
   RequestType
 } from './types';
-import { defaultConfig, errors, TestErrorPath } from './constants';
+import {
+  defaultConfig,
+  errors,
+  TestErrorPath,
+  LocalClientId,
+  LocalClientSecret
+} from './constants';
 import onExit from 'signal-exit';
 
 const interceptor = new BatchInterceptor({
@@ -34,6 +40,8 @@ const Supergood = () => {
   let log: LoggerType;
   let interval: NodeJS.Timeout;
 
+  let localOnly = false;
+
   const init = async (
     {
       clientId,
@@ -53,10 +61,15 @@ const Supergood = () => {
     if (!clientId) throw new Error(errors.NO_CLIENT_ID);
     if (!clientSecret) throw new Error(errors.NO_CLIENT_SECRET);
 
+    if (clientId === LocalClientId || clientSecret === LocalClientSecret) {
+      localOnly = true;
+    }
+
     supergoodConfig = {
       ...defaultConfig,
       ...config
     } as ConfigType;
+
     requestCache = new NodeCache({
       stdTTL: 0
     });
@@ -65,7 +78,7 @@ const Supergood = () => {
     });
 
     headerOptions = getHeaderOptions(clientId, clientSecret);
-    log = logger({ headerOptions });
+    log = logger({ errorSinkUrl, headerOptions });
 
     interceptor.apply();
     interceptor.on('request', async (request: InteractiveIsomorphicRequest) => {
@@ -90,7 +103,10 @@ const Supergood = () => {
         log.error(
           errors.CACHING_REQUEST,
           { request, config: supergoodConfig },
-          e as Error
+          e as Error,
+          {
+            reportOut: !localOnly
+          }
         );
       }
     });
@@ -122,10 +138,8 @@ const Supergood = () => {
       }
     });
 
-    headerOptions = getHeaderOptions(clientId, clientSecret);
     errorSinkUrl = `${baseUrl}${supergoodConfig.errorSinkEndpoint}`;
     eventSinkUrl = `${baseUrl}${supergoodConfig.eventSinkEndpoint}`;
-    log = logger({ errorSinkUrl, headerOptions });
 
     // Flushes the cache every <flushInterval> milliseconds
     interval = setInterval(flushCache, supergoodConfig.flushInterval);
@@ -192,7 +206,11 @@ const Supergood = () => {
     }
 
     try {
-      await postEvents(eventSinkUrl, data, headerOptions);
+      if (localOnly) {
+        log.debug(JSON.stringify(data, null, 2));
+      } else {
+        await postEvents(eventSinkUrl, data, headerOptions);
+      }
       log.debug(`Flushed ${data.length} events`, { force });
     } catch (e) {
       const error = e as Error;
@@ -211,7 +229,10 @@ const Supergood = () => {
         log.error(
           errors.POSTING_EVENTS,
           { data, config: supergoodConfig },
-          error
+          error,
+          {
+            reportOut: !localOnly
+          }
         );
       }
     } finally {

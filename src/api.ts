@@ -1,9 +1,4 @@
-import {
-  HeaderOptionType,
-  EventRequestType,
-  ErrorPayloadType,
-  ConfigType
-} from './types';
+import { HeaderOptionType, EventRequestType, ErrorPayloadType } from './types';
 import { errors } from './constants';
 import axios from 'axios';
 

@@ -417,5 +417,19 @@ describe('non-standard payloads', () => {
     );
   });
 });
-// Perhaps even need to write a restore from disk method?
-// test('write to disk when connection fails', () => {});
+
+describe('local client id and secret', () => {
+  test('does not report out', async () => {
+    await Supergood.init(
+      {
+        config: defaultConfig,
+        clientId: 'local-client-id',
+        clientSecret: 'local-client-secret'
+      },
+      INTERNAL_SUPERGOOD_SERVER
+    );
+    await axios.get(`${HTTP_OUTBOUND_TEST_SERVER}/posts`);
+    expect(postEvents).toBeCalledTimes(0);
+    await Supergood.close();
+  });
+});
