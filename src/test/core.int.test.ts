@@ -270,6 +270,54 @@ describe('config specifications', () => {
     await Supergood.close();
     expect(postEvents).toBeCalledTimes(1);
   });
+
+  test('performances matching on partial domains', async () => {
+    await Supergood.init(
+      {
+        config: { ignoredDomains: ['herokuapp.com'] },
+        clientId: CLIENT_ID,
+        clientSecret: CLIENT_SECRET
+      },
+      INTERNAL_SUPERGOOD_SERVER
+    );
+    await axios.get('https://supergood-testbed.herokuapp.com/200');
+    await Supergood.close();
+    expect(postEvents).toBeCalledTimes(0);
+  });
+
+  test('performances matching on partial domains, allowed overrides ignored', async () => {
+    await Supergood.init(
+      {
+        config: {
+          allowedDomains: ['herokuapp.com'],
+          ignoredDomains: ['herokuapp.com']
+        },
+        clientId: CLIENT_ID,
+        clientSecret: CLIENT_SECRET
+      },
+      INTERNAL_SUPERGOOD_SERVER
+    );
+    await axios.get('https://supergood-testbed.herokuapp.com/200');
+    await Supergood.close();
+    expect(postEvents).toBeCalledTimes(1);
+  });
+
+  test('only posts for specified domains, ignores everything else', async () => {
+    await Supergood.init(
+      {
+        config: {
+          allowedDomains: ['ipify']
+        },
+        clientId: CLIENT_ID,
+        clientSecret: CLIENT_SECRET
+      },
+      INTERNAL_SUPERGOOD_SERVER
+    );
+    await axios.get('https://api.ipify.org?format=json');
+    await axios.get('https://supergood-testbed.herokuapp.com/200');
+    await Supergood.close();
+    expect(postEvents).toBeCalledTimes(1);
+  });
 });
 
 describe('testing various endpoints and libraries basic functionality', () => {

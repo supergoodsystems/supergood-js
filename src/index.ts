@@ -3,7 +3,13 @@ import {
   InteractiveIsomorphicRequest
 } from '@mswjs/interceptors';
 import NodeCache from 'node-cache';
-import { getHeaderOptions, logger, safeParseJson, prepareData } from './utils';
+import {
+  getHeaderOptions,
+  logger,
+  safeParseJson,
+  prepareData,
+  shouldCachePayload
+} from './utils';
 import { postEvents } from './api';
 import nodeInterceptors from '@mswjs/interceptors/lib/presets/node';
 import {
@@ -147,12 +153,7 @@ const Supergood = () => {
   };
 
   const cacheRequest = async (request: RequestType, baseUrl: string) => {
-    const url = new URL(request.url);
-    const baseOrigin = new URL(baseUrl).origin;
-    if (
-      baseOrigin !== url.origin &&
-      !supergoodConfig.ignoredDomains.includes(url.hostname)
-    ) {
+    if (shouldCachePayload(request.url, baseUrl, supergoodConfig)) {
       requestCache.set(request.id, { request });
       log.debug('Setting Request Cache', {
         request
@@ -161,13 +162,7 @@ const Supergood = () => {
   };
 
   const cacheResponse = async (event: EventRequestType, baseUrl: string) => {
-    const url = new URL(event.request.url);
-    const baseOrigin = new URL(baseUrl).origin;
-
-    if (
-      baseOrigin !== url.origin &&
-      !supergoodConfig.ignoredDomains.includes(url.hostname)
-    ) {
+    if (shouldCachePayload(event.request.url, baseUrl, supergoodConfig)) {
       responseCache.set(event.request.id, event);
       log.debug('Setting Response Cache', {
         id: event.request.id,

@@ -4,7 +4,8 @@ import {
   InfoPayloadType,
   RequestType,
   ResponseType,
-  EventRequestType
+  EventRequestType,
+  ConfigType
 } from './types';
 import crypto from 'crypto';
 import { postError } from './api';
@@ -160,11 +161,35 @@ const prepareData = (
   return events.filter((e) => hashValuesFromKeys(e, keysToHash));
 };
 
+const shouldCachePayload = (
+  url: string,
+  baseUrl: string,
+  config: ConfigType
+) => {
+  const requestUrl = new URL(url);
+  const baseOriginUrl = new URL(baseUrl);
+
+  // Origin is needed for 'localhost' testing rather than hostname
+  if (requestUrl.origin == baseOriginUrl.origin) return false;
+  if (config.allowedDomains?.length) {
+    return config.allowedDomains.some((domain) => {
+      return requestUrl.hostname.includes(domain);
+    });
+  }
+  if (config.ignoredDomains?.length) {
+    return !config.ignoredDomains.some((domain) => {
+      return requestUrl.hostname.includes(domain);
+    });
+  }
+  return true;
+};
+
 export {
   getHeaderOptions,
   hashValue,
   hashValuesFromKeys,
   logger,
   safeParseJson,
-  prepareData
+  prepareData,
+  shouldCachePayload
 };

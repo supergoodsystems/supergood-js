@@ -3,7 +3,8 @@ const defaultConfig = {
   eventSinkEndpoint: '/api/events',
   errorSinkEndpoint: '/api/errors',
   keysToHash: [],
-  ignoredDomains: []
+  ignoredDomains: [],
+  allowedDomains: []
 };
 
 const errors = {
