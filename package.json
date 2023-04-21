@@ -5,7 +5,7 @@
     "url": "git://github.com/supergoodsystems/supergood-js.git"
   },
   "main": "build/src/index.js",
-  "types": "build/src/types.d.ts",
+  "types": "build/src/index.d.ts",
   "version": "1.1.25",
   "scripts": {
     "test": "yarn run clean && tsc && NODE_ENV=test jest --setupFiles dotenv/config",

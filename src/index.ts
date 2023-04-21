@@ -248,7 +248,4 @@ const Supergood = () => {
   return { close, flushCache, init };
 };
 
-const sg = Supergood();
-
-export default sg;
-module.exports = sg;
+export = Supergood();
