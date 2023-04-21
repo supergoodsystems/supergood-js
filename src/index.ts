@@ -40,8 +40,8 @@ const Supergood = () => {
       clientSecret,
       config
     }: {
-      clientId: string;
-      clientSecret: string;
+      clientId?: string;
+      clientSecret?: string;
       config?: Partial<ConfigType>;
     } = {
       clientId: process.env.SUPERGOOD_CLIENT_ID as string,
