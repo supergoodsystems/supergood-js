@@ -12,6 +12,7 @@ import {
 } from './utils';
 import { postEvents } from './api';
 import nodeInterceptors from '@mswjs/interceptors/lib/presets/node';
+import browserInterceptors from '@mswjs/interceptors/lib/presets/browser';
 import {
   HeaderOptionType,
   EventRequestType,
@@ -30,7 +31,7 @@ import onExit from 'signal-exit';
 
 const interceptor = new BatchInterceptor({
   name: 'supergood-interceptor',
-  interceptors: nodeInterceptors
+  interceptors: [...nodeInterceptors, ...browserInterceptors]
 });
 
 const Supergood = () => {
