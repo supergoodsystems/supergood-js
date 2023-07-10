@@ -11,8 +11,9 @@ import {
   shouldCachePayload
 } from './utils';
 import { postEvents } from './api';
-import nodeInterceptors from '@mswjs/interceptors/lib/presets/node';
-import browserInterceptors from '@mswjs/interceptors/lib/presets/browser';
+import { XMLHttpRequestInterceptor } from '@mswjs/interceptors/lib/interceptors/XMLHttpRequest';
+import { ClientRequestInterceptor } from '@mswjs/interceptors/lib/interceptors/ClientRequest';
+import { FetchInterceptor } from '@mswjs/interceptors/lib/interceptors/fetch';
 import {
   HeaderOptionType,
   EventRequestType,
@@ -31,7 +32,11 @@ import onExit from 'signal-exit';
 
 const interceptor = new BatchInterceptor({
   name: 'supergood-interceptor',
-  interceptors: [...nodeInterceptors, ...browserInterceptors]
+  interceptors: [
+    new XMLHttpRequestInterceptor(),
+    new ClientRequestInterceptor(),
+    new FetchInterceptor()
+  ]
 });
 
 const Supergood = () => {
