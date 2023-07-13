@@ -30,13 +30,30 @@ import {
 } from './constants';
 import onExit from 'signal-exit';
 
+const getInterceptors = () => {
+  const interceptors = [];
+
+  if (process.env.INTERCEPT_XML) {
+    interceptors.push(new XMLHttpRequestInterceptor());
+  }
+
+  if (process.env.INTERCEPT_CLIENT) {
+    interceptors.push(new ClientRequestInterceptor());
+  }
+
+  if (process.env.INTERCEPT_FETCH) {
+    interceptors.push(new FetchInterceptor());
+  }
+
+  if (interceptors.length > 0) return interceptors;
+  else {
+    return [new XMLHttpRequestInterceptor(), new ClientRequestInterceptor()];
+  }
+};
+
 const interceptor = new BatchInterceptor({
   name: 'supergood-interceptor',
-  interceptors: [
-    new XMLHttpRequestInterceptor(),
-    new ClientRequestInterceptor(),
-    new FetchInterceptor()
-  ]
+  interceptors: getInterceptors()
 });
 
 const Supergood = () => {
