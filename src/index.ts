@@ -13,7 +13,6 @@ import {
 import { postEvents } from './api';
 import { XMLHttpRequestInterceptor } from '@mswjs/interceptors/lib/interceptors/XMLHttpRequest';
 import { ClientRequestInterceptor } from '@mswjs/interceptors/lib/interceptors/ClientRequest';
-import { FetchInterceptor } from '@mswjs/interceptors/lib/interceptors/fetch';
 import {
   HeaderOptionType,
   EventRequestType,
@@ -42,6 +41,10 @@ const getInterceptors = () => {
   }
 
   if (process.env.INTERCEPT_FETCH) {
+    /* eslint-disable @typescript-eslint/no-var-requires */
+    const {
+      FetchInterceptor
+    } = require('@mswjs/interceptors/lib/interceptors/fetch');
     interceptors.push(new FetchInterceptor());
   }
 
