@@ -35,7 +35,7 @@ const postEvents = async (
   if (response.status === 401) {
     throw new Error(errors.UNAUTHORIZED);
   }
-  if (!responseData || response.status !== 200) {
+  if (!response.ok) {
     throw new Error(errors.POSTING_EVENTS);
   }
   return responseData;
