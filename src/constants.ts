@@ -28,7 +28,6 @@ const errors = {
 };
 
 const TestErrorPath = '/api/supergood-test-error';
-const SupergoodByteLimit = 500000;
 const LocalClientId = 'local-client-id';
 const LocalClientSecret = 'local-client-secret';
 
@@ -36,7 +35,6 @@ export {
   defaultConfig,
   errors,
   TestErrorPath,
-  SupergoodByteLimit,
   LocalClientId,
   LocalClientSecret
 };

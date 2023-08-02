@@ -1,4 +1,3 @@
-import { SupergoodByteLimit } from './constants';
 import {
   HeaderOptionType,
   InfoPayloadType,
@@ -86,23 +85,6 @@ const hashValuesFromKeys = (
   keysToHash: Array<string>
 ) => {
   let objCopy = { ...obj };
-
-  if (!keysToHash.includes('response.body')) {
-    const payload = get(obj, 'response.body');
-    const payloadSize = getPayloadSize(payload);
-    if (payloadSize && payloadSize >= SupergoodByteLimit) {
-      objCopy = set(objCopy, 'response.body', hashValue(payload));
-    }
-  }
-
-  if (!keysToHash.includes('request.body')) {
-    const payload = get(obj, 'request.body');
-    const payloadSize = getPayloadSize(payload);
-    if (payloadSize && payloadSize >= SupergoodByteLimit) {
-      objCopy = set(objCopy, 'request.body', hashValue(payload));
-    }
-  }
-
   for (let i = 0; i < keysToHash.length; i++) {
     const keyString = keysToHash[i];
     const value = get(objCopy, keyString);
