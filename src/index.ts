@@ -102,7 +102,7 @@ const Supergood = () => {
         const body = await request.clone().text();
         const requestData = {
           id: requestId,
-          headers: request.headers,
+          headers: Object.fromEntries(request.headers.entries()),
           method: request.method,
           url: url.href,
           path: url.pathname,
@@ -133,7 +133,7 @@ const Supergood = () => {
           const body = await response.clone().text();
           const responseData = {
             response: {
-              headers: response.headers,
+              headers: Object.fromEntries(response.headers.entries()),
               status: response.status,
               statusText: response.statusText,
               body: response.body && safeParseJson(body),

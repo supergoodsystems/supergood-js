@@ -12,7 +12,7 @@ type BodyType = Record<string, string>;
 
 interface RequestType {
   id: string;
-  headers: Headers;
+  headers: Record<string, string>;
   method: string;
   url: string;
   path: string;
@@ -22,7 +22,7 @@ interface RequestType {
 }
 
 interface ResponseType {
-  headers: Headers;
+  headers: Record<string, string>;
   status: number;
   statusText: string;
   body?: string | BodyType | [BodyType];

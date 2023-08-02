@@ -427,6 +427,50 @@ describe('non-standard payloads', () => {
   });
 });
 
+describe('captures headers', () => {
+  test('captures request headers', async () => {
+    await Supergood.init(
+      {
+        clientId: CLIENT_ID,
+        clientSecret: CLIENT_SECRET
+      },
+      INTERNAL_SUPERGOOD_SERVER
+    );
+    await fetch(`${HTTP_OUTBOUND_TEST_SERVER}/posts`, {
+      method: 'POST',
+      body: JSON.stringify({
+        title: 'node-fetch-post'
+      }),
+      headers: {
+        'x-custom-header': 'custom-header-value'
+      }
+    });
+    await Supergood.close();
+    const eventsPosted = getEvents(postEvents as jest.Mock);
+    expect(eventsPosted.length).toEqual(1);
+    expect(get(eventsPosted, '[0]request.headers.x-custom-header')).toEqual(
+      'custom-header-value'
+    );
+  });
+
+  test('capture response headers', async () => {
+    await Supergood.init(
+      {
+        clientId: CLIENT_ID,
+        clientSecret: CLIENT_SECRET
+      },
+      INTERNAL_SUPERGOOD_SERVER
+    );
+    await fetch(`${HTTP_OUTBOUND_TEST_SERVER}/custom-header`);
+    await Supergood.close();
+    const eventsPosted = getEvents(postEvents as jest.Mock);
+    expect(eventsPosted.length).toEqual(1);
+    expect(get(eventsPosted, '[0]response.headers.x-custom-header')).toEqual(
+      'custom-header-value'
+    );
+  });
+});
+
 describe('local client id and secret', () => {
   test('does not report out', async () => {
     await Supergood.init(
