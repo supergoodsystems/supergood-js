@@ -1,11 +1,3 @@
----
-description: The Node.js client is written in Typescript and is non-blocking.
----
-
-# Node.js
-
-The Supergood Node.js client connects Supergood to your Node.js application. Follow these steps to integrate with the Node.js client.
-
 ## 1. Install the Supergood library
 
 ```bash
