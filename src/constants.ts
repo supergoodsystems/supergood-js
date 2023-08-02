@@ -4,7 +4,11 @@ const defaultConfig = {
   errorSinkEndpoint: '/api/errors',
   keysToHash: [],
   ignoredDomains: [],
-  allowedDomains: []
+  allowedDomains: [],
+
+  // After the close command is sent, wait for this many milliseconds before
+  // exiting. This gives any hanging responses a chance to return.
+  waitAfterClose: 1000
 };
 
 const errors = {
@@ -24,7 +28,6 @@ const errors = {
 };
 
 const TestErrorPath = '/api/supergood-test-error';
-const SupergoodByteLimit = 500000;
 const LocalClientId = 'local-client-id';
 const LocalClientSecret = 'local-client-secret';
 
@@ -32,7 +35,6 @@ export {
   defaultConfig,
   errors,
   TestErrorPath,
-  SupergoodByteLimit,
   LocalClientId,
   LocalClientSecret
 };

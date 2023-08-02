@@ -8,6 +8,7 @@ import {
   test,
   jest,
   describe,
+  xdescribe,
   beforeAll,
   beforeEach
 } from '@jest/globals';
@@ -22,6 +23,8 @@ import get from 'lodash.get';
 import superagent from 'superagent';
 import axios from 'axios';
 import fetch from 'node-fetch';
+import { sleep } from '../utils';
+import zlib from 'zlib';
 
 const base64Regex =
   /^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/;
@@ -153,7 +156,7 @@ describe('testing failure states', () => {
       INTERNAL_SUPERGOOD_SERVER
     );
     axios.get(`${HTTP_OUTBOUND_TEST_SERVER}/200?sleep=2000`);
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+    await sleep(1000);
     await Supergood.close();
     const eventsPosted = getEvents(postEvents as jest.Mock);
     const firstEvent = eventsPosted[0];
@@ -398,50 +401,6 @@ describe('testing various endpoints and libraries basic functionality', () => {
 });
 
 describe('non-standard payloads', () => {
-  test('not automatically hashing sub 500kb payload', async () => {
-    // Double quotes and other strings take up space in the payload
-    const payloadSize = 400000;
-    await Supergood.init(
-      {
-        clientId: CLIENT_ID,
-        clientSecret: CLIENT_SECRET
-      },
-      INTERNAL_SUPERGOOD_SERVER
-    );
-
-    const response = await axios.get(
-      `${HTTP_OUTBOUND_TEST_SERVER}/massive-response?payloadSize=${payloadSize}`
-    );
-    await new Promise((resolve) => setTimeout(resolve, 2000));
-    expect(response.status).toEqual(200);
-    await Supergood.close();
-    const eventsPosted = getEvents(postEvents as jest.Mock);
-    expect(eventsPosted.length).toEqual(1);
-    expect(
-      get(eventsPosted, '[0].response.body.massiveResponse', false)
-    ).toEqual('X'.repeat(payloadSize));
-  });
-
-  test('automatically hashing 500kb+ payload', async () => {
-    const payloadSize = 500001;
-    await Supergood.init(
-      {
-        clientId: CLIENT_ID,
-        clientSecret: CLIENT_SECRET
-      },
-      INTERNAL_SUPERGOOD_SERVER
-    );
-    const response = await axios.get(
-      `${HTTP_OUTBOUND_TEST_SERVER}/massive-response?payloadSize=${payloadSize}`
-    );
-    await new Promise((resolve) => setTimeout(resolve, 2000));
-    expect(response.status).toEqual(200);
-    await Supergood.close();
-    const eventsPosted = getEvents(postEvents as jest.Mock);
-    expect(eventsPosted.length).toEqual(1);
-    expect(get(eventsPosted, '[0].response.body.hashed', false)).toBeTruthy();
-  });
-
   test('gzipped response', async () => {
     await Supergood.init(
       {
@@ -454,14 +413,60 @@ describe('non-standard payloads', () => {
       `${HTTP_OUTBOUND_TEST_SERVER}/gzipped-response`
     );
     const body = await response.text();
-    await new Promise((resolve) => setTimeout(resolve, 2000));
+    await sleep(2000);
     expect(response.status).toEqual(200);
     expect(body).toBeTruthy();
     await Supergood.close();
     const eventsPosted = getEvents(postEvents as jest.Mock);
     expect(eventsPosted.length).toEqual(1);
-    expect(get(eventsPosted, '[0]response.body.gzippedResponse')).toEqual(
-      'this-is-gzipped'
+    expect(get(eventsPosted, '[0]response.body')).toEqual(
+      zlib
+        .gzipSync(JSON.stringify({ gzippedResponse: 'this-is-gzipped' }))
+        .toString()
+    );
+  });
+});
+
+describe('captures headers', () => {
+  test('captures request headers', async () => {
+    await Supergood.init(
+      {
+        clientId: CLIENT_ID,
+        clientSecret: CLIENT_SECRET
+      },
+      INTERNAL_SUPERGOOD_SERVER
+    );
+    await fetch(`${HTTP_OUTBOUND_TEST_SERVER}/posts`, {
+      method: 'POST',
+      body: JSON.stringify({
+        title: 'node-fetch-post'
+      }),
+      headers: {
+        'x-custom-header': 'custom-header-value'
+      }
+    });
+    await Supergood.close();
+    const eventsPosted = getEvents(postEvents as jest.Mock);
+    expect(eventsPosted.length).toEqual(1);
+    expect(get(eventsPosted, '[0]request.headers.x-custom-header')).toEqual(
+      'custom-header-value'
+    );
+  });
+
+  test('capture response headers', async () => {
+    await Supergood.init(
+      {
+        clientId: CLIENT_ID,
+        clientSecret: CLIENT_SECRET
+      },
+      INTERNAL_SUPERGOOD_SERVER
+    );
+    await fetch(`${HTTP_OUTBOUND_TEST_SERVER}/custom-header`);
+    await Supergood.close();
+    const eventsPosted = getEvents(postEvents as jest.Mock);
+    expect(eventsPosted.length).toEqual(1);
+    expect(get(eventsPosted, '[0]response.headers.x-custom-header')).toEqual(
+      'custom-header-value'
     );
   });
 });

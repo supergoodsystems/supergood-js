@@ -45,6 +45,11 @@ const initialize = async (): Promise<http.Server> => {
     res.status(200).send(payload);
   });
 
+  server.get('/custom-header', async (req, res) => {
+    res.set('X-Custom-Header', 'custom-header-value');
+    res.status(200).jsonp({ success: 'ok' });
+  });
+
   server.use(router);
   return server.listen(HTTP_OUTBOUND_TEST_SERVER_PORT, () => {
     console.log(`JSON Server is running on ${HTTP_OUTBOUND_TEST_SERVER_PORT}`);

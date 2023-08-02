@@ -1,5 +1,5 @@
-import { IsomorphicRequest, IsomorphicResponse } from '@mswjs/interceptors';
-import { Headers } from 'headers-polyfill';
+import { InteractiveRequest } from '@mswjs/interceptors/src/utils/toInteractiveRequest';
+import { Response } from 'node-fetch';
 
 interface HeaderOptionType {
   headers: {
@@ -12,7 +12,7 @@ type BodyType = Record<string, string>;
 
 interface RequestType {
   id: string;
-  headers: Headers;
+  headers: Record<string, string>;
   method: string;
   url: string;
   path: string;
@@ -22,7 +22,7 @@ interface RequestType {
 }
 
 interface ResponseType {
-  headers: Headers;
+  headers: Record<string, string>;
   status: number;
   statusText: string;
   body?: string | BodyType | [BodyType];
@@ -38,6 +38,7 @@ interface ConfigType {
   keysToHash: string[];
   eventSinkEndpoint: string; // Defaults to {baseUrl}/api/events if not provided
   errorSinkEndpoint: string; // Defaults to {baseUrl}/api/errors if not provided
+  waitAfterClose: number;
 }
 
 interface EventRequestType {
@@ -57,8 +58,11 @@ type ErrorPayloadType = {
 
 interface InfoPayloadType {
   config: ConfigType;
-  request?: IsomorphicRequest;
-  response?: IsomorphicResponse;
+  request?: Omit<InteractiveRequest, 'respondWith'>;
+  response?: Omit<
+    Response,
+    'buffer' | 'size' | 'textConverted' | 'timeout' | 'headers'
+  >;
   data?: EventRequestType[];
   packageName?: string;
   packageVersion?: string;

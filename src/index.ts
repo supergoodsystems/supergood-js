@@ -1,17 +1,17 @@
-import {
-  BatchInterceptor,
-  InteractiveIsomorphicRequest
-} from '@mswjs/interceptors';
+import { BatchInterceptor } from '@mswjs/interceptors';
 import NodeCache from 'node-cache';
 import {
   getHeaderOptions,
   logger,
   safeParseJson,
   prepareData,
-  shouldCachePayload
+  shouldCachePayload,
+  sleep
 } from './utils';
 import { postEvents } from './api';
-import nodeInterceptors from '@mswjs/interceptors/lib/presets/node';
+import { ClientRequestInterceptor } from '@mswjs/interceptors/ClientRequest';
+import { XMLHttpRequestInterceptor } from '@mswjs/interceptors/XMLHttpRequest';
+import { FetchInterceptor } from '@mswjs/interceptors/fetch';
 import {
   HeaderOptionType,
   EventRequestType,
@@ -30,7 +30,11 @@ import onExit from 'signal-exit';
 
 const interceptor = new BatchInterceptor({
   name: 'supergood-interceptor',
-  interceptors: nodeInterceptors
+  interceptors: [
+    new ClientRequestInterceptor(),
+    new XMLHttpRequestInterceptor(),
+    new FetchInterceptor()
+  ]
 });
 
 const Supergood = () => {
@@ -87,23 +91,26 @@ const Supergood = () => {
     log = logger({ errorSinkUrl, headerOptions });
 
     interceptor.apply();
-    interceptor.on('request', async (request: InteractiveIsomorphicRequest) => {
+    interceptor.on('request', async ({ request, requestId }) => {
       try {
+        const url = new URL(request.url);
         // Meant for debug and testing purposes
-        if (request.url.pathname === TestErrorPath) {
+        if (url.pathname === TestErrorPath) {
           throw new Error(errors.TEST_ERROR);
         }
+
         const body = await request.clone().text();
         const requestData = {
-          id: request.id,
-          headers: request.headers,
+          id: requestId,
+          headers: Object.fromEntries(request.headers.entries()),
           method: request.method,
-          url: request.url.href,
-          path: request.url.pathname,
-          search: request.url.search,
+          url: url.href,
+          path: url.pathname,
+          search: url.search,
           body: safeParseJson(body),
           requestedAt: new Date()
-        };
+        } as RequestType;
+
         cacheRequest(requestData, baseUrl);
       } catch (e) {
         log.error(
@@ -117,28 +124,29 @@ const Supergood = () => {
       }
     });
 
-    interceptor.on('response', async (request, response) => {
+    interceptor.on('response', async ({ request, requestId, response }) => {
       try {
-        const requestData = requestCache.get(request.id) as {
+        const requestData = requestCache.get(requestId) as {
           request: RequestType;
         };
         if (requestData) {
+          const body = await response.clone().text();
           const responseData = {
             response: {
-              headers: response.headers,
+              headers: Object.fromEntries(response.headers.entries()),
               status: response.status,
               statusText: response.statusText,
-              body: response.body && safeParseJson(response.body),
+              body: response.body && safeParseJson(body),
               respondedAt: new Date()
             },
             ...requestData
-          };
+          } as EventRequestType;
           cacheResponse(responseData, baseUrl);
         }
       } catch (e) {
         log.error(
           errors.CACHING_RESPONSE,
-          { request, response, config: supergoodConfig },
+          { request, config: supergoodConfig },
           e as Error
         );
       }
@@ -241,26 +249,21 @@ const Supergood = () => {
   };
 
   // Stops the interval and disposes of the interceptor
-  const close = (force = true) => {
+  const close = async (force = true) => {
     clearInterval(interval);
+
+    // If there are hanging requests, wait a second
+    if (requestCache.keys().length > 0) {
+      await sleep(supergoodConfig.waitAfterClose);
+    }
+
     interceptor.dispose();
-    return flushCache({ force });
-  };
-
-  // If program ends abruptly, it'll send out
-  // whatever logs it already collected.
-
-  const cleanup = async () => {
-    log.debug('Cleaning up, flushing cache gracefully.');
-    clearInterval(interval);
-    interceptor.dispose();
-    await flushCache({ force: true });
-
+    await flushCache({ force });
     return false;
   };
 
   // Set up cleanup catch for exit signals
-  onExit(() => cleanup(), { alwaysLast: true });
+  onExit(() => close(), { alwaysLast: true });
   return { close, flushCache, init };
 };
 
