@@ -184,6 +184,10 @@ const shouldCachePayload = (
   return true;
 };
 
+const sleep = (ms: number) => {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+};
+
 export {
   getHeaderOptions,
   hashValue,
@@ -191,5 +195,6 @@ export {
   logger,
   safeParseJson,
   prepareData,
-  shouldCachePayload
+  shouldCachePayload,
+  sleep
 };
