@@ -99,7 +99,7 @@ const Supergood = () => {
           throw new Error(errors.TEST_ERROR);
         }
 
-        const body = await request.text();
+        const body = await request.clone().text();
         const requestData = {
           id: requestId,
           headers: request.headers,
