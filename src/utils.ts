@@ -62,6 +62,11 @@ const logger = ({
           payload ?? JSON.stringify(payload, null, 2)
         );
       }
+    },
+    sample: (method: string, href: string) => {
+      if (process.env.SUPERGOOD_LOG_LEVEL === 'sample') {
+        console.log(`[Supergood] ${method} ${href}`);
+      }
     }
   };
 };

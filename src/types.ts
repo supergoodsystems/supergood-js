@@ -77,6 +77,7 @@ interface LoggerType {
   ) => void;
   info: (message: string, payload?: InfoPayloadType) => void;
   debug: (message: string, payload?: any) => void;
+  sample: (method: string, href: string) => void;
 }
 
 export type {

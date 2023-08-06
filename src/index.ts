@@ -101,6 +101,8 @@ const Supergood = () => {
           throw new Error(errors.TEST_ERROR);
         }
 
+        log.sample(request.method, url.href);
+
         const body = await request.clone().text();
         const requestData = {
           id: requestId,
@@ -185,7 +187,6 @@ const Supergood = () => {
 
   // Force flush cache means don't wait for responses
   const flushCache = async ({ force } = { force: false }) => {
-    log.debug('Flushing Cache ...', { force });
     const responseCacheKeys = responseCache.keys();
     const requestCacheKeys = requestCache.keys();
 
@@ -206,7 +207,6 @@ const Supergood = () => {
     }
 
     if (data.length === 0) {
-      log.debug('Nothing to flush', { force });
       return;
     }
 
