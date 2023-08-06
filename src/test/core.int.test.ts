@@ -8,10 +8,12 @@ import {
   test,
   jest,
   describe,
-  xdescribe,
   beforeAll,
-  beforeEach
+  beforeEach,
+  xtest
 } from '@jest/globals';
+import { request } from 'undici';
+
 import { ErrorPayloadType, EventRequestType } from '../types';
 import initialDB from './initial-db';
 import http from 'http';
@@ -394,6 +396,29 @@ describe('testing various endpoints and libraries basic functionality', () => {
     const responseJson = await response.json();
     expect(response.status).toEqual(201);
     expect(responseJson.id).toBeTruthy();
+    await Supergood.close();
+    const eventsPosted = getEvents(postEvents as jest.Mock);
+    expect(eventsPosted.length).toEqual(1);
+  });
+
+  // Not yet supported
+  xtest('undici get', async () => {
+    const response = await request(`${HTTP_OUTBOUND_TEST_SERVER}/posts`);
+    expect(response.statusCode).toEqual(200);
+    await Supergood.close();
+    const eventsPosted = getEvents(postEvents as jest.Mock);
+    expect(eventsPosted.length).toEqual(1);
+  });
+
+  // Not yet supported
+  xtest('undici post', async () => {
+    const response = await request(`${HTTP_OUTBOUND_TEST_SERVER}/posts`, {
+      method: 'POST',
+      body: JSON.stringify({
+        title: 'undici-post'
+      })
+    });
+    expect(response.statusCode).toEqual(201);
     await Supergood.close();
     const eventsPosted = getEvents(postEvents as jest.Mock);
     expect(eventsPosted.length).toEqual(1);
