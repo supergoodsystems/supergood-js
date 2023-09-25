@@ -1,7 +1,7 @@
 const defaultConfig = {
   flushInterval: 1000,
-  eventSinkEndpoint: '/api/events',
-  errorSinkEndpoint: '/api/errors',
+  eventSinkEndpoint: '/events',
+  errorSinkEndpoint: '/errors',
   keysToHash: [],
   ignoredDomains: [],
   allowedDomains: [],
@@ -27,7 +27,7 @@ const errors = {
     'No Client Secret Provided, set SUPERGOOD_CLIENT_SECRET or pass it as an argument'
 };
 
-const TestErrorPath = '/api/supergood-test-error';
+const TestErrorPath = '/supergood-test-error';
 const LocalClientId = 'local-client-id';
 const LocalClientSecret = 'local-client-secret';
 

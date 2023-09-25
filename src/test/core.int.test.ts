@@ -44,8 +44,8 @@ const INTERNAL_SUPERGOOD_SERVER = `http://localhost:${SUPERGOOD_SERVER_PORT}`;
 const defaultConfig = {
   flushInterval: 30000,
   cacheTtl: 0,
-  eventSinkEndpoint: `/api/events`,
-  errorSinkEndpoint: `/api/errors`,
+  eventSinkEndpoint: `/events`,
+  errorSinkEndpoint: `/errors`,
   keysToHash: ['request.body', 'response.body'],
   ignoredDomains: []
 };

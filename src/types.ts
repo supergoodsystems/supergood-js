@@ -36,8 +36,8 @@ interface ConfigType {
   allowedDomains: string[];
   cacheTtl: number;
   keysToHash: string[];
-  eventSinkEndpoint: string; // Defaults to {baseUrl}/api/events if not provided
-  errorSinkEndpoint: string; // Defaults to {baseUrl}/api/errors if not provided
+  eventSinkEndpoint: string; // Defaults to {baseUrl}/events if not provided
+  errorSinkEndpoint: string; // Defaults to {baseUrl}/errors if not provided
   waitAfterClose: number;
 }
 
