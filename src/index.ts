@@ -1,4 +1,4 @@
-import { BatchInterceptor } from '@mswjs/interceptors';
+import { BatchInterceptor, IsomorphicRequest } from '@mswjs/interceptors';
 import NodeCache from 'node-cache';
 import {
   getHeaderOptions,
@@ -10,9 +10,10 @@ import {
 } from './utils';
 import { postEvents } from './api';
 
-import { ClientRequestInterceptor } from '@mswjs/interceptors/ClientRequest';
-import { XMLHttpRequestInterceptor } from '@mswjs/interceptors/XMLHttpRequest';
-import { FetchInterceptor } from '@mswjs/interceptors/fetch';
+import nodeInterceptors from '@mswjs/interceptors/lib/presets/node';
+// import { ClientRequestInterceptor } from '@mswjs/interceptors/src/interceptors/ClientRequest';
+// import { XMLHttpRequestInterceptor } from '@mswjs/interceptors/src/interceptors/XMLHttpRequest';
+// import { FetchInterceptor } from '@mswjs/interceptors/src/interceptors/fetch';
 
 import {
   HeaderOptionType,
@@ -32,11 +33,14 @@ import onExit from 'signal-exit';
 
 const interceptor = new BatchInterceptor({
   name: 'supergood-interceptor',
-  interceptors: [
+  interceptors: nodeInterceptors /* [
+    // @ts-ignore
     new ClientRequestInterceptor(),
+    // @ts-ignore
     new XMLHttpRequestInterceptor(),
+    // @ts-ignore
     new FetchInterceptor()
-  ]
+  ] */
 });
 
 const Supergood = () => {
@@ -93,7 +97,8 @@ const Supergood = () => {
     log = logger({ errorSinkUrl, headerOptions });
 
     interceptor.apply();
-    interceptor.on('request', async ({ request, requestId }) => {
+    interceptor.on('request', async (request: IsomorphicRequest) => {
+      const requestId = request.id;
       try {
         const url = new URL(request.url);
         // Meant for debug and testing purposes
@@ -126,19 +131,19 @@ const Supergood = () => {
       }
     });
 
-    interceptor.on('response', async ({ request, requestId, response }) => {
+    interceptor.on('response', async (request, response) => {
+      const requestId = request.id;
       try {
         const requestData = requestCache.get(requestId) as {
           request: RequestType;
         };
         if (requestData) {
-          const body = await response.clone().text();
           const responseData = {
             response: {
               headers: Object.fromEntries(response.headers.entries()),
               status: response.status,
               statusText: response.statusText,
-              body: response.body && safeParseJson(body),
+              body: response.body && safeParseJson(response.body),
               respondedAt: new Date()
             },
             ...requestData

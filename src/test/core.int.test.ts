@@ -26,7 +26,6 @@ import superagent from 'superagent';
 import axios from 'axios';
 import fetch from 'node-fetch';
 import { sleep } from '../utils';
-import zlib from 'zlib';
 
 const base64Regex =
   /^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/;
@@ -393,7 +392,7 @@ describe('testing various endpoints and libraries basic functionality', () => {
         title: 'node-fetch-post'
       })
     });
-    const responseJson = await response.json();
+    const responseJson = (await response.json()) as Response & { id: string };
     expect(response.status).toEqual(201);
     expect(responseJson.id).toBeTruthy();
     await Supergood.close();
@@ -444,11 +443,9 @@ describe('non-standard payloads', () => {
     await Supergood.close();
     const eventsPosted = getEvents(postEvents as jest.Mock);
     expect(eventsPosted.length).toEqual(1);
-    expect(get(eventsPosted, '[0]response.body')).toEqual(
-      zlib
-        .gzipSync(JSON.stringify({ gzippedResponse: 'this-is-gzipped' }))
-        .toString()
-    );
+    expect(get(eventsPosted, '[0]response.body')).toEqual({
+      gzippedResponse: 'this-is-gzipped'
+    });
   });
 });
 

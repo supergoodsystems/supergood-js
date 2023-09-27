@@ -1,4 +1,4 @@
-import { InteractiveRequest } from '@mswjs/interceptors/src/utils/toInteractiveRequest';
+import { InteractiveIsomorphicRequest } from '@mswjs/interceptors';
 import { Response } from 'node-fetch';
 
 interface HeaderOptionType {
@@ -58,7 +58,7 @@ type ErrorPayloadType = {
 
 interface InfoPayloadType {
   config: ConfigType;
-  request?: Omit<InteractiveRequest, 'respondWith'>;
+  request?: Omit<InteractiveIsomorphicRequest, 'respondWith'>;
   response?: Omit<
     Response,
     'buffer' | 'size' | 'textConverted' | 'timeout' | 'headers'
