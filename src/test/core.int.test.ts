@@ -10,10 +10,11 @@ import {
   describe,
   beforeAll,
   beforeEach,
-  xtest
+  xtest,
+  xdescribe
 } from '@jest/globals';
 import { request } from 'undici';
-
+import OpenAI from 'openai';
 import { ErrorPayloadType, EventRequestType } from '../types';
 import initialDB from './initial-db';
 import http from 'http';
@@ -506,5 +507,34 @@ describe('local client id and secret', () => {
     await axios.get(`${HTTP_OUTBOUND_TEST_SERVER}/posts`);
     expect(postEvents).toBeCalledTimes(0);
     await Supergood.close();
+  });
+});
+
+xdescribe('testing openAI', () => {
+  test('simple chat completion call being logged', async () => {
+    await Supergood.init(
+      {
+        clientId: CLIENT_ID,
+        clientSecret: CLIENT_SECRET
+      },
+      INTERNAL_SUPERGOOD_SERVER
+    );
+    const openAi = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+    await openAi.chat.completions.create({
+      messages: [
+        {
+          role: 'user',
+          content: 'Come up with a name for a new fintech company'
+        }
+      ],
+      model: 'gpt-3.5-turbo-0613'
+    });
+    await Supergood.close();
+    const eventsPosted = getEvents(postEvents as jest.Mock)[0];
+    const content = (get(
+      eventsPosted,
+      'response.body.choices[0].message.content'
+    ) || '') as string;
+    expect(content.length).toBeGreaterThan(1);
   });
 });
