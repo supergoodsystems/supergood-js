@@ -512,6 +512,8 @@ describe('local client id and secret', () => {
 
 xdescribe('testing openAI', () => {
   test('simple chat completion call being logged', async () => {
+    /* eslint-disable-next-line @typescript-eslint/no-var-requires */
+    const OpenAI = require('openai');
     await Supergood.init(
       {
         clientId: CLIENT_ID,
