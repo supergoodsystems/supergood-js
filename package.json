@@ -15,7 +15,7 @@
   "author": "Alex Klarfeld",
   "license": "ISC",
   "dependencies": {
-    "@mswjs/interceptors": "^0.23.0",
+    "@mswjs/interceptors": "0.17.6",
     "@types/lodash.get": "^4.4.7",
     "@types/lodash.set": "^4.3.7",
     "@types/node-cleanup": "^2.1.2",
@@ -44,7 +44,8 @@
     "got": "^12.5.3",
     "jest": "^29.2.1",
     "json-server": "^0.17.0",
-    "node-fetch": "^2.6.7",
+    "node-fetch": "2",
+    "openai": "^4.10.0",
     "postgres": "^3.3.4",
     "prettier": "^2.8.1",
     "source-map-loader": "^4.0.1",

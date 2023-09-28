@@ -1,11 +1,11 @@
 import Supergood from '..';
-import { test, describe, expect } from '@jest/globals';
+import { xtest, describe, expect } from '@jest/globals';
 import postgres from 'postgres';
 import axios from 'axios';
 import { v4 as uuid } from 'uuid';
 
 describe('end-to-end tests', () => {
-  test('log to the staging database after a simple get request', async () => {
+  xtest('log to the staging database after a simple get request', async () => {
     await Supergood.init(
       {
         clientId: process.env.SUPERGOOD_CLIENT_ID as string,

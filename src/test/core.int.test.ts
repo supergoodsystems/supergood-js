@@ -10,10 +10,11 @@ import {
   describe,
   beforeAll,
   beforeEach,
-  xtest
+  xtest,
+  xdescribe
 } from '@jest/globals';
 import { request } from 'undici';
-
+import OpenAI from 'openai';
 import { ErrorPayloadType, EventRequestType } from '../types';
 import initialDB from './initial-db';
 import http from 'http';
@@ -26,7 +27,6 @@ import superagent from 'superagent';
 import axios from 'axios';
 import fetch from 'node-fetch';
 import { sleep } from '../utils';
-import zlib from 'zlib';
 
 const base64Regex =
   /^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/;
@@ -393,7 +393,7 @@ describe('testing various endpoints and libraries basic functionality', () => {
         title: 'node-fetch-post'
       })
     });
-    const responseJson = await response.json();
+    const responseJson = (await response.json()) as Response & { id: string };
     expect(response.status).toEqual(201);
     expect(responseJson.id).toBeTruthy();
     await Supergood.close();
@@ -444,11 +444,9 @@ describe('non-standard payloads', () => {
     await Supergood.close();
     const eventsPosted = getEvents(postEvents as jest.Mock);
     expect(eventsPosted.length).toEqual(1);
-    expect(get(eventsPosted, '[0]response.body')).toEqual(
-      zlib
-        .gzipSync(JSON.stringify({ gzippedResponse: 'this-is-gzipped' }))
-        .toString()
-    );
+    expect(get(eventsPosted, '[0]response.body')).toEqual({
+      gzippedResponse: 'this-is-gzipped'
+    });
   });
 });
 
@@ -509,5 +507,36 @@ describe('local client id and secret', () => {
     await axios.get(`${HTTP_OUTBOUND_TEST_SERVER}/posts`);
     expect(postEvents).toBeCalledTimes(0);
     await Supergood.close();
+  });
+});
+
+xdescribe('testing openAI', () => {
+  test('simple chat completion call being logged', async () => {
+    /* eslint-disable-next-line @typescript-eslint/no-var-requires */
+    const OpenAI = require('openai');
+    await Supergood.init(
+      {
+        clientId: CLIENT_ID,
+        clientSecret: CLIENT_SECRET
+      },
+      INTERNAL_SUPERGOOD_SERVER
+    );
+    const openAi = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+    await openAi.chat.completions.create({
+      messages: [
+        {
+          role: 'user',
+          content: 'Come up with a name for a new fintech company'
+        }
+      ],
+      model: 'gpt-3.5-turbo-0613'
+    });
+    await Supergood.close();
+    const eventsPosted = getEvents(postEvents as jest.Mock)[0];
+    const content = (get(
+      eventsPosted,
+      'response.body.choices[0].message.content'
+    ) || '') as string;
+    expect(content.length).toBeGreaterThan(1);
   });
 });
