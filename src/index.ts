@@ -83,6 +83,9 @@ const Supergood = () => {
       stdTTL: 0
     });
 
+    errorSinkUrl = `${baseUrl}${supergoodConfig.errorSinkEndpoint}`;
+    eventSinkUrl = `${baseUrl}${supergoodConfig.eventSinkEndpoint}`;
+
     headerOptions = getHeaderOptions(clientId, clientSecret);
     log = logger({ errorSinkUrl, headerOptions });
 
@@ -148,9 +151,6 @@ const Supergood = () => {
         );
       }
     });
-
-    errorSinkUrl = `${baseUrl}${supergoodConfig.errorSinkEndpoint}`;
-    eventSinkUrl = `${baseUrl}${supergoodConfig.eventSinkEndpoint}`;
 
     // Flushes the cache every <flushInterval> milliseconds
     interval = setInterval(flushCache, supergoodConfig.flushInterval);

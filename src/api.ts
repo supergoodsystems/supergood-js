@@ -1,5 +1,5 @@
 import { HeaderOptionType, EventRequestType, ErrorPayloadType } from './types';
-import { errors } from './constants';
+import { post } from './utils';
 
 const postError = async (
   errorSinkUrl: string,
@@ -7,13 +7,12 @@ const postError = async (
   options: HeaderOptionType
 ) => {
   try {
-    const response = await fetch(errorSinkUrl, {
-      method: 'POST',
-      body: JSON.stringify(errorPayload),
-      headers: options.headers
-    });
-    const data = await response.json();
-    return data;
+    const response = await post(
+      errorSinkUrl,
+      errorPayload,
+      options.headers.Authorization
+    );
+    return response;
   } catch (e) {
     console.warn(`Failed to report error to ${errorSinkUrl}`);
     return null;
@@ -25,20 +24,13 @@ const postEvents = async (
   data: Array<EventRequestType>,
   options: HeaderOptionType
 ) => {
-  const response = await fetch(eventSinkUrl, {
-    method: 'POST',
-    body: JSON.stringify(data),
-    headers: options.headers
-  });
-  const responseData = await response.json();
+  const response = await post(
+    eventSinkUrl,
+    data,
+    options.headers.Authorization
+  );
 
-  if (response.status === 401) {
-    throw new Error(errors.UNAUTHORIZED);
-  }
-  if (!response.ok) {
-    throw new Error(errors.POSTING_EVENTS);
-  }
-  return responseData;
+  return response;
 };
 
 export { postError, postEvents };
