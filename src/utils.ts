@@ -38,6 +38,7 @@ const logger = ({
         JSON.stringify(payload, null, 2),
         error
       );
+      console.log({ reportOut, errorSinkUrl });
       if (reportOut && errorSinkUrl) {
         postError(
           errorSinkUrl,
