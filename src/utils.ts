@@ -7,7 +7,7 @@ import {
   ConfigType,
   ErrorPayloadType
 } from './types';
-import crypto from 'crypto';
+import crypto from 'node:crypto';
 import { postError } from './api';
 import { name, version } from '../package.json';
 import https from 'https';
