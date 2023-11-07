@@ -14,7 +14,6 @@ import {
   xdescribe
 } from '@jest/globals';
 import { request } from 'undici';
-import OpenAI from 'openai';
 import { ErrorPayloadType, EventRequestType } from '../types';
 import initialDB from './initial-db';
 import http from 'http';
@@ -513,6 +512,7 @@ describe('local client id and secret', () => {
 xdescribe('testing openAI', () => {
   test('simple chat completion call being logged', async () => {
     /* eslint-disable-next-line @typescript-eslint/no-var-requires */
+    const OpenAI = require('openai');
     await Supergood.init(
       {
         clientId: CLIENT_ID,
