@@ -14,7 +14,6 @@ import {
   xdescribe
 } from '@jest/globals';
 import { request } from 'undici';
-import OpenAI from 'openai';
 import { ErrorPayloadType, EventRequestType } from '../types';
 import initialDB from './initial-db';
 import http from 'http';
