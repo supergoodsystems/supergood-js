@@ -1,11 +1,10 @@
 import Supergood from '../src';
-import { xtest, describe, expect } from '@jest/globals';
 import postgres from 'postgres';
 import axios from 'axios';
 import crypto from 'node:crypto';
 
 describe('end-to-end tests', () => {
-  xtest('log to the staging database after a simple get request', async () => {
+  test('log to the staging database after a simple get request', async () => {
     await Supergood.init(
       {
         clientId: process.env.SUPERGOOD_CLIENT_ID as string,

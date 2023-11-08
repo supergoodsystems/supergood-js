@@ -2,17 +2,6 @@ import Supergood from '../src';
 import { postEvents, postError } from '../src/api';
 import { initialize } from './json-server-config';
 import { errors } from '../src/constants';
-import {
-  afterAll,
-  expect,
-  test,
-  jest,
-  describe,
-  beforeAll,
-  beforeEach,
-  xtest,
-  xdescribe
-} from '@jest/globals';
 import { request } from 'undici';
 import { ErrorPayloadType, EventRequestType } from '../src/types';
 import initialDB from './initial-db';
