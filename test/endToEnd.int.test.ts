@@ -1,4 +1,4 @@
-import Supergood from '..';
+import Supergood from '../src';
 import { xtest, describe, expect } from '@jest/globals';
 import postgres from 'postgres';
 import axios from 'axios';

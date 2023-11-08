@@ -1,7 +1,7 @@
-import Supergood from '..';
-import { postEvents, postError } from '../api';
+import Supergood from '../src';
+import { postEvents, postError } from '../src/api';
 import { initialize } from './json-server-config';
-import { errors } from '../constants';
+import { errors } from '../src/constants';
 import {
   afterAll,
   expect,
@@ -14,7 +14,7 @@ import {
   xdescribe
 } from '@jest/globals';
 import { request } from 'undici';
-import { ErrorPayloadType, EventRequestType } from '../types';
+import { ErrorPayloadType, EventRequestType } from '../src/types';
 import initialDB from './initial-db';
 import http from 'http';
 import fs from 'fs';
@@ -25,7 +25,7 @@ import get from 'lodash.get';
 import superagent from 'superagent';
 import axios from 'axios';
 import fetch from 'node-fetch';
-import { sleep } from '../utils';
+import { sleep } from '../src/utils';
 
 const base64Regex =
   /^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/;
@@ -84,7 +84,7 @@ const getErrors = (mockedPostError: jest.Mock): ErrorPayloadType => {
   )[1] as ErrorPayloadType;
 };
 
-jest.mock('../api', () => ({
+jest.mock('../src/api', () => ({
   postEvents: jest.fn(async (eventSinkUrl, data) => ({ data })),
   postError: jest.fn(async (errorSinkUrl, payload) => ({
     payload
