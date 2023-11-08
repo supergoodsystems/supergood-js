@@ -28,7 +28,6 @@
     "@types/lodash.set": "^4.3.7",
     "@types/signal-exit": "^3.0.1",
     "@types/superagent": "^4.1.16",
-    "@types/uuid": "^9.0.1",
     "@typescript-eslint/eslint-plugin": "^5.49.0",
     "@typescript-eslint/parser": "^5.49.0",
     "axios": "^1.4.0",
@@ -45,8 +44,7 @@
     "superagent": "^8.0.9",
     "ts-jest": "^29.0.5",
     "typescript": "^4.9.4",
-    "undici": "^5.23.0",
-    "uuid": "^9.0.0"
+    "undici": "^5.23.0"
   },
   "bugs": {
     "url": "https://github.com/supergoodsystems/supergood-js/issues"

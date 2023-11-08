@@ -2,7 +2,7 @@ import Supergood from '..';
 import { xtest, describe, expect } from '@jest/globals';
 import postgres from 'postgres';
 import axios from 'axios';
-import { v4 as uuid } from 'uuid';
+import crypto from 'node:crypto';
 
 describe('end-to-end tests', () => {
   xtest('log to the staging database after a simple get request', async () => {
@@ -13,7 +13,7 @@ describe('end-to-end tests', () => {
       },
       process.env.SUPERGOOD_BASE_URL
     );
-    const queryId = `?id=${uuid()}`;
+    const queryId = `?id=${crypto.randomUUID()}`;
     const organizationId = process.env.SUPERGOOD_ORGANIZATION_ID as string;
     await axios.get(`https://supergood-testbed.herokuapp.com/200${queryId}`);
     await Supergood.close();
