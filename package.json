@@ -8,7 +8,7 @@
   "types": "build/src/index.d.ts",
   "version": "1.1.41",
   "scripts": {
-    "test": "yarn run clean && tsc && NODE_ENV=test jest --setupFiles dotenv/config",
+    "test": "NODE_ENV=test jest --setupFiles dotenv/config",
     "clean": "rm -rf build/ && rm -rf supergood-*.log",
     "build": "yarn run clean && tsc"
   },
@@ -26,13 +26,12 @@
     "signal-exit": "^3.0.7"
   },
   "devDependencies": {
-    "@jest/globals": "^29.4.1",
+    "@types/jest": "^29.5.8",
     "@types/json-server": "^0.14.4",
     "@types/lodash.get": "^4.4.7",
     "@types/lodash.set": "^4.3.7",
     "@types/signal-exit": "^3.0.1",
     "@types/superagent": "^4.1.16",
-    "@types/uuid": "^9.0.1",
     "@typescript-eslint/eslint-plugin": "^5.49.0",
     "@typescript-eslint/parser": "^5.49.0",
     "axios": "^1.4.0",
@@ -49,8 +48,7 @@
     "superagent": "^8.0.9",
     "ts-jest": "^29.0.5",
     "typescript": "^4.9.4",
-    "undici": "^5.23.0",
-    "uuid": "^9.0.0"
+    "undici": "^5.23.0"
   },
   "bugs": {
     "url": "https://github.com/supergoodsystems/supergood-js/issues"
