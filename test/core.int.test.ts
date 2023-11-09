@@ -1,19 +1,21 @@
-import Supergood from '../src';
-import { postEvents, postError } from '../src/api';
-import { initialize } from './json-server-config';
-import { errors } from '../src/constants';
-import { request } from 'undici';
-import { ErrorPayloadType, EventRequestType } from '../src/types';
-import initialDB from './initial-db';
 import http from 'http';
 import fs from 'fs';
 import path from 'path';
 import get from 'lodash.get';
 
 // HTTP libraries
+import { request } from 'undici';
 import superagent from 'superagent';
 import axios from 'axios';
 import fetch from 'node-fetch';
+
+import Supergood from '../src';
+import { postEvents, postError } from '../src/api';
+import { initialize } from './json-server-config';
+import { errors } from '../src/constants';
+import { ErrorPayloadType, EventRequestType } from '../src/types';
+import initialDB from './initial-db';
+
 import { sleep } from '../src/utils';
 
 const base64Regex =
@@ -40,32 +42,11 @@ const defaultConfig = {
 
 let server: http.Server;
 
-beforeAll(async () => {
-  fs.writeFileSync(
-    path.join(__dirname, 'db.json'),
-    JSON.stringify(initialDB, null, 2),
-    {
-      encoding: 'utf8',
-      flag: 'w'
-    }
+const getEvents = (mockedPostEvents: jest.Mock): Array<EventRequestType> => {
+  return Object.values(
+    mockedPostEvents.mock.calls.flat()[1] as EventRequestType
   );
-  server = await initialize();
-});
-
-afterAll(async () => {
-  server.close();
-  fs.writeFileSync(
-    path.join(__dirname, 'db.json'),
-    JSON.stringify(initialDB, null, 2),
-    {
-      encoding: 'utf8',
-      flag: 'w'
-    }
-  );
-});
-
-const getEvents = (mockedPostEvents: jest.Mock): Array<EventRequestType> =>
-  Object.values(mockedPostEvents.mock.calls.flat()[1] as EventRequestType);
+};
 
 const getErrors = (mockedPostError: jest.Mock): ErrorPayloadType => {
   return Object.values(
@@ -73,9 +54,30 @@ const getErrors = (mockedPostError: jest.Mock): ErrorPayloadType => {
   )[1] as ErrorPayloadType;
 };
 
+const resetDatabase = () => {
+  fs.writeFileSync(
+    path.join(__dirname, 'db.json'),
+    JSON.stringify(initialDB, null, 2),
+    {
+      encoding: 'utf8',
+      flag: 'w'
+    }
+  );
+};
+
+beforeAll(async () => {
+  resetDatabase();
+  server = await initialize();
+});
+
+afterAll(async () => {
+  server.close();
+  resetDatabase();
+});
+
 jest.mock('../src/api', () => ({
-  postEvents: jest.fn(async (eventSinkUrl, data) => ({ data })),
-  postError: jest.fn(async (errorSinkUrl, payload) => ({
+  postEvents: jest.fn(async (_, data) => ({ data })),
+  postError: jest.fn(async (_, payload) => ({
     payload
   }))
 }));
@@ -171,7 +173,7 @@ describe('testing failure states', () => {
     await axios.get(`${HTTP_OUTBOUND_TEST_SERVER}/posts`);
     await Supergood.close();
     const postedErrors = getErrors(postError as jest.Mock);
-    expect(postError as jest.Mock).toBeCalled();
+    expect(postError as jest.Mock).toHaveBeenCalled();
     expect(postedErrors.message).toEqual(errors.POSTING_EVENTS);
   });
 });
@@ -498,7 +500,7 @@ describe('local client id and secret', () => {
   });
 });
 
-xdescribe('testing openAI', () => {
+describe('testing openAI', () => {
   test('simple chat completion call being logged', async () => {
     /* eslint-disable-next-line @typescript-eslint/no-var-requires */
     const OpenAI = require('openai');
