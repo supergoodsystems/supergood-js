@@ -15,11 +15,15 @@
   },
   "homepage": "https://supergood.ai/",
   "files": [
-    "/dist"
+    "src"
   ],
   "publishConfig": {
     "access": "public",
     "registry": "https://registry.npmjs.org"
+  },
+  "engines": {
+    "node": ">=14",
+    "npm": ">=6.0.0"
   },
   "scripts": {
     "check:publish-ready": "yarn build && yarn test",
