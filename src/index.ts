@@ -91,64 +91,70 @@ const Supergood = () => {
 
     interceptor.apply();
     interceptor.on('request', async (request: IsomorphicRequest) => {
-      const requestId = request.id;
-      try {
-        const url = new URL(request.url);
-        // Meant for debug and testing purposes
-        if (url.pathname === TestErrorPath) {
-          throw new Error(errors.TEST_ERROR);
-        }
-
-        const body = await request.clone().text();
-        const requestData = {
-          id: requestId,
-          headers: Object.fromEntries(request.headers.entries()),
-          method: request.method,
-          url: url.href,
-          path: url.pathname,
-          search: url.search,
-          body: safeParseJson(body),
-          requestedAt: new Date()
-        } as RequestType;
-
-        cacheRequest(requestData, baseUrl);
-      } catch (e) {
-        log.error(
-          errors.CACHING_REQUEST,
-          { request, config: supergoodConfig },
-          e as Error,
-          {
-            reportOut: !localOnly
+      const url = new URL(request.url);
+      if (shouldCachePayload(url.href, baseUrl, supergoodConfig)) {
+        const requestId = request.id;
+        try {
+          const url = new URL(request.url);
+          // Meant for debug and testing purposes
+          if (url.pathname === TestErrorPath) {
+            throw new Error(errors.TEST_ERROR);
           }
-        );
+
+          const body = await request.clone().text();
+          const requestData = {
+            id: requestId,
+            headers: Object.fromEntries(request.headers.entries()),
+            method: request.method,
+            url: url.href,
+            path: url.pathname,
+            search: url.search,
+            body: safeParseJson(body),
+            requestedAt: new Date()
+          } as RequestType;
+
+          cacheRequest(requestData);
+        } catch (e) {
+          log.error(
+            errors.CACHING_REQUEST,
+            { request, config: supergoodConfig },
+            e as Error,
+            {
+              reportOut: !localOnly
+            }
+          );
+        }
       }
     });
 
     interceptor.on('response', async (request, response) => {
-      const requestId = request.id;
-      try {
-        const requestData = requestCache.get(requestId) as {
-          request: RequestType;
-        };
-        if (requestData) {
-          const responseData = {
-            response: {
-              headers: Object.fromEntries(response.headers.entries()),
-              status: response.status,
-              statusText: response.statusText,
-              body: response.body && safeParseJson(response.body),
-              respondedAt: new Date()
-            },
-            ...requestData
-          } as EventRequestType;
-          cacheResponse(responseData, baseUrl);
+      const url = new URL(request.url);
+      if (shouldCachePayload(url.href, baseUrl, supergoodConfig)) {
+        const requestId = request.id;
+        try {
+          const requestData = requestCache.get(requestId) as {
+            request: RequestType;
+          };
+          if (requestData) {
+            const responseData = {
+              response: {
+                headers: Object.fromEntries(response.headers.entries()),
+                status: response.status,
+                statusText: response.statusText,
+                body: response.body && safeParseJson(response.body),
+                respondedAt: new Date()
+              },
+              ...requestData
+            } as EventRequestType;
+            cacheResponse(responseData);
+          }
+        } catch (e) {
+          log.error(
+            errors.CACHING_RESPONSE,
+            { request, config: supergoodConfig },
+            e as Error
+          );
         }
-      } catch (e) {
-        log.error(
-          errors.CACHING_RESPONSE,
-          { request, config: supergoodConfig },
-          e as Error
-        );
       }
     });
 
@@ -157,25 +163,21 @@ const Supergood = () => {
     interval.unref();
   };
 
-  const cacheRequest = async (request: RequestType, baseUrl: string) => {
-    if (shouldCachePayload(request.url, baseUrl, supergoodConfig)) {
-      requestCache.set(request.id, { request });
-      log.debug('Setting Request Cache', {
-        request
-      });
-    }
+  const cacheRequest = async (request: RequestType) => {
+    requestCache.set(request.id, { request });
+    log.debug('Setting Request Cache', {
+      request
+    });
   };
 
-  const cacheResponse = async (event: EventRequestType, baseUrl: string) => {
-    if (shouldCachePayload(event.request.url, baseUrl, supergoodConfig)) {
-      responseCache.set(event.request.id, event);
-      log.debug('Setting Response Cache', {
-        id: event.request.id,
-        ...event
-      });
-      requestCache.del(event.request.id);
-      log.debug('Deleting Request Cache', { id: event.request.id });
-    }
+  const cacheResponse = async (event: EventRequestType) => {
+    responseCache.set(event.request.id, event);
+    log.debug('Setting Response Cache', {
+      id: event.request.id,
+      ...event
+    });
+    requestCache.del(event.request.id);
+    log.debug('Deleting Request Cache', { id: event.request.id });
   };
 
   // Force flush cache means don't wait for responses
