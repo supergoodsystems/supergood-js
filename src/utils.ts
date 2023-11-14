@@ -79,7 +79,9 @@ const getHeaderOptions = (
       'Content-Type': 'application/json',
       Authorization: `Basic ${Buffer.from(
         clientId + ':' + clientSecret
-      ).toString('base64')}`
+      ).toString('base64')}`,
+      'supergood-api-type': 'supergood-js',
+      'supergood-api-version': version
     }
   };
 };

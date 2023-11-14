@@ -5,6 +5,8 @@ interface HeaderOptionType {
   headers: {
     'Content-Type': string;
     Authorization: string;
+    'supergood-api-type': string;
+    'supergood-api-version': string;
   };
 }
 
