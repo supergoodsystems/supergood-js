@@ -15,7 +15,7 @@
   "author": "Alex Klarfeld",
   "license": "ISC",
   "dependencies": {
-    "@mswjs/interceptors": "0.17.6",
+    "@supergood/interceptors": "git+https://github.com/supergoodsystems/interceptors.git",
     "lodash.get": "^4.4.2",
     "lodash.set": "^4.3.2",
     "node-cache": "^5.1.2",

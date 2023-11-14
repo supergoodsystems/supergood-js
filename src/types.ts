@@ -1,4 +1,4 @@
-import { InteractiveIsomorphicRequest } from '@mswjs/interceptors';
+import { InteractiveIsomorphicRequest } from '@supergood/interceptors';
 import { Response } from 'node-fetch';
 
 interface HeaderOptionType {
