@@ -80,8 +80,6 @@ const getHeaderOptions = (
       Authorization: `Basic ${Buffer.from(
         clientId + ':' + clientSecret
       ).toString('base64')}`,
-      'supergood-api-type': 'supergood-js',
-      'supergood-api-version': version
     }
   };
 };
@@ -178,13 +176,16 @@ function post(
   authorization: string
 ): Promise<string> {
   const dataString = JSON.stringify(data);
+  const packageVersion = version;
 
   const options = {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       'Content-Length': dataString.length,
-      Authorization: authorization
+      Authorization: authorization,
+      'supergood-api-type': 'supergood-js',
+      'supergood-api-version': packageVersion
     },
     timeout: 5000 // in ms
   };
