@@ -184,7 +184,7 @@ function post(
       'Content-Type': 'application/json',
       'Content-Length': dataString.length,
       Authorization: authorization,
-      'supergood-api-type': 'supergood-js',
+      'supergood-api': 'supergood-js',
       'supergood-api-version': packageVersion
     },
     timeout: 5000 // in ms
