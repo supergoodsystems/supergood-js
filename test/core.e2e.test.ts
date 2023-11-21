@@ -1,6 +1,3 @@
-import http from 'http';
-import fs from 'fs';
-import path from 'path';
 import get from 'lodash.get';
 
 // HTTP libraries
@@ -11,10 +8,9 @@ import fetch from 'node-fetch';
 
 import Supergood from '../src';
 import * as api from '../src/api';
-import { initialize } from './json-server-config';
+import { setupMockServer, stopMockServer } from './mock-server';
 import { errors } from '../src/constants';
 import { ErrorPayloadType, EventRequestType } from '../src/types';
-import initialDB from './initial-db';
 
 import { sleep } from '../src/utils';
 
@@ -40,8 +36,6 @@ const defaultConfig = {
   ignoredDomains: []
 };
 
-let server: http.Server;
-
 const getEvents = (
   mockedPostEvents: jest.SpyInstance
 ): Array<EventRequestType> => {
@@ -56,25 +50,12 @@ const getErrors = (mockedPostError: jest.SpyInstance): ErrorPayloadType => {
   )[1] as ErrorPayloadType;
 };
 
-const resetDatabase = () => {
-  fs.writeFileSync(
-    path.join(__dirname, 'db.json'),
-    JSON.stringify(initialDB, null, 2),
-    {
-      encoding: 'utf8',
-      flag: 'w'
-    }
-  );
-};
-
-beforeAll(async () => {
-  resetDatabase();
-  server = await initialize();
+beforeAll(() => {
+  return setupMockServer();
 });
 
-afterAll(async () => {
-  server.close();
-  resetDatabase();
+afterAll(() => {
+  return stopMockServer();
 });
 
 const postEventsMock = jest
