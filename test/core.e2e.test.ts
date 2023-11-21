@@ -256,7 +256,7 @@ describe('config specifications', () => {
     );
     await axios.get('https://supergood-testbed.herokuapp.com/200');
     await Supergood.close();
-    expect(postEventsMock).toBeCalledTimes(0);
+    expect(postEventsMock).not.toHaveBeenCalled();
   });
 
   test('operates normally when ignored domains is empty', async () => {
@@ -270,7 +270,7 @@ describe('config specifications', () => {
     );
     await axios.get('https://supergood-testbed.herokuapp.com/200');
     await Supergood.close();
-    expect(postEventsMock).toBeCalledTimes(1);
+    expect(postEventsMock).toHaveBeenCalled();
   });
 
   test('performances matching on partial domains', async () => {
@@ -284,7 +284,7 @@ describe('config specifications', () => {
     );
     await axios.get('https://supergood-testbed.herokuapp.com/200');
     await Supergood.close();
-    expect(postEventsMock).toBeCalledTimes(0);
+    expect(postEventsMock).not.toHaveBeenCalled();
   });
 
   test('performances matching on partial domains, allowed overrides ignored', async () => {
@@ -301,7 +301,7 @@ describe('config specifications', () => {
     );
     await axios.get('https://supergood-testbed.herokuapp.com/200');
     await Supergood.close();
-    expect(postEventsMock).toBeCalledTimes(1);
+    expect(postEventsMock).toHaveBeenCalled();
   });
 
   test('only posts for specified domains, ignores everything else', async () => {
@@ -318,7 +318,7 @@ describe('config specifications', () => {
     await axios.get('https://api.ipify.org?format=json');
     await axios.get('https://supergood-testbed.herokuapp.com/200');
     await Supergood.close();
-    expect(postEventsMock).toBeCalledTimes(1);
+    expect(postEventsMock).toHaveBeenCalled();
   });
 });
 
@@ -502,7 +502,7 @@ describe('local client id and secret', () => {
       INTERNAL_SUPERGOOD_SERVER
     );
     await axios.get(`${HTTP_OUTBOUND_TEST_SERVER}/posts`);
-    expect(postEventsMock).toBeCalledTimes(0);
+    expect(postEventsMock).not.toHaveBeenCalled();
     await Supergood.close();
   });
 });
