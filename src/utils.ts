@@ -11,6 +11,7 @@ import crypto from 'node:crypto';
 import { postError } from './api';
 import { name, version } from '../package.json';
 import https from 'https';
+import http from 'http';
 import { errors } from './constants';
 
 import set from 'lodash.set';
@@ -191,7 +192,8 @@ function post(
   };
 
   return new Promise((resolve, reject) => {
-    const req = https.request(url, options, (res) => {
+    const transport = url.startsWith('https') ? https : http;
+    const req = transport.request(url, options, (res) => {
       if (res && res.statusCode) {
         if (res.statusCode === 401) {
           return reject(new Error(errors.UNAUTHORIZED));

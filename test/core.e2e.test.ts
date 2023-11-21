@@ -10,7 +10,7 @@ import axios from 'axios';
 import fetch from 'node-fetch';
 
 import Supergood from '../src';
-import { postEvents, postError } from '../src/api';
+import * as api from '../src/api';
 import { initialize } from './json-server-config';
 import { errors } from '../src/constants';
 import { ErrorPayloadType, EventRequestType } from '../src/types';
@@ -42,13 +42,15 @@ const defaultConfig = {
 
 let server: http.Server;
 
-const getEvents = (mockedPostEvents: jest.Mock): Array<EventRequestType> => {
+const getEvents = (
+  mockedPostEvents: jest.SpyInstance
+): Array<EventRequestType> => {
   return Object.values(
     mockedPostEvents.mock.calls.flat()[1] as EventRequestType
   );
 };
 
-const getErrors = (mockedPostError: jest.Mock): ErrorPayloadType => {
+const getErrors = (mockedPostError: jest.SpyInstance): ErrorPayloadType => {
   return Object.values(
     mockedPostError.mock.calls.flat()
   )[1] as ErrorPayloadType;
@@ -75,12 +77,17 @@ afterAll(async () => {
   resetDatabase();
 });
 
-jest.mock('../src/api', () => ({
-  postEvents: jest.fn(async (_, data) => ({ data })),
-  postError: jest.fn(async (_, payload) => ({
-    payload
-  }))
-}));
+const postEventsMock = jest
+  .spyOn(api, 'postEvents')
+  .mockImplementation(async (_, data) => ({ data } as any));
+const postErrorMock = jest
+  .spyOn(api, 'postError')
+  .mockImplementation(async (_, payload) => ({ payload } as any));
+
+afterEach(() => {
+  postEventsMock.mockClear();
+  postErrorMock.mockClear();
+});
 
 describe('testing success states', () => {
   test('captures all outgoing 200 http requests', async () => {
@@ -98,7 +105,7 @@ describe('testing success states', () => {
       await axios.get(`${HTTP_OUTBOUND_TEST_SERVER}/posts`);
     }
     await Supergood.close();
-    const eventsPosted = getEvents(postEvents as jest.Mock);
+    const eventsPosted = getEvents(postEventsMock);
     expect(eventsPosted.length).toEqual(numberOfHttpCalls);
     expect(
       eventsPosted.every((event) => event.request.requestedAt)
@@ -127,7 +134,7 @@ describe('testing success states', () => {
       }
     }
     await Supergood.close();
-    const eventsPosted = getEvents(postEvents as jest.Mock);
+    const eventsPosted = getEvents(postEventsMock);
     expect(eventsPosted.length).toEqual(httpErrorCodes.length);
     expect(
       eventsPosted.every((event) =>
@@ -150,7 +157,7 @@ describe('testing failure states', () => {
     axios.get(`${HTTP_OUTBOUND_TEST_SERVER}/200?sleep=2000`);
     await sleep(1000);
     await Supergood.close();
-    const eventsPosted = getEvents(postEvents as jest.Mock);
+    const eventsPosted = getEvents(postEventsMock);
     const firstEvent = eventsPosted[0];
     expect(eventsPosted.length).toEqual(1);
     expect(firstEvent.request.requestedAt).toBeTruthy();
@@ -159,7 +166,7 @@ describe('testing failure states', () => {
 
   // Causes the github actions to hang for some reason
   test.skip('posting errors', async () => {
-    (postEvents as jest.Mock).mockImplementation(() => {
+    postEventsMock.mockImplementation(() => {
       throw new Error();
     });
     await Supergood.init(
@@ -172,8 +179,8 @@ describe('testing failure states', () => {
     );
     await axios.get(`${HTTP_OUTBOUND_TEST_SERVER}/posts`);
     await Supergood.close();
-    const postedErrors = getErrors(postError as jest.Mock);
-    expect(postError as jest.Mock).toHaveBeenCalled();
+    const postedErrors = getErrors(postErrorMock);
+    expect(postErrorMock).toHaveBeenCalled();
     expect(postedErrors.message).toEqual(errors.POSTING_EVENTS);
   });
 });
@@ -192,7 +199,7 @@ describe('config specifications', () => {
     );
     await axios.get(`${HTTP_OUTBOUND_TEST_SERVER}/posts`);
     await Supergood.close();
-    const eventsPosted = getEvents(postEvents as jest.Mock);
+    const eventsPosted = getEvents(postEventsMock);
     const firstEvent = eventsPosted[0] as EventRequestType;
     const hashedBodyValue = get(firstEvent, ['response', 'body', '0']);
     expect(hashedBodyValue && hashedBodyValue.match(base64Regex)).toBeTruthy();
@@ -209,7 +216,7 @@ describe('config specifications', () => {
     );
     await axios.get(`${HTTP_OUTBOUND_TEST_SERVER}/posts`);
     await Supergood.close();
-    const eventsPosted = getEvents(postEvents as jest.Mock);
+    const eventsPosted = getEvents(postEventsMock);
     const firstEvent = eventsPosted[0] as EventRequestType;
     expect(
       typeof get(firstEvent, ['response', 'body']) === 'object'
@@ -230,7 +237,7 @@ describe('config specifications', () => {
     );
     await axios.get(`${HTTP_OUTBOUND_TEST_SERVER}/posts`);
     await Supergood.close();
-    const eventsPosted = getEvents(postEvents as jest.Mock);
+    const eventsPosted = getEvents(postEventsMock);
     const firstEvent = eventsPosted[0] as EventRequestType;
     expect(
       typeof get(firstEvent, ['response', 'body']) === 'object'
@@ -249,7 +256,7 @@ describe('config specifications', () => {
     );
     await axios.get('https://supergood-testbed.herokuapp.com/200');
     await Supergood.close();
-    expect(postEvents).toBeCalledTimes(0);
+    expect(postEventsMock).toBeCalledTimes(0);
   });
 
   test('operates normally when ignored domains is empty', async () => {
@@ -263,7 +270,7 @@ describe('config specifications', () => {
     );
     await axios.get('https://supergood-testbed.herokuapp.com/200');
     await Supergood.close();
-    expect(postEvents).toBeCalledTimes(1);
+    expect(postEventsMock).toBeCalledTimes(1);
   });
 
   test('performances matching on partial domains', async () => {
@@ -277,7 +284,7 @@ describe('config specifications', () => {
     );
     await axios.get('https://supergood-testbed.herokuapp.com/200');
     await Supergood.close();
-    expect(postEvents).toBeCalledTimes(0);
+    expect(postEventsMock).toBeCalledTimes(0);
   });
 
   test('performances matching on partial domains, allowed overrides ignored', async () => {
@@ -294,7 +301,7 @@ describe('config specifications', () => {
     );
     await axios.get('https://supergood-testbed.herokuapp.com/200');
     await Supergood.close();
-    expect(postEvents).toBeCalledTimes(1);
+    expect(postEventsMock).toBeCalledTimes(1);
   });
 
   test('only posts for specified domains, ignores everything else', async () => {
@@ -311,7 +318,7 @@ describe('config specifications', () => {
     await axios.get('https://api.ipify.org?format=json');
     await axios.get('https://supergood-testbed.herokuapp.com/200');
     await Supergood.close();
-    expect(postEvents).toBeCalledTimes(1);
+    expect(postEventsMock).toBeCalledTimes(1);
   });
 });
 
@@ -330,7 +337,7 @@ describe('testing various endpoints and libraries basic functionality', () => {
     const response = await axios.get(`${HTTP_OUTBOUND_TEST_SERVER}/posts`);
     expect(response.status).toEqual(200);
     await Supergood.close();
-    const eventsPosted = getEvents(postEvents as jest.Mock);
+    const eventsPosted = getEvents(postEventsMock);
     expect(eventsPosted.length).toEqual(1);
   });
 
@@ -341,7 +348,7 @@ describe('testing various endpoints and libraries basic functionality', () => {
     });
     expect(response.status).toEqual(201);
     await Supergood.close();
-    const eventsPosted = getEvents(postEvents as jest.Mock);
+    const eventsPosted = getEvents(postEventsMock);
     expect(eventsPosted.length).toEqual(1);
   });
 
@@ -349,7 +356,7 @@ describe('testing various endpoints and libraries basic functionality', () => {
     const response = await superagent.get(`${HTTP_OUTBOUND_TEST_SERVER}/posts`);
     expect(response.status).toEqual(200);
     await Supergood.close();
-    const eventsPosted = getEvents(postEvents as jest.Mock);
+    const eventsPosted = getEvents(postEventsMock);
     expect(eventsPosted.length).toEqual(1);
   });
 
@@ -362,7 +369,7 @@ describe('testing various endpoints and libraries basic functionality', () => {
       });
     expect(response.status).toEqual(201);
     await Supergood.close();
-    const eventsPosted = getEvents(postEvents as jest.Mock);
+    const eventsPosted = getEvents(postEventsMock);
     expect(eventsPosted.length).toEqual(1);
   });
 
@@ -372,7 +379,7 @@ describe('testing various endpoints and libraries basic functionality', () => {
     expect(response.status).toEqual(200);
     expect(body).toBeTruthy();
     await Supergood.close();
-    const eventsPosted = getEvents(postEvents as jest.Mock);
+    const eventsPosted = getEvents(postEventsMock);
     expect(eventsPosted.length).toEqual(1);
   });
 
@@ -387,7 +394,7 @@ describe('testing various endpoints and libraries basic functionality', () => {
     expect(response.status).toEqual(201);
     expect(responseJson.id).toBeTruthy();
     await Supergood.close();
-    const eventsPosted = getEvents(postEvents as jest.Mock);
+    const eventsPosted = getEvents(postEventsMock);
     expect(eventsPosted.length).toEqual(1);
   });
 
@@ -396,7 +403,7 @@ describe('testing various endpoints and libraries basic functionality', () => {
     const response = await request(`${HTTP_OUTBOUND_TEST_SERVER}/posts`);
     expect(response.statusCode).toEqual(200);
     await Supergood.close();
-    const eventsPosted = getEvents(postEvents as jest.Mock);
+    const eventsPosted = getEvents(postEventsMock);
     expect(eventsPosted.length).toEqual(1);
   });
 
@@ -410,7 +417,7 @@ describe('testing various endpoints and libraries basic functionality', () => {
     });
     expect(response.statusCode).toEqual(201);
     await Supergood.close();
-    const eventsPosted = getEvents(postEvents as jest.Mock);
+    const eventsPosted = getEvents(postEventsMock);
     expect(eventsPosted.length).toEqual(1);
   });
 });
@@ -432,7 +439,7 @@ describe('non-standard payloads', () => {
     expect(response.status).toEqual(200);
     expect(body).toBeTruthy();
     await Supergood.close();
-    const eventsPosted = getEvents(postEvents as jest.Mock);
+    const eventsPosted = getEvents(postEventsMock);
     expect(eventsPosted.length).toEqual(1);
     expect(get(eventsPosted, '[0]response.body')).toEqual({
       gzippedResponse: 'this-is-gzipped'
@@ -459,7 +466,7 @@ describe('captures headers', () => {
       }
     });
     await Supergood.close();
-    const eventsPosted = getEvents(postEvents as jest.Mock);
+    const eventsPosted = getEvents(postEventsMock);
     expect(eventsPosted.length).toEqual(1);
     expect(get(eventsPosted, '[0]request.headers.x-custom-header')).toEqual(
       'custom-header-value'
@@ -476,7 +483,7 @@ describe('captures headers', () => {
     );
     await fetch(`${HTTP_OUTBOUND_TEST_SERVER}/custom-header`);
     await Supergood.close();
-    const eventsPosted = getEvents(postEvents as jest.Mock);
+    const eventsPosted = getEvents(postEventsMock);
     expect(eventsPosted.length).toEqual(1);
     expect(get(eventsPosted, '[0]response.headers.x-custom-header')).toEqual(
       'custom-header-value'
@@ -495,7 +502,7 @@ describe('local client id and secret', () => {
       INTERNAL_SUPERGOOD_SERVER
     );
     await axios.get(`${HTTP_OUTBOUND_TEST_SERVER}/posts`);
-    expect(postEvents).toBeCalledTimes(0);
+    expect(postEventsMock).toBeCalledTimes(0);
     await Supergood.close();
   });
 });
@@ -524,7 +531,7 @@ describe.skip('testing openAI', () => {
       model: 'gpt-3.5-turbo-0613'
     });
     await Supergood.close();
-    const eventsPosted = getEvents(postEvents as jest.Mock)[0];
+    const eventsPosted = getEvents(postEventsMock)[0];
     const content = (get(
       eventsPosted,
       'response.body.choices[0].message.content'

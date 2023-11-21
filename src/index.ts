@@ -1,4 +1,4 @@
-import { BatchInterceptor, IsomorphicRequest } from '@mswjs/interceptors';
+import { IsomorphicRequest } from '@mswjs/interceptors';
 import NodeCache from 'node-cache';
 import {
   getHeaderOptions,
@@ -10,8 +10,7 @@ import {
 } from './utils';
 import { postEvents } from './api';
 
-import nodeInterceptors from '@mswjs/interceptors/lib/presets/node';
-
+import { ClientRequestInterceptor } from '@mswjs/interceptors/lib/interceptors/ClientRequest';
 import {
   HeaderOptionType,
   EventRequestType,
@@ -28,11 +27,6 @@ import {
 } from './constants';
 import onExit from 'signal-exit';
 
-const interceptor = new BatchInterceptor({
-  name: 'supergood-interceptor',
-  interceptors: nodeInterceptors
-});
-
 const Supergood = () => {
   let eventSinkUrl: string;
   let errorSinkUrl: string;
@@ -47,6 +41,8 @@ const Supergood = () => {
   let interval: NodeJS.Timeout;
 
   let localOnly = false;
+
+  let interceptor: ClientRequestInterceptor;
 
   const init = async (
     {
@@ -81,6 +77,9 @@ const Supergood = () => {
     });
     responseCache = new NodeCache({
       stdTTL: 0
+    });
+    interceptor = new ClientRequestInterceptor({
+      ignoredDomains: supergoodConfig.ignoredDomains
     });
 
     errorSinkUrl = `${baseUrl}${supergoodConfig.errorSinkEndpoint}`;

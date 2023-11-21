@@ -605,10 +605,9 @@
     "@jridgewell/resolve-uri" "3.1.0"
     "@jridgewell/sourcemap-codec" "1.4.14"
 
-"@mswjs/interceptors@0.17.6":
-  version "0.17.6"
-  resolved "https://registry.yarnpkg.com/@mswjs/interceptors/-/interceptors-0.17.6.tgz#7f7900f4cd26f70d9f698685e4485b2f4101d26a"
-  integrity sha512-201pBIWehTURb6q8Gheu4Zhvd3Ox1U4BJq5KiOQsYzkWyfiOG4pwcz5hPZIEryztgrf8/sdwABpvY757xMmfrQ==
+"@mswjs/interceptors@file:../mswjs-interceptors/mswjs-interceptors-v0.17.7-beta.0.tgz":
+  version "0.17.7-beta.0"
+  resolved "file:../mswjs-interceptors/mswjs-interceptors-v0.17.7-beta.0.tgz#645eb72eb167c284364f2d76b4e1eabb0e1c3c1c"
   dependencies:
     "@open-draft/until" "^1.0.3"
     "@types/debug" "^4.1.7"
