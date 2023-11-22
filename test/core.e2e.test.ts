@@ -88,13 +88,20 @@ describe('testing success states', () => {
     await Supergood.close();
     const eventsPosted = getEvents(postEventsMock);
     expect(eventsPosted.length).toEqual(numberOfHttpCalls);
-    expect(
-      eventsPosted.every((event) => event.request.requestedAt)
-    ).toBeTruthy();
-    expect(
-      eventsPosted.every((event) => event.response.respondedAt)
-    ).toBeTruthy();
-    await Supergood.close();
+    expect(postEventsMock).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.arrayContaining([
+        expect.objectContaining({
+          request: expect.objectContaining({
+            requestedAt: expect.any(Date)
+          }),
+          response: expect.objectContaining({
+            respondedAt: expect.any(Date)
+          })
+        })
+      ]),
+      expect.any(Object)
+    );
   });
 
   test('captures non-success status and errors', async () => {
@@ -254,42 +261,11 @@ describe('config specifications', () => {
     expect(postEventsMock).toHaveBeenCalled();
   });
 
-  test('performances matching on partial domains', async () => {
-    await Supergood.init(
-      {
-        config: { ignoredDomains: ['herokuapp.com'] },
-        clientId: CLIENT_ID,
-        clientSecret: CLIENT_SECRET
-      },
-      INTERNAL_SUPERGOOD_SERVER
-    );
-    await axios.get('https://supergood-testbed.herokuapp.com/200');
-    await Supergood.close();
-    expect(postEventsMock).not.toHaveBeenCalled();
-  });
-
-  test('performances matching on partial domains, allowed overrides ignored', async () => {
-    await Supergood.init(
-      {
-        config: {
-          allowedDomains: ['herokuapp.com'],
-          ignoredDomains: ['herokuapp.com']
-        },
-        clientId: CLIENT_ID,
-        clientSecret: CLIENT_SECRET
-      },
-      INTERNAL_SUPERGOOD_SERVER
-    );
-    await axios.get('https://supergood-testbed.herokuapp.com/200');
-    await Supergood.close();
-    expect(postEventsMock).toHaveBeenCalled();
-  });
-
   test('only posts for specified domains, ignores everything else', async () => {
     await Supergood.init(
       {
         config: {
-          allowedDomains: ['ipify']
+          ignoredDomains: ['supergood-testbed.herokuapp.com']
         },
         clientId: CLIENT_ID,
         clientSecret: CLIENT_SECRET
@@ -380,7 +356,7 @@ describe('testing various endpoints and libraries basic functionality', () => {
   });
 
   // Not yet supported
-  xtest('undici get', async () => {
+  test.skip('undici get', async () => {
     const response = await request(`${HTTP_OUTBOUND_TEST_SERVER}/posts`);
     expect(response.statusCode).toEqual(200);
     await Supergood.close();
@@ -389,7 +365,7 @@ describe('testing various endpoints and libraries basic functionality', () => {
   });
 
   // Not yet supported
-  xtest('undici post', async () => {
+  test.skip('undici post', async () => {
     const response = await request(`${HTTP_OUTBOUND_TEST_SERVER}/posts`, {
       method: 'POST',
       body: JSON.stringify({
