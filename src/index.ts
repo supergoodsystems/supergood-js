@@ -1,4 +1,4 @@
-import { IsomorphicRequest } from '@mswjs/interceptors';
+import { IsomorphicRequest } from 'supergood-interceptors';
 import NodeCache from 'node-cache';
 import {
   getHeaderOptions,
@@ -10,7 +10,7 @@ import {
 } from './utils';
 import { postEvents } from './api';
 
-import { ClientRequestInterceptor } from '@mswjs/interceptors/lib/interceptors/ClientRequest';
+import { ClientRequestInterceptor } from 'supergood-interceptors/lib/interceptors/ClientRequest';
 import {
   HeaderOptionType,
   EventRequestType,
