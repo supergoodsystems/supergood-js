@@ -157,7 +157,7 @@ const Supergood = () => {
   };
 
   const cacheRequest = async (request: RequestType, baseUrl: string) => {
-    if (shouldCachePayload(request.url, baseUrl, supergoodConfig)) {
+    if (shouldCachePayload(request.url, baseUrl)) {
       requestCache.set(request.id, { request });
       log.debug('Setting Request Cache', {
         request
@@ -166,7 +166,7 @@ const Supergood = () => {
   };
 
   const cacheResponse = async (event: EventRequestType, baseUrl: string) => {
-    if (shouldCachePayload(event.request.url, baseUrl, supergoodConfig)) {
+    if (shouldCachePayload(event.request.url, baseUrl)) {
       responseCache.set(event.request.id, event);
       log.debug('Setting Response Cache', {
         id: event.request.id,

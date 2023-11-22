@@ -4,7 +4,6 @@ const defaultConfig = {
   errorSinkEndpoint: '/errors',
   keysToHash: [],
   ignoredDomains: [],
-  allowedDomains: [],
 
   // After the close command is sent, wait for this many milliseconds before
   // exiting. This gives any hanging responses a chance to return.
