@@ -2,3 +2,5 @@ node_modules/
 supergood-*.log
 build/
 .env
+
+test/db.json

@@ -1,4 +1,4 @@
-import { InteractiveIsomorphicRequest } from '@mswjs/interceptors';
+import { InteractiveIsomorphicRequest } from 'supergood-interceptors';
 import { Response } from 'node-fetch';
 
 interface HeaderOptionType {
@@ -33,7 +33,6 @@ interface ResponseType {
 interface ConfigType {
   flushInterval: number;
   ignoredDomains: string[];
-  allowedDomains: string[];
   cacheTtl: number;
   keysToHash: string[];
   eventSinkEndpoint: string; // Defaults to {baseUrl}/events if not provided

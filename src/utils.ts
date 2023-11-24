@@ -11,6 +11,7 @@ import crypto from 'node:crypto';
 import { postError } from './api';
 import { name, version } from '../package.json';
 import https from 'https';
+import http from 'http';
 import { errors } from './constants';
 
 import set from 'lodash.set';
@@ -147,26 +148,15 @@ const prepareData = (
   return events.filter((e) => hashValuesFromKeys(e, keysToHash));
 };
 
-const shouldCachePayload = (
-  url: string,
-  baseUrl: string,
-  config: ConfigType
-) => {
+const shouldCachePayload = (url: string, baseUrl: string) => {
   const requestUrl = new URL(url);
   const baseOriginUrl = new URL(baseUrl);
 
   // Origin is needed for 'localhost' testing rather than hostname
-  if (requestUrl.origin == baseOriginUrl.origin) return false;
-  if (config.allowedDomains?.length) {
-    return config.allowedDomains.some((domain) => {
-      return requestUrl.hostname.includes(domain);
-    });
+  if (requestUrl.origin == baseOriginUrl.origin) {
+    return false;
   }
-  if (config.ignoredDomains?.length) {
-    return !config.ignoredDomains.some((domain) => {
-      return requestUrl.hostname.includes(domain);
-    });
-  }
+
   return true;
 };
 
@@ -191,7 +181,8 @@ function post(
   };
 
   return new Promise((resolve, reject) => {
-    const req = https.request(url, options, (res) => {
+    const transport = url.startsWith('https') ? https : http;
+    const req = transport.request(url, options, (res) => {
       if (res && res.statusCode) {
         if (res.statusCode === 401) {
           return reject(new Error(errors.UNAUTHORIZED));

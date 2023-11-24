@@ -15,11 +15,11 @@
   "author": "Alex Klarfeld",
   "license": "ISC",
   "dependencies": {
-    "@mswjs/interceptors": "0.17.6",
     "lodash.get": "^4.4.2",
     "lodash.set": "^4.3.2",
     "node-cache": "^5.1.2",
-    "signal-exit": "^3.0.7"
+    "signal-exit": "^3.0.7",
+    "supergood-interceptors": "0.17.7-rc.0"
   },
   "devDependencies": {
     "@types/jest": "^29.5.8",
