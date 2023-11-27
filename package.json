@@ -1,40 +1,19 @@
 {
   "name": "supergood",
-  "version": "1.1.42",
-  "description": "",
-  "main": "dist/src/index.js",
-  "types": "dist/src/index.d.ts",
-  "author": "Alex Klarfeld",
-  "license": "ISC",
   "repository": {
     "type": "git",
     "url": "git://github.com/supergoodsystems/supergood-js.git"
   },
-  "bugs": {
-    "url": "https://github.com/supergoodsystems/supergood-js/issues"
-  },
-  "homepage": "https://supergood.ai/",
-  "files": [
-    "src"
-  ],
-  "publishConfig": {
-    "access": "public",
-    "registry": "https://registry.npmjs.org"
-  },
-  "engines": {
-    "node": ">=14",
-    "npm": ">=6.0.0"
-  },
+  "main": "build/src/index.js",
+  "types": "build/src/index.d.ts",
+  "version": "1.1.42",
   "scripts": {
-    "check:publish-ready": "yarn build && yarn test",
-    "preversion": "yarn check:publish-ready",
-    "postversion": "git add package.json && git commit -m \"chore: update $npm_package_name to v$npm_package_version\" && git tag $npm_package_name@$npm_package_version",
-    "prepublish": "yarn check:publish-ready",
-    "postpublish": "git push origin && git push origin --tags",
     "test": "NODE_ENV=test jest --setupFiles dotenv/config",
-    "clean": "rm -rf dist/ && rm -rf supergood-*.log",
+    "clean": "rm -rf build/ && rm -rf supergood-*.log",
     "build": "yarn run clean && tsc"
   },
+  "author": "Alex Klarfeld",
+  "license": "ISC",
   "dependencies": {
     "lodash.get": "^4.4.2",
     "lodash.set": "^4.3.2",
@@ -66,5 +45,13 @@
     "ts-jest": "^29.0.5",
     "typescript": "^4.9.4",
     "undici": "^5.23.0"
-  }
+  },
+  "bugs": {
+    "url": "https://github.com/supergoodsystems/supergood-js/issues"
+  },
+  "homepage": "https://supergood.ai/",
+  "directories": {
+    "test": "test"
+  },
+  "description": ""
 }
