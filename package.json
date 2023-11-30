@@ -39,8 +39,8 @@
     "lodash.get": "^4.4.2",
     "lodash.set": "^4.3.2",
     "node-cache": "^5.1.2",
-    "signal-exit": "^3.0.7",
-    "supergood-interceptors": "0.17.7-rc.0"
+    "pino": "^8.16.2",
+    "signal-exit": "^3.0.7"
   },
   "devDependencies": {
     "@types/jest": "^29.5.8",
@@ -60,6 +60,7 @@
     "jest": "^29.2.1",
     "json-server": "^0.17.0",
     "openai": "^4.10.0",
+    "pino-pretty": "^10.2.3",
     "postgres": "^3.3.4",
     "prettier": "^2.8.1",
     "superagent": "^8.0.9",
