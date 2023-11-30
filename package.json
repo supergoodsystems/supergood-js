@@ -15,7 +15,7 @@
   },
   "homepage": "https://supergood.ai/",
   "files": [
-    "src/*"
+    "dist"
   ],
   "publishConfig": {
     "access": "public",
