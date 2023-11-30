@@ -1,6 +1,3 @@
-import { InteractiveIsomorphicRequest } from 'supergood-interceptors';
-import { Response } from 'node-fetch';
-
 interface HeaderOptionType {
   headers: {
     'Content-Type': string;
@@ -57,7 +54,7 @@ type ErrorPayloadType = {
 
 interface InfoPayloadType {
   config: ConfigType;
-  request?: Omit<InteractiveIsomorphicRequest, 'respondWith'>;
+  request?: Request;
   response?: Omit<
     Response,
     'buffer' | 'size' | 'textConverted' | 'timeout' | 'headers'

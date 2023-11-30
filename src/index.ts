@@ -1,4 +1,3 @@
-import { IsomorphicRequest } from 'supergood-interceptors';
 import NodeCache from 'node-cache';
 import {
   getHeaderOptions,
@@ -10,7 +9,6 @@ import {
 } from './utils';
 import { postEvents } from './api';
 
-import { ClientRequestInterceptor } from 'supergood-interceptors/lib/interceptors/ClientRequest';
 import {
   HeaderOptionType,
   EventRequestType,
@@ -26,6 +24,7 @@ import {
   LocalClientSecret
 } from './constants';
 import onExit from 'signal-exit';
+import { NodeRequestInterceptor } from './interceptor/NodeRequestInterceptor';
 
 const Supergood = () => {
   let eventSinkUrl: string;
@@ -42,7 +41,7 @@ const Supergood = () => {
 
   let localOnly = false;
 
-  let interceptor: ClientRequestInterceptor;
+  let interceptor: NodeRequestInterceptor;
 
   const init = async (
     {
@@ -78,7 +77,7 @@ const Supergood = () => {
     responseCache = new NodeCache({
       stdTTL: 0
     });
-    interceptor = new ClientRequestInterceptor({
+    interceptor = new NodeRequestInterceptor({
       ignoredDomains: supergoodConfig.ignoredDomains
     });
 
@@ -88,9 +87,9 @@ const Supergood = () => {
     headerOptions = getHeaderOptions(clientId, clientSecret);
     log = logger({ errorSinkUrl, headerOptions });
 
-    interceptor.apply();
-    interceptor.on('request', async (request: IsomorphicRequest) => {
-      const requestId = request.id;
+    interceptor.setup();
+
+    interceptor.on('request', async (request: Request, requestId: string) => {
       try {
         const url = new URL(request.url);
         // Meant for debug and testing purposes
@@ -123,8 +122,7 @@ const Supergood = () => {
       }
     });
 
-    interceptor.on('response', async (request, response) => {
-      const requestId = request.id;
+    interceptor.on('response', async (response, requestId) => {
       try {
         const requestData = requestCache.get(requestId) as {
           request: RequestType;
@@ -223,7 +221,7 @@ const Supergood = () => {
           }
         );
         clearInterval(interval);
-        interceptor.dispose();
+        interceptor.teardown();
       } else {
         log.error(
           errors.POSTING_EVENTS,
@@ -253,7 +251,7 @@ const Supergood = () => {
       await sleep(supergoodConfig.waitAfterClose);
     }
 
-    interceptor.dispose();
+    interceptor.teardown();
     await flushCache({ force });
     return false;
   };
