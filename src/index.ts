@@ -114,7 +114,7 @@ const Supergood = () => {
       } catch (e) {
         log.error(
           errors.CACHING_REQUEST,
-          { request, config: supergoodConfig },
+          { config: supergoodConfig },
           e as Error,
           {
             reportOut: !localOnly
@@ -145,7 +145,7 @@ const Supergood = () => {
       } catch (e) {
         log.error(
           errors.CACHING_RESPONSE,
-          { request, config: supergoodConfig },
+          { config: supergoodConfig },
           e as Error
         );
       }
@@ -216,7 +216,7 @@ const Supergood = () => {
       if (error.message === errors.UNAUTHORIZED) {
         log.error(
           errors.UNAUTHORIZED,
-          { data, config: supergoodConfig },
+          { config: supergoodConfig },
           error,
           {
             reportOut: false
@@ -227,7 +227,7 @@ const Supergood = () => {
       } else {
         log.error(
           errors.POSTING_EVENTS,
-          { data, config: supergoodConfig },
+          { config: supergoodConfig },
           error,
           {
             reportOut: !localOnly
