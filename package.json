@@ -1,12 +1,30 @@
 {
   "name": "supergood",
+  "version": "1.1.48",
+  "description": "",
+  "main": "dist/src/index.js",
+  "types": "dist/src/index.d.ts",
+  "author": "Alex Klarfeld",
+  "license": "ISC",
   "repository": {
     "type": "git",
     "url": "git://github.com/supergoodsystems/supergood-js.git"
   },
-  "main": "build/src/index.js",
-  "types": "build/src/index.d.ts",
-  "version": "1.1.43-beta.0",
+  "bugs": {
+    "url": "https://github.com/supergoodsystems/supergood-js/issues"
+  },
+  "homepage": "https://supergood.ai/",
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org"
+  },
+  "engines": {
+    "node": ">=14",
+    "npm": ">=6.0.0"
+  },
   "scripts": {
     "test": "NODE_ENV=test jest --setupFiles dotenv/config",
     "clean": "rm -rf build/ && rm -rf supergood-*.log",
