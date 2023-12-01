@@ -1,4 +1,4 @@
-import { IsomorphicRequest } from 'supergood-interceptors';
+import { IsomorphicRequest } from 'supergood-interceptors/lib';
 import NodeCache from 'node-cache';
 import {
   getHeaderOptions,
@@ -79,7 +79,8 @@ const Supergood = () => {
       stdTTL: 0
     });
     interceptor = new ClientRequestInterceptor({
-      ignoredDomains: supergoodConfig.ignoredDomains
+      ignoredDomains: supergoodConfig.ignoredDomains,
+      allowLocalUrls: supergoodConfig.allowLocalUrls
     });
 
     errorSinkUrl = `${baseUrl}${supergoodConfig.errorSinkEndpoint}`;

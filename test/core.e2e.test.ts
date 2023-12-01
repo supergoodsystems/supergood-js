@@ -33,7 +33,8 @@ const defaultConfig = {
   eventSinkEndpoint: `/events`,
   errorSinkEndpoint: `/errors`,
   keysToHash: ['request.body', 'response.body'],
-  ignoredDomains: []
+  ignoredDomains: [],
+  allowLocalUrls: true,
 };
 
 const getEvents = (
@@ -178,7 +179,8 @@ describe('config specifications', () => {
     await Supergood.init(
       {
         config: {
-          keysToHash: ['response.body']
+          keysToHash: ['response.body'],
+          allowLocalUrls: true
         },
         clientId: CLIENT_ID,
         clientSecret: CLIENT_SECRET
@@ -196,7 +198,7 @@ describe('config specifications', () => {
   test('not hashing', async () => {
     await Supergood.init(
       {
-        config: { keysToHash: [] },
+        config: { keysToHash: [], allowLocalUrls: true },
         clientId: CLIENT_ID,
         clientSecret: CLIENT_SECRET
       },
@@ -216,7 +218,8 @@ describe('config specifications', () => {
     await Supergood.init(
       {
         config: {
-          keysToHash: ['thisKeyDoesNotExist', 'response.thisKeyDoesNotExist']
+          keysToHash: ['thisKeyDoesNotExist', 'response.thisKeyDoesNotExist'],
+          allowLocalUrls: true
         },
         clientId: CLIENT_ID,
         clientSecret: CLIENT_SECRET
@@ -236,7 +239,7 @@ describe('config specifications', () => {
   test('ignores requests to ignored domains', async () => {
     await Supergood.init(
       {
-        config: { ignoredDomains: ['supergood-testbed.herokuapp.com'] },
+        config: { ignoredDomains: ['supergood-testbed.herokuapp.com'], allowLocalUrls: true },
         clientId: CLIENT_ID,
         clientSecret: CLIENT_SECRET
       },
@@ -247,10 +250,24 @@ describe('config specifications', () => {
     expect(postEventsMock).not.toHaveBeenCalled();
   });
 
+  test('ignores requests to local URLs', async () => {
+    await Supergood.init(
+      {
+        config: { ignoredDomains: [], allowLocalUrls: false },
+        clientId: CLIENT_ID,
+        clientSecret: CLIENT_SECRET
+      },
+      INTERNAL_SUPERGOOD_SERVER
+    );
+    await axios.get(`${HTTP_OUTBOUND_TEST_SERVER}/posts`);
+    await Supergood.close();
+    expect(postEventsMock).not.toHaveBeenCalled();
+  });
+
   test('operates normally when ignored domains is empty', async () => {
     await Supergood.init(
       {
-        config: { ignoredDomains: [] },
+        config: { ignoredDomains: [], allowLocalUrls: true },
         clientId: CLIENT_ID,
         clientSecret: CLIENT_SECRET
       },
@@ -265,7 +282,8 @@ describe('config specifications', () => {
     await Supergood.init(
       {
         config: {
-          ignoredDomains: ['supergood-testbed.herokuapp.com']
+          ignoredDomains: ['supergood-testbed.herokuapp.com'],
+          allowLocalUrls: true
         },
         clientId: CLIENT_ID,
         clientSecret: CLIENT_SECRET
@@ -284,7 +302,8 @@ describe('testing various endpoints and libraries basic functionality', () => {
     await Supergood.init(
       {
         clientId: CLIENT_ID,
-        clientSecret: CLIENT_SECRET
+        clientSecret: CLIENT_SECRET,
+        config: defaultConfig,
       },
       INTERNAL_SUPERGOOD_SERVER
     );
@@ -384,7 +403,10 @@ describe('non-standard payloads', () => {
     await Supergood.init(
       {
         clientId: CLIENT_ID,
-        clientSecret: CLIENT_SECRET
+        clientSecret: CLIENT_SECRET,
+        config: {
+          allowLocalUrls: true,
+        },
       },
       INTERNAL_SUPERGOOD_SERVER
     );
@@ -409,7 +431,8 @@ describe('captures headers', () => {
     await Supergood.init(
       {
         clientId: CLIENT_ID,
-        clientSecret: CLIENT_SECRET
+        clientSecret: CLIENT_SECRET,
+        config: defaultConfig,
       },
       INTERNAL_SUPERGOOD_SERVER
     );
@@ -434,7 +457,8 @@ describe('captures headers', () => {
     await Supergood.init(
       {
         clientId: CLIENT_ID,
-        clientSecret: CLIENT_SECRET
+        clientSecret: CLIENT_SECRET,
+        config: defaultConfig,
       },
       INTERNAL_SUPERGOOD_SERVER
     );
@@ -473,7 +497,8 @@ describe.skip('testing openAI', () => {
     await Supergood.init(
       {
         clientId: CLIENT_ID,
-        clientSecret: CLIENT_SECRET
+        clientSecret: CLIENT_SECRET,
+        config: defaultConfig,
       },
       INTERNAL_SUPERGOOD_SERVER
     );
