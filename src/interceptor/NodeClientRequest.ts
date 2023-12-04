@@ -3,12 +3,15 @@ import { EventEmitter } from 'events';
 import { NormalizedClientRequestArgs } from './utils/request-args';
 import { Readable } from 'stream';
 import crypto from 'crypto';
-import { createResponse } from './utils/createResponse';
 import {
   ClientRequestWriteArgs,
   normalizeClientRequestWriteArgs
 } from './utils/normalizeClientRequestWriteArgs';
 import { createRequest } from './utils/createRequest';
+import {
+  createHeadersFromIncomingHttpHeaders,
+  getIncomingMessageBody
+} from './utils/getIncomingMessageBody';
 
 export type NodeClientOptions = {
   emitter: EventEmitter;
@@ -38,6 +41,7 @@ export class NodeClientRequest extends ClientRequest {
 
     // Set request buffer to null by default so that GET/HEAD requests
     // without a body wouldn't suddenly get one.
+    // used in createRequest utils function
     this.requestBuffer = null;
   }
 
@@ -91,12 +95,27 @@ export class NodeClientRequest extends ClientRequest {
   emit(event: 'unpipe', src: Readable): boolean;
   emit(event: string | symbol, ...args: any[]): boolean {
     if (event === 'response') {
-      if (!this.ignoredDomains.includes(this.url.hostname)) {
-        this.emitter.emit(
+      async function emitResponse(
+        requestId: string,
+        message: IncomingMessage,
+        emitter: EventEmitter
+      ) {
+        const response = args[0] as IncomingMessage;
+        const responseBody = await getIncomingMessageBody(message);
+        emitter.emit(
           'response',
-          createResponse(args[0] as IncomingMessage),
-          this.requestId
+          {
+            status: response.statusCode || 200,
+            statusText: response.statusMessage || 'OK',
+            headers: createHeadersFromIncomingHttpHeaders(message.headers),
+            body: responseBody
+          },
+          requestId
         );
+      }
+
+      if (!this.ignoredDomains.includes(this.url.hostname)) {
+        emitResponse(this.requestId as string, args[0], this.emitter);
       }
     }
 

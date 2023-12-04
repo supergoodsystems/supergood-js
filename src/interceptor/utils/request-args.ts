@@ -9,13 +9,13 @@ import {
   globalAgent as httpsGlobalAgent
 } from 'https';
 import { Url as LegacyURL, parse as parseUrl } from 'url';
-import { getRequestOptionsByUrl } from '../../utils/getRequestOptionsByUrl';
+import { getRequestOptionsByUrl } from './getRequestOptionsByUrl';
 import {
   ResolvedRequestOptions,
   getUrlByRequestOptions
-} from '../../utils/getUrlByRequestOptions';
-import { cloneObject } from '../../utils/cloneObject';
-import { isObject } from '../../utils/isObject';
+} from './getUrlByRequestOptions';
+import { cloneObject } from './cloneObject';
+import { isObject } from './isObject';
 import { pinoLogger } from '../../logger';
 
 const logger = pinoLogger.child({ module: 'request-args' });
@@ -36,24 +36,24 @@ function resolveRequestOptions(
   // Calling `fetch` provides only URL to `ClientRequest`
   // without any `RequestOptions` or callback.
   if (typeof args[1] === 'undefined' || typeof args[1] === 'function') {
-    logger.info('request options not provided, deriving from the url', url);
+    logger.debug('request options not provided, deriving from the url', url);
     return getRequestOptionsByUrl(url);
   }
 
   if (args[1]) {
-    logger.info('has custom RequestOptions!', args[1]);
+    logger.debug('has custom RequestOptions!', args[1]);
     const requestOptionsFromUrl = getRequestOptionsByUrl(url);
 
-    logger.info('derived RequestOptions from the URL:', requestOptionsFromUrl);
+    logger.debug('derived RequestOptions from the URL:', requestOptionsFromUrl);
 
     /**
      * Clone the request options to lock their state
      * at the moment they are provided to `ClientRequest`.
      * @see https://github.com/mswjs/interceptors/issues/86
      */
-    logger.info('cloning RequestOptions...');
+    logger.debug('cloning RequestOptions...');
     const clonedRequestOptions = cloneObject(args[1]);
-    logger.info('successfully cloned RequestOptions!', clonedRequestOptions);
+    logger.debug('successfully cloned RequestOptions!', clonedRequestOptions);
 
     return {
       ...requestOptionsFromUrl,
@@ -61,7 +61,7 @@ function resolveRequestOptions(
     };
   }
 
-  logger.info('using an empty object as request options');
+  logger.debug('using an empty object as request options');
   return {} as RequestOptions;
 }
 
@@ -108,8 +108,8 @@ export function normalizeClientRequestArgs(
   let options: ResolvedRequestOptions;
   let callback: HttpRequestCallback | undefined;
 
-  logger.info('arguments', args);
-  logger.info('using default protocol:', defaultProtocol);
+  logger.debug('arguments', args);
+  logger.debug('using default protocol:', defaultProtocol);
 
   // Support "http.request()" calls without any arguments.
   // That call results in a "GET http://localhost" request.
@@ -122,16 +122,16 @@ export function normalizeClientRequestArgs(
   // Convert a url string into a URL instance
   // and derive request options from it.
   if (typeof args[0] === 'string') {
-    logger.info('first argument is a location string:', args[0]);
+    logger.debug('first argument is a location string:', args[0]);
 
     url = new URL(args[0]);
-    logger.info('created a url:', url);
+    logger.debug('created a url:', url);
 
     const requestOptionsFromUrl = getRequestOptionsByUrl(url);
-    logger.info('request options from url:', requestOptionsFromUrl);
+    logger.debug('request options from url:', requestOptionsFromUrl);
 
     options = resolveRequestOptions(args, url);
-    logger.info('resolved request options:', options);
+    logger.debug('resolved request options:', options);
 
     callback = resolveCallback(args);
   }
@@ -139,7 +139,7 @@ export function normalizeClientRequestArgs(
   // and derive request options from it.
   else if (args[0] instanceof URL) {
     url = args[0];
-    logger.info('first argument is a URL:', url);
+    logger.debug('first argument is a URL:', url);
 
     // Check if the second provided argument is RequestOptions.
     // If it is, check if "options.path" was set and rewrite it
@@ -151,7 +151,7 @@ export function normalizeClientRequestArgs(
     }
 
     options = resolveRequestOptions(args, url);
-    logger.info('derived request options:', options);
+    logger.debug('derived request options:', options);
 
     callback = resolveCallback(args);
   }
@@ -159,7 +159,7 @@ export function normalizeClientRequestArgs(
   // or a WHATWG URL.
   else if ('hash' in args[0] && !('method' in args[0])) {
     const [legacyUrl] = args;
-    logger.info('first argument is a legacy URL:', legacyUrl);
+    logger.debug('first argument is a legacy URL:', legacyUrl);
 
     if (legacyUrl.hostname === null) {
       /**
@@ -169,7 +169,7 @@ export function normalizeClientRequestArgs(
        * with the behaviour in ClientRequest.
        * @see https://github.com/nodejs/node/blob/d84f1312915fe45fe0febe888db692c74894c382/lib/_http_client.js#L122
        */
-      logger.info('given legacy URL is relative (no hostname)');
+      logger.debug('given legacy URL is relative (no hostname)');
 
       return isObject(args[1])
         ? normalizeClientRequestArgs(
@@ -184,7 +184,7 @@ export function normalizeClientRequestArgs(
           );
     }
 
-    logger.info('given legacy url is absolute');
+    logger.debug('given legacy url is absolute');
 
     // We are dealing with an absolute URL, so convert to WHATWG and try again.
     const resolvedUrl = new URL(legacyUrl.href);
@@ -204,15 +204,15 @@ export function normalizeClientRequestArgs(
   // and derive the URL instance from it.
   else if (isObject(args[0])) {
     options = args[0] as any;
-    logger.info('first argument is RequestOptions:', options);
+    logger.debug('first argument is RequestOptions:', options);
 
     // When handling a "RequestOptions" object without an explicit "protocol",
     // infer the protocol from the request issuing module (http/https).
     options.protocol = options.protocol || defaultProtocol;
-    logger.info('normalized request options:', options);
+    logger.debug('normalized request options:', options);
 
     url = getUrlByRequestOptions(options);
-    logger.info('created a URL from RequestOptions:', url.href);
+    logger.debug('created a URL from RequestOptions:', url.href);
 
     callback = resolveCallback(args);
   } else {
@@ -241,7 +241,7 @@ export function normalizeClientRequestArgs(
         : new HttpAgent();
 
     options.agent = agent;
-    logger.info('resolved fallback agent:', agent);
+    logger.debug('resolved fallback agent:', agent);
   }
 
   /**
@@ -253,7 +253,7 @@ export function normalizeClientRequestArgs(
    * @see https://github.com/nodejs/node/blob/418ff70b810f0e7112d48baaa72932a56cfa213b/lib/_http_client.js#L157-L159
    */
   if (!options._defaultAgent) {
-    logger.info(
+    logger.debug(
       'has no default agent, setting the default agent for "%s"',
       options.protocol
     );
@@ -262,9 +262,9 @@ export function normalizeClientRequestArgs(
       options.protocol === 'https:' ? httpsGlobalAgent : httpGlobalAgent;
   }
 
-  logger.info('successfully resolved url:', url.href);
-  logger.info('successfully resolved options:', options);
-  logger.info('successfully resolved callback:', callback);
+  logger.debug('successfully resolved url:', url.href);
+  logger.debug('successfully resolved options:', options);
+  logger.debug('successfully resolved callback:', callback);
 
   return [url, options, callback];
 }

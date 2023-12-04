@@ -60,7 +60,6 @@
     "jest": "^29.2.1",
     "json-server": "^0.17.0",
     "openai": "^4.10.0",
-    "pino-pretty": "^10.2.3",
     "postgres": "^3.3.4",
     "prettier": "^2.8.1",
     "superagent": "^8.0.9",

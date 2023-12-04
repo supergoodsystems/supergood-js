@@ -1,6 +1,6 @@
 import { Agent } from 'http';
 import { RequestOptions, Agent as HttpsAgent } from 'https';
-import { pinoLogger } from '../logger';
+import { pinoLogger } from '../../logger';
 
 const logger = pinoLogger.child({ module: 'utils getUrlByRequestOptions' });
 
@@ -131,46 +131,46 @@ function getHostname(host: string, port?: number): string {
  * Creates a `URL` instance from a given `RequestOptions` object.
  */
 export function getUrlByRequestOptions(options: ResolvedRequestOptions): URL {
-  logger.info('request options', options);
+  logger.debug('request options', options);
 
   if (options.uri) {
-    logger.info(
+    logger.debug(
       'constructing url from explicitly provided "options.uri": %s',
       options.uri
     );
     return new URL(options.uri.href);
   }
 
-  logger.info('figuring out url from request options...');
+  logger.debug('figuring out url from request options...');
 
   const protocol = getProtocolByRequestOptions(options);
-  logger.info('protocol', protocol);
+  logger.debug('protocol', protocol);
 
   const host = getHostByRequestOptions(options);
-  logger.info('host', host);
+  logger.debug('host', host);
 
   const port = getPortByRequestOptions(options);
-  logger.info('port', port);
+  logger.debug('port', port);
 
   const hostname = getHostname(host, port);
-  logger.info('hostname', hostname);
+  logger.debug('hostname', hostname);
 
   const path = options.path || DEFAULT_PATH;
-  logger.info('path', path);
+  logger.debug('path', path);
 
   const credentials = getAuthByRequestOptions(options);
-  logger.info('credentials', credentials);
+  logger.debug('credentials', credentials);
 
   const authString = credentials
     ? `${credentials.username}:${credentials.password}@`
     : '';
-  logger.info('auth string:', authString);
+  logger.debug('auth string:', authString);
 
   const url = new URL(`${protocol}//${hostname}${path}`);
   url.username = credentials?.username || '';
   url.password = credentials?.password || '';
 
-  logger.info('created url:', url);
+  logger.debug('created url:', url);
 
   return url;
 }

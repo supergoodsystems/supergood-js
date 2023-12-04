@@ -18,7 +18,7 @@ export type NormalizedClientRequestWriteArgs = [
 export function normalizeClientRequestWriteArgs(
   args: ClientRequestWriteArgs
 ): NormalizedClientRequestWriteArgs {
-  logger.info('normalizing ClientRequest.write arguments...', args);
+  logger.debug('normalizing ClientRequest.write arguments...', args);
 
   const chunk = args[0];
   const encoding =
@@ -30,7 +30,7 @@ export function normalizeClientRequestWriteArgs(
     encoding,
     callback
   ];
-  logger.info(
+  logger.debug(
     'successfully normalized ClientRequest.write arguments:',
     writeArgs
   );

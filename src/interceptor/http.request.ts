@@ -16,7 +16,7 @@ export function request(protocol: Protocol, options: NodeClientOptions) {
   return function interceptorsHttpRequest(
     ...args: ClientRequestArgs
   ): ClientRequest {
-    logger.info('request call (protocol "%s"):', protocol, args);
+    logger.debug('request call (protocol "%s"):', protocol, args);
 
     const clientRequestArgs = normalizeClientRequestArgs(
       `${protocol}:`,

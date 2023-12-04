@@ -1,4 +1,3 @@
-import { it, expect } from 'vitest'
 import { normalizeClientRequestWriteArgs } from './normalizeClientRequestWriteArgs'
 
 it('returns a triplet of null given no chunk, encoding, or callback', () => {
