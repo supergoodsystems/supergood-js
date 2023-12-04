@@ -4,7 +4,6 @@ import {
   RequestType,
   ResponseType,
   EventRequestType,
-  ConfigType,
   ErrorPayloadType
 } from './types';
 import crypto from 'node:crypto';
@@ -14,8 +13,8 @@ import https from 'https';
 import http from 'http';
 import { errors } from './constants';
 
-import set from 'lodash.set';
-import get from 'lodash.get';
+import _set from 'lodash.set';
+import _get from 'lodash.get';
 
 const logger = ({
   errorSinkUrl,
@@ -92,9 +91,9 @@ const hashValuesFromKeys = (
   let objCopy = { ...obj };
   for (let i = 0; i < keysToHash.length; i++) {
     const keyString = keysToHash[i];
-    const value = get(objCopy, keyString);
+    const value = _get(objCopy, keyString);
     if (value) {
-      objCopy = set(objCopy, keyString, hashValue(value));
+      objCopy = _set(objCopy, keyString, hashValue(value));
     }
   }
   return objCopy;
@@ -148,11 +147,11 @@ const prepareData = (
   return events.filter((e) => hashValuesFromKeys(e, keysToHash));
 };
 
-function post(
+const post = (
   url: string,
   data: Array<EventRequestType> | ErrorPayloadType,
   authorization: string
-): Promise<string> {
+): Promise<string> => {
   const dataString = JSON.stringify(data);
   const packageVersion = version;
 
@@ -203,6 +202,56 @@ function post(
   });
 }
 
+const get = (
+  url: string,
+  authorization: string
+): Promise<string> => {
+  const packageVersion = version;
+
+  const options = {
+    method: 'GET',
+    headers: {
+      Authorization: authorization,
+      'supergood-api': 'supergood-js',
+      'supergood-api-version': packageVersion
+    },
+    timeout: 5000 // in ms
+  };
+
+  return new Promise((resolve, reject) => {
+    const transport = url.startsWith('https') ? https : http;
+    const req = transport.request(url, options, (res) => {
+      if (res && res.statusCode) {
+        if (res.statusCode === 401) {
+          return reject(new Error(errors.UNAUTHORIZED));
+        }
+
+        if (res.statusCode < 200 || res.statusCode > 299) {
+          return reject(new Error(`HTTP status code ${res.statusCode}`));
+        }
+      }
+
+      const body = [] as Buffer[];
+      res.on('data', (chunk) => body.push(chunk));
+      res.on('end', () => {
+        const resString = Buffer.concat(body).toString();
+        resolve(resString);
+      });
+    });
+
+    req.on('error', (err) => {
+      reject(err);
+    });
+
+    req.on('timeout', () => {
+      req.destroy();
+      reject(new Error('Request time out'));
+    });
+
+    req.end(); // Notice there is no req.write() for GET requests
+  });
+}
+
 const sleep = (ms: number) => {
   return new Promise((resolve) => setTimeout(resolve, ms));
 };
@@ -215,5 +264,6 @@ export {
   safeParseJson,
   prepareData,
   sleep,
-  post
+  post,
+  get
 };
