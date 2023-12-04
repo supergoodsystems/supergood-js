@@ -32,7 +32,7 @@
     "prepublish": "yarn check:publish-ready",
     "postpublish": "git push origin && git push origin --tags",
     "test": "yarn run test:unit && yarn run test:e2e",
-    "test:unit": "echo \"No unit tests yet\"",
+    "test:unit": "jest -c test/jest.unit.config.js",
     "test:e2e": "node ./test/mock-server & jest -c test/jest.e2e.config.js",
     "posttest:e2e": "kill -9 $(lsof -t -i:3001)",
     "clean": "rm -rf dist/ && rm -rf supergood-*.log",
