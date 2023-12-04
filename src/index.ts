@@ -4,7 +4,6 @@ import {
   logger,
   safeParseJson,
   prepareData,
-  shouldCachePayload,
   sleep
 } from './utils';
 import { postEvents } from './api';
@@ -78,7 +77,9 @@ const Supergood = () => {
       stdTTL: 0
     });
     interceptor = new NodeRequestInterceptor({
-      ignoredDomains: supergoodConfig.ignoredDomains
+      ignoredDomains: supergoodConfig.ignoredDomains,
+      allowLocalUrls: supergoodConfig.allowLocalUrls,
+      baseUrl
     });
 
     errorSinkUrl = `${baseUrl}${supergoodConfig.errorSinkEndpoint}`;
@@ -155,24 +156,20 @@ const Supergood = () => {
   };
 
   const cacheRequest = async (request: RequestType, baseUrl: string) => {
-    if (shouldCachePayload(request.url, baseUrl)) {
-      requestCache.set(request.id, { request });
-      log.debug('Setting Request Cache', {
-        request
-      });
-    }
+    requestCache.set(request.id, { request });
+    log.debug('Setting Request Cache', {
+      request
+    });
   };
 
   const cacheResponse = async (event: EventRequestType, baseUrl: string) => {
-    if (shouldCachePayload(event.request.url, baseUrl)) {
-      responseCache.set(event.request.id, event);
-      log.debug('Setting Response Cache', {
-        id: event.request.id,
-        ...event
-      });
-      requestCache.del(event.request.id);
-      log.debug('Deleting Request Cache', { id: event.request.id });
-    }
+    responseCache.set(event.request.id, event);
+    log.debug('Setting Response Cache', {
+      id: event.request.id,
+      ...event
+    });
+    requestCache.del(event.request.id);
+    log.debug('Deleting Request Cache', { id: event.request.id });
   };
 
   // Force flush cache means don't wait for responses

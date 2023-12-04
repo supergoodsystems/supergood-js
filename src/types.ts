@@ -30,6 +30,7 @@ interface ResponseType {
 interface ConfigType {
   flushInterval: number;
   ignoredDomains: string[];
+  allowLocalUrls: boolean;
   cacheTtl: number;
   keysToHash: string[];
   eventSinkEndpoint: string; // Defaults to {baseUrl}/events if not provided

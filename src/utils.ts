@@ -148,18 +148,6 @@ const prepareData = (
   return events.filter((e) => hashValuesFromKeys(e, keysToHash));
 };
 
-const shouldCachePayload = (url: string, baseUrl: string) => {
-  const requestUrl = new URL(url);
-  const baseOriginUrl = new URL(baseUrl);
-
-  // Origin is needed for 'localhost' testing rather than hostname
-  if (requestUrl.origin == baseOriginUrl.origin) {
-    return false;
-  }
-
-  return true;
-};
-
 function post(
   url: string,
   data: Array<EventRequestType> | ErrorPayloadType,
@@ -226,7 +214,6 @@ export {
   logger,
   safeParseJson,
   prepareData,
-  shouldCachePayload,
   sleep,
   post
 };
