@@ -42,6 +42,7 @@ export class NodeClientRequest extends ClientRequest {
 
     // Set request buffer to null by default so that GET/HEAD requests
     // without a body wouldn't suddenly get one.
+    // used in createRequest utils function
     this.requestBuffer = null;
 
     this.isInterceptable = isInterceptable({
@@ -119,6 +120,10 @@ export class NodeClientRequest extends ClientRequest {
       }
 
       if (this.isInterceptable) {
+        emitResponse(this.requestId as string, args[0], this.emitter);
+      }
+
+      if (!this.ignoredDomains.includes(this.url.hostname)) {
         emitResponse(this.requestId as string, args[0], this.emitter);
       }
     }
