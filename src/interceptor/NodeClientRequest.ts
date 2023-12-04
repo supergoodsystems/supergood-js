@@ -18,6 +18,8 @@ export type NodeClientOptions = {
   allowLocalUrls: boolean;
   baseUrl?: string;
   ignoredDomains?: string[];
+  allowLocalUrls: boolean;
+  baseUrl?: string;
 };
 
 export type Protocol = 'http' | 'https';
@@ -122,7 +124,7 @@ export class NodeClientRequest extends ClientRequest {
         emitResponse(this.requestId as string, args[0], this.emitter);
       }
 
-      if (!this.ignoredDomains.includes(this.url.hostname)) {
+      if (!this.isAnIgnoredRequest) {
         emitResponse(this.requestId as string, args[0], this.emitter);
       }
     }
