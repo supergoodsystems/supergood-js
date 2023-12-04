@@ -1,4 +1,3 @@
-import OpenAI from 'openai';
 import get from 'lodash.get';
 
 import Supergood from '../../src';
@@ -26,6 +25,7 @@ describe.skip('openai library', () => {
   });
 
   it('simple chat completion call being logged ', async () => {
+    const OpenAI = require('openai-api');
     const openAi = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
     await openAi.chat.completions.create({
       messages: [

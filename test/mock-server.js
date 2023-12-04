@@ -16,7 +16,7 @@ const setupMockServer = async () => {
 
   const server = jsonServer.create();
   const router = jsonServer.router(path.join(__dirname, 'db.json'));
-  const middlewares = jsonServer.defaults();
+  const middlewares = jsonServer.defaults({ logger: false });
 
   const httSuccessCodes = [200];
   const httpErrorCodes = [400, 401, 403, 404, 500, 501, 502, 503, 504];

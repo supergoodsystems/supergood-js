@@ -39,11 +39,14 @@
     "build": "yarn run clean && tsc"
   },
   "dependencies": {
+    "headers-polyfill": "^4.0.2",
     "lodash.get": "^4.4.2",
     "lodash.set": "^4.3.2",
     "node-cache": "^5.1.2",
     "pino": "^8.16.2",
-    "signal-exit": "^3.0.7"
+    "signal-exit": "^3.0.7",
+    "ts-essentials": "^9.4.1",
+    "web-encoding": "^1.1.5"
   },
   "devDependencies": {
     "@types/jest": "^29.5.8",

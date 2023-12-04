@@ -3,15 +3,17 @@ import { EventEmitter } from 'events';
 import { NormalizedClientRequestArgs } from './utils/request-args';
 import { Readable } from 'stream';
 import crypto from 'crypto';
+import { Headers } from 'headers-polyfill';
 import {
   ClientRequestWriteArgs,
   normalizeClientRequestWriteArgs
 } from './utils/normalizeClientRequestWriteArgs';
-import { createRequest } from './utils/createRequest';
 import {
   createHeadersFromIncomingHttpHeaders,
   getIncomingMessageBody
 } from './utils/getIncomingMessageBody';
+import { IsomorphicRequest } from './utils/IsomorphicRequest';
+import { getArrayBuffer } from './utils/bufferUtils';
 
 export type NodeClientOptions = {
   emitter: EventEmitter;
@@ -41,7 +43,6 @@ export class NodeClientRequest extends ClientRequest {
 
     // Set request buffer to null by default so that GET/HEAD requests
     // without a body wouldn't suddenly get one.
-    // used in createRequest utils function
     this.requestBuffer = null;
   }
 
@@ -82,7 +83,12 @@ export class NodeClientRequest extends ClientRequest {
   ): this;
   end(chunk?: unknown, encoding?: unknown, cb?: unknown): this {
     if (!this.ignoredDomains.includes(this.url.hostname)) {
-      this.emitter.emit('request', createRequest(this), this.requestId);
+      const requestBody = getArrayBuffer(this.requestBuffer ?? Buffer.from([]));
+      this.emitter.emit(
+        'request',
+        this.toIsomorphicRequest(requestBody),
+        this.requestId
+      );
     }
     return super.end(chunk, encoding as BufferEncoding, cb as () => void);
   }
@@ -120,5 +126,27 @@ export class NodeClientRequest extends ClientRequest {
     }
 
     return super.emit(event as string, ...args);
+  }
+
+  private toIsomorphicRequest(body: ArrayBuffer): IsomorphicRequest {
+    const outgoingHeaders = this.getHeaders();
+
+    const headers = new Headers();
+    for (const [headerName, headerValue] of Object.entries(outgoingHeaders)) {
+      if (!headerValue) {
+        continue;
+      }
+
+      headers.set(headerName.toLowerCase(), headerValue.toString());
+    }
+
+    const isomorphicRequest = new IsomorphicRequest(this.url, {
+      body,
+      method: this.method || 'GET',
+      credentials: 'same-origin',
+      headers
+    });
+
+    return isomorphicRequest;
   }
 }

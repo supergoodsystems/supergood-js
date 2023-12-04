@@ -1,7 +1,9 @@
+import { Headers } from 'headers-polyfill';
 import { IncomingMessage, IncomingHttpHeaders } from 'http';
-import { pinoLogger } from '../../logger';
 import { PassThrough } from 'stream';
 import * as zlib from 'zlib';
+
+import { pinoLogger } from '../../logger';
 
 const logger = pinoLogger.child({ module: 'http getIncomingMessageBody' });
 
