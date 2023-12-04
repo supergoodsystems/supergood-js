@@ -1,17 +1,15 @@
-import zlib from 'zlib';
-import http from 'http';
-import path from 'path';
-import fs from 'fs';
-import initialDB from './mock-db';
+const zlib = require('zlib');
+const path = require('path');
+const fs = require('fs');
+const jsonServer = require('json-server');
 
-import jsonServer from 'json-server';
+const initialDB = require('./mock-db');
 
-import { sleep } from '../src/utils';
+const PORT = process.env.MOCK_SERVER_PORT || 3001;
 
-const HTTP_OUTBOUND_TEST_SERVER_PORT =
-  process.env.HTTP_OUTBOUND_TEST_SERVER_PORT || 3001;
-
-let mockServer: http.Server | null = null;
+const sleep = (ms) => {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+};
 
 const setupMockServer = async () => {
   resetDatabase();
@@ -30,7 +28,7 @@ const setupMockServer = async () => {
   for (let i = 0; i < httpCodes.length; i++) {
     server.get(`/${httpCodes[i]}`, async (req, res) => {
       if (req.query.sleep) {
-        const sleepString = req.query.sleep as string;
+        const sleepString = req.query.sleep;
         const sleepArg = sleepString ? parseInt(sleepString, 10) : 0;
         await sleep(sleepArg);
       }
@@ -39,7 +37,7 @@ const setupMockServer = async () => {
   }
 
   server.get('/massive-response', async (req, res) => {
-    const payloadSize = parseInt(req.query.payloadSize as string, 10) || 1;
+    const payloadSize = parseInt(req.query.payloadSize, 10) || 1;
     res.status(200).jsonp({ massiveResponse: 'X'.repeat(payloadSize) });
   });
 
@@ -58,14 +56,9 @@ const setupMockServer = async () => {
 
   server.use(router);
 
-  mockServer = server.listen(HTTP_OUTBOUND_TEST_SERVER_PORT, () =>
-    console.log(`Mock Server is running on ${HTTP_OUTBOUND_TEST_SERVER_PORT}`)
+  mockServer = server.listen(PORT, () =>
+    console.log(`Mock Server is running on ${PORT}`)
   );
-};
-
-const stopMockServer = async () => {
-  mockServer?.close();
-  resetDatabase();
 };
 
 const resetDatabase = () => {
@@ -79,4 +72,4 @@ const resetDatabase = () => {
   );
 };
 
-export { setupMockServer, stopMockServer };
+setupMockServer();
