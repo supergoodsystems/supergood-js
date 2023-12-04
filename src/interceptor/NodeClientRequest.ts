@@ -42,7 +42,6 @@ export class NodeClientRequest extends ClientRequest {
 
     // Set request buffer to null by default so that GET/HEAD requests
     // without a body wouldn't suddenly get one.
-    // used in createRequest utils function
     this.requestBuffer = null;
 
     this.isInterceptable = isInterceptable({
