@@ -20,6 +20,7 @@ export type NodeClientOptions = {
   ignoredDomains?: string[];
   allowLocalUrls: boolean;
   baseUrl?: string;
+  ignoredDomains?: string[];
 };
 
 export type Protocol = 'http' | 'https';
@@ -124,7 +125,7 @@ export class NodeClientRequest extends ClientRequest {
         emitResponse(this.requestId as string, args[0], this.emitter);
       }
 
-      if (!this.isAnIgnoredRequest) {
+      if (this.isInterceptable) {
         emitResponse(this.requestId as string, args[0], this.emitter);
       }
     }
