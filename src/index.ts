@@ -138,8 +138,8 @@ const Supergood = () => {
     });
 
     interceptor.on('response', async (response, requestId) => {
-      let requestData;
-      let responseData;
+      let requestData = { url: '' };
+      let responseData = {};
 
       try {
         const requestData = requestCache.get(requestId) as {
@@ -165,8 +165,8 @@ const Supergood = () => {
             config: supergoodConfig,
             metadata: {
               ...supergoodMetadata,
-              requestUrl: requestData && requestData.url ? requestData.url : '<none>',
-              payloadSize: new Blob([responseData]).size,
+              requestUrl: requestData.url,
+              payloadSize: responseData ? new Blob([responseData as BlobPart]).size : 0
             }
           },
           e as Error
