@@ -121,7 +121,14 @@ const Supergood = () => {
       } catch (e) {
         log.error(
           errors.CACHING_REQUEST,
-          { config: supergoodConfig, metadata: supergoodMetadata },
+          {
+            config: supergoodConfig,
+            metadata: {
+              requestUrl: request.url,
+              payloadSize: new Blob([request as any]).size,
+              ...supergoodMetadata
+            }
+          },
           e as Error,
           {
             reportOut: !localOnly
@@ -131,6 +138,9 @@ const Supergood = () => {
     });
 
     interceptor.on('response', async (response, requestId) => {
+      let requestData;
+      let responseData;
+
       try {
         const requestData = requestCache.get(requestId) as {
           request: RequestType;
@@ -151,7 +161,14 @@ const Supergood = () => {
       } catch (e) {
         log.error(
           errors.CACHING_RESPONSE,
-          { config: supergoodConfig, metadata: supergoodMetadata },
+          {
+            config: supergoodConfig,
+            metadata: {
+              ...supergoodMetadata,
+              requestUrl: requestData.url,
+              payloadSize: new Blob([responseData]).size,
+            }
+          },
           e as Error
         );
       }
@@ -218,7 +235,12 @@ const Supergood = () => {
       if (error.message === errors.UNAUTHORIZED) {
         log.error(
           errors.UNAUTHORIZED,
-          { config: supergoodConfig, metadata: supergoodMetadata },
+          {
+            config: supergoodConfig,
+            metadata: {
+              ...supergoodMetadata
+            }
+          },
           error,
           {
             reportOut: false
@@ -229,7 +251,15 @@ const Supergood = () => {
       } else {
         log.error(
           errors.POSTING_EVENTS,
-          { config: supergoodConfig, metadata: supergoodMetadata },
+          {
+            config: supergoodConfig,
+            metadata: {
+              numberOfEvents: data.length,
+              payloadSize: new Blob([data as any]).size,
+              requestUrls: data.map((event) => event.request.url),
+              ...supergoodMetadata
+            }
+          },
           error,
           {
             reportOut: !localOnly
