@@ -165,7 +165,7 @@ const Supergood = () => {
             config: supergoodConfig,
             metadata: {
               ...supergoodMetadata,
-              requestUrl: requestData?.url,
+              requestUrl: requestData ? requestData.url : '<none>',
               payloadSize: new Blob([responseData || {}]).size,
             }
           },
@@ -255,7 +255,7 @@ const Supergood = () => {
             config: supergoodConfig,
             metadata: {
               numberOfEvents: data.length,
-              payloadSize: new Blob([data as any || {}]).size,
+              payloadSize: new Blob([(data || {}) as any]).size,
               requestUrls: data.map((event) => event?.request?.url),
               ...supergoodMetadata
             }
