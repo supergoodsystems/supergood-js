@@ -165,8 +165,8 @@ const Supergood = () => {
             config: supergoodConfig,
             metadata: {
               ...supergoodMetadata,
-              requestUrl: requestData.url,
-              payloadSize: new Blob([responseData]).size,
+              requestUrl: requestData?.url,
+              payloadSize: new Blob([responseData || {}]).size,
             }
           },
           e as Error
@@ -255,8 +255,8 @@ const Supergood = () => {
             config: supergoodConfig,
             metadata: {
               numberOfEvents: data.length,
-              payloadSize: new Blob([data as any]).size,
-              requestUrls: data.map((event) => event.request.url),
+              payloadSize: new Blob([data as any || {}]).size,
+              requestUrls: data.map((event) => event?.request?.url),
               ...supergoodMetadata
             }
           },
