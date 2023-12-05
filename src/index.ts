@@ -165,8 +165,8 @@ const Supergood = () => {
             config: supergoodConfig,
             metadata: {
               ...supergoodMetadata,
-              requestUrl: requestData ? requestData.url : '<none>',
-              payloadSize: new Blob([responseData || {}]).size,
+              requestUrl: requestData && requestData.url ? requestData.url : '<none>',
+              payloadSize: new Blob([responseData]).size,
             }
           },
           e as Error
