@@ -100,6 +100,7 @@ const Supergood = () => {
       try {
         const url = new URL(request.url);
         // Meant for debug and testing purposes
+
         if (url.pathname === TestErrorPath) {
           throw new Error(errors.TEST_ERROR);
         }
