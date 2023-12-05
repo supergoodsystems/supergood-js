@@ -13,7 +13,8 @@ import {
   EventRequestType,
   ConfigType,
   LoggerType,
-  RequestType
+  RequestType,
+  MetadataType
 } from './types';
 import {
   defaultConfig,
@@ -31,6 +32,7 @@ const Supergood = () => {
 
   let headerOptions: HeaderOptionType;
   let supergoodConfig: ConfigType;
+  let supergoodMetadata: MetadataType;
 
   let requestCache: NodeCache;
   let responseCache: NodeCache;
@@ -46,16 +48,19 @@ const Supergood = () => {
     {
       clientId,
       clientSecret,
-      config
+      config,
+      metadata,
     }: {
       clientId?: string;
       clientSecret?: string;
       config?: Partial<ConfigType>;
+      metadata?: Partial<MetadataType>;
     } = {
-      clientId: process.env.SUPERGOOD_CLIENT_ID as string,
-      clientSecret: process.env.SUPERGOOD_CLIENT_SECRET as string,
-      config: {} as Partial<ConfigType>
-    },
+        clientId: process.env.SUPERGOOD_CLIENT_ID as string,
+        clientSecret: process.env.SUPERGOOD_CLIENT_SECRET as string,
+        config: {} as Partial<ConfigType>,
+        metadata: {} as Partial<MetadataType>,
+      },
     baseUrl = process.env.SUPERGOOD_BASE_URL || 'https://api.supergood.ai'
   ) => {
     if (!clientId) throw new Error(errors.NO_CLIENT_ID);
@@ -69,6 +74,7 @@ const Supergood = () => {
       ...defaultConfig,
       ...config
     } as ConfigType;
+    supergoodMetadata = metadata as MetadataType;
 
     requestCache = new NodeCache({
       stdTTL: 0
@@ -114,7 +120,7 @@ const Supergood = () => {
       } catch (e) {
         log.error(
           errors.CACHING_REQUEST,
-          { config: supergoodConfig },
+          { config: supergoodConfig, metadata: supergoodMetadata },
           e as Error,
           {
             reportOut: !localOnly
@@ -144,7 +150,7 @@ const Supergood = () => {
       } catch (e) {
         log.error(
           errors.CACHING_RESPONSE,
-          { config: supergoodConfig },
+          { config: supergoodConfig, metadata: supergoodMetadata },
           e as Error
         );
       }
@@ -211,7 +217,7 @@ const Supergood = () => {
       if (error.message === errors.UNAUTHORIZED) {
         log.error(
           errors.UNAUTHORIZED,
-          { config: supergoodConfig },
+          { config: supergoodConfig, metadata: supergoodMetadata },
           error,
           {
             reportOut: false
@@ -222,7 +228,7 @@ const Supergood = () => {
       } else {
         log.error(
           errors.POSTING_EVENTS,
-          { config: supergoodConfig },
+          { config: supergoodConfig, metadata: supergoodMetadata },
           error,
           {
             reportOut: !localOnly

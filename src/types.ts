@@ -38,6 +38,10 @@ interface ConfigType {
   waitAfterClose: number;
 }
 
+interface MetadataType {
+  serviceName?: string;
+}
+
 interface EventRequestType {
   request: RequestType;
   response: ResponseType;
@@ -63,6 +67,7 @@ interface InfoPayloadType {
   data?: EventRequestType[];
   packageName?: string;
   packageVersion?: string;
+  metadata?: MetadataType;
 }
 
 interface LoggerType {
@@ -85,5 +90,6 @@ export type {
   LoggerType,
   ConfigType,
   ErrorPayloadType,
-  BodyType
+  BodyType,
+  MetadataType
 };
