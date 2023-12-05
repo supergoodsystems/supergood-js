@@ -17,22 +17,6 @@ describe('isInterceptable', () => {
     expect(result).toBe(false);
   });
 
-  // it('should return false if the request is a local URL', () => {
-  //   const url = new URL('http://local.supergood.ai');
-  //   const ignoredDomains: string[] = [];
-  //   const baseUrl = 'https://api.supergood.ai';
-  //   const allowLocalUrls = false;
-
-  //   const result = isInterceptable({
-  //     url,
-  //     ignoredDomains,
-  //     baseUrl,
-  //     allowLocalUrls
-  //   });
-
-  //   expect(result).toBe(false);
-  // });
-
   it('should return false if the request without TLD', () => {
     const url = new URL('http://localhost');
     const ignoredDomains: string[] = [];
