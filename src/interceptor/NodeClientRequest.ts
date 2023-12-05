@@ -14,13 +14,13 @@ import {
 } from './utils/getIncomingMessageBody';
 import { IsomorphicRequest } from './utils/IsomorphicRequest';
 import { getArrayBuffer } from './utils/bufferUtils';
-import { isAnIgnoredRequest } from './utils/isIgnoredRequest';
+import { isInterceptable } from './utils/isInterceptable';
 
 export type NodeClientOptions = {
   emitter: EventEmitter;
-  ignoredDomains?: string[];
   allowLocalUrls: boolean;
   baseUrl?: string;
+  ignoredDomains?: string[];
 };
 
 export type Protocol = 'http' | 'https';
@@ -31,7 +31,7 @@ export class NodeClientRequest extends ClientRequest {
   public url: URL;
   public requestBuffer: Buffer | null;
   public requestId: string | null = null;
-  public isAnIgnoredRequest: boolean;
+  public isInterceptable: boolean;
 
   constructor(
     [url, requestOptions, callback]: NormalizedClientRequestArgs,
@@ -47,10 +47,10 @@ export class NodeClientRequest extends ClientRequest {
     // without a body wouldn't suddenly get one.
     this.requestBuffer = null;
 
-    this.isAnIgnoredRequest = isAnIgnoredRequest({
+    this.isInterceptable = isInterceptable({
       url: this.url,
       ignoredDomains: options.ignoredDomains ?? [],
-      baseUrl:  options.baseUrl ?? '',
+      baseUrl: options.baseUrl ?? '',
       allowLocalUrls: options.allowLocalUrls ?? false
     });
   }
@@ -91,7 +91,7 @@ export class NodeClientRequest extends ClientRequest {
     cb?: (() => void) | undefined
   ): this;
   end(chunk?: unknown, encoding?: unknown, cb?: unknown): this {
-    if (!this.isAnIgnoredRequest) {
+    if (this.isInterceptable) {
       const requestBody = getArrayBuffer(this.requestBuffer ?? Buffer.from([]));
       this.emitter.emit(
         'request',
@@ -129,7 +129,7 @@ export class NodeClientRequest extends ClientRequest {
         );
       }
 
-      if (!this.isAnIgnoredRequest) {
+      if (this.isInterceptable) {
         emitResponse(this.requestId as string, args[0], this.emitter);
       }
     }
