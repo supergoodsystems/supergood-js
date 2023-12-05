@@ -26,7 +26,7 @@ describe('core functionality', () => {
     test('captures all outgoing 200 http requests', async () => {
       await Supergood.init(
         {
-          config: SUPERGOOD_CONFIG,
+          config: { ...SUPERGOOD_CONFIG, allowLocalUrls: true },
           clientId: SUPERGOOD_CLIENT_ID,
           clientSecret: SUPERGOOD_CLIENT_SECRET
         },
@@ -63,7 +63,7 @@ describe('core functionality', () => {
       const httpErrorCodes = [400, 401, 403, 404, 500, 501, 502, 503, 504];
       await Supergood.init(
         {
-          config: SUPERGOOD_CONFIG,
+          config: { ...SUPERGOOD_CONFIG, allowLocalUrls: true },
           clientId: SUPERGOOD_CLIENT_ID,
           clientSecret: SUPERGOOD_CLIENT_SECRET
         },
@@ -91,7 +91,7 @@ describe('core functionality', () => {
     test('hanging response', async () => {
       await Supergood.init(
         {
-          config: SUPERGOOD_CONFIG,
+          config: { ...SUPERGOOD_CONFIG, allowLocalUrls: true },
           clientId: SUPERGOOD_CLIENT_ID,
           clientSecret: SUPERGOOD_CLIENT_SECRET
         },
@@ -114,7 +114,7 @@ describe('core functionality', () => {
       });
       await Supergood.init(
         {
-          config: SUPERGOOD_CONFIG,
+          config: { ...SUPERGOOD_CONFIG, allowLocalUrls: true },
           clientId: SUPERGOOD_CLIENT_ID,
           clientSecret: SUPERGOOD_CLIENT_SECRET
         },
@@ -133,7 +133,8 @@ describe('core functionality', () => {
       await Supergood.init(
         {
           config: {
-            keysToHash: ['response.body']
+            keysToHash: ['response.body'],
+            allowLocalUrls: true
           },
           clientId: SUPERGOOD_CLIENT_ID,
           clientSecret: SUPERGOOD_CLIENT_SECRET
@@ -153,7 +154,7 @@ describe('core functionality', () => {
     test('not hashing', async () => {
       await Supergood.init(
         {
-          config: { keysToHash: [] },
+          config: { keysToHash: [], allowLocalUrls: true },
           clientId: SUPERGOOD_CLIENT_ID,
           clientSecret: SUPERGOOD_CLIENT_SECRET
         },
@@ -173,7 +174,8 @@ describe('core functionality', () => {
       await Supergood.init(
         {
           config: {
-            keysToHash: ['thisKeyDoesNotExist', 'response.thisKeyDoesNotExist']
+            keysToHash: ['thisKeyDoesNotExist', 'response.thisKeyDoesNotExist'],
+            allowLocalUrls: true
           },
           clientId: SUPERGOOD_CLIENT_ID,
           clientSecret: SUPERGOOD_CLIENT_SECRET
@@ -193,7 +195,7 @@ describe('core functionality', () => {
     test('ignores requests to ignored domains', async () => {
       await Supergood.init(
         {
-          config: { ignoredDomains: ['supergood-testbed.herokuapp.com'] },
+          config: { ignoredDomains: ['supergood-testbed.herokuapp.com'], allowLocalUrls: true },
           clientId: SUPERGOOD_CLIENT_ID,
           clientSecret: SUPERGOOD_CLIENT_SECRET
         },
@@ -207,7 +209,7 @@ describe('core functionality', () => {
     test('operates normally when ignored domains is empty', async () => {
       await Supergood.init(
         {
-          config: { ignoredDomains: [] },
+          config: { ignoredDomains: [], allowLocalUrls: true },
           clientId: SUPERGOOD_CLIENT_ID,
           clientSecret: SUPERGOOD_CLIENT_SECRET
         },
@@ -222,7 +224,8 @@ describe('core functionality', () => {
       await Supergood.init(
         {
           config: {
-            ignoredDomains: ['supergood-testbed.herokuapp.com']
+            ignoredDomains: ['supergood-testbed.herokuapp.com'],
+            allowLocalUrls: true
           },
           clientId: SUPERGOOD_CLIENT_ID,
           clientSecret: SUPERGOOD_CLIENT_SECRET
@@ -241,7 +244,10 @@ describe('core functionality', () => {
       await Supergood.init(
         {
           clientId: SUPERGOOD_CLIENT_ID,
-          clientSecret: SUPERGOOD_CLIENT_SECRET
+          clientSecret: SUPERGOOD_CLIENT_SECRET,
+          config: {
+            allowLocalUrls: true
+          }
         },
         SUPERGOOD_SERVER
       );
@@ -264,7 +270,10 @@ describe('core functionality', () => {
       await Supergood.init(
         {
           clientId: SUPERGOOD_CLIENT_ID,
-          clientSecret: SUPERGOOD_CLIENT_SECRET
+          clientSecret: SUPERGOOD_CLIENT_SECRET,
+          config: {
+            allowLocalUrls: true
+          }
         },
         SUPERGOOD_SERVER
       );
@@ -289,7 +298,8 @@ describe('core functionality', () => {
       await Supergood.init(
         {
           clientId: SUPERGOOD_CLIENT_ID,
-          clientSecret: SUPERGOOD_CLIENT_SECRET
+          clientSecret: SUPERGOOD_CLIENT_SECRET,
+          config: { allowLocalUrls: true }
         },
         SUPERGOOD_SERVER
       );
@@ -307,7 +317,7 @@ describe('core functionality', () => {
     test('does not report out', async () => {
       await Supergood.init(
         {
-          config: SUPERGOOD_CONFIG,
+          config: { ...SUPERGOOD_CONFIG, allowLocalUrls: true },
           clientId: 'local-client-id',
           clientSecret: 'local-client-secret'
         },

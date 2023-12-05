@@ -14,9 +14,12 @@ import {
 } from './utils/getIncomingMessageBody';
 import { IsomorphicRequest } from './utils/IsomorphicRequest';
 import { getArrayBuffer } from './utils/bufferUtils';
+import { isInterceptable } from './utils/isInterceptable';
 
 export type NodeClientOptions = {
   emitter: EventEmitter;
+  allowLocalUrls: boolean;
+  baseUrl?: string;
   ignoredDomains?: string[];
 };
 
@@ -28,7 +31,7 @@ export class NodeClientRequest extends ClientRequest {
   public url: URL;
   public requestBuffer: Buffer | null;
   public requestId: string | null = null;
-  public ignoredDomains: string[];
+  public isInterceptable: boolean;
 
   constructor(
     [url, requestOptions, callback]: NormalizedClientRequestArgs,
@@ -39,11 +42,17 @@ export class NodeClientRequest extends ClientRequest {
     this.requestId = crypto.randomUUID();
     this.url = url;
     this.emitter = options.emitter;
-    this.ignoredDomains = options.ignoredDomains ?? [];
 
     // Set request buffer to null by default so that GET/HEAD requests
     // without a body wouldn't suddenly get one.
     this.requestBuffer = null;
+
+    this.isInterceptable = isInterceptable({
+      url: this.url,
+      ignoredDomains: options.ignoredDomains ?? [],
+      baseUrl: options.baseUrl ?? '',
+      allowLocalUrls: options.allowLocalUrls ?? false
+    });
   }
 
   private writeRequestBodyChunk(
@@ -82,7 +91,7 @@ export class NodeClientRequest extends ClientRequest {
     cb?: (() => void) | undefined
   ): this;
   end(chunk?: unknown, encoding?: unknown, cb?: unknown): this {
-    if (!this.ignoredDomains.includes(this.url.hostname)) {
+    if (this.isInterceptable) {
       const requestBody = getArrayBuffer(this.requestBuffer ?? Buffer.from([]));
       this.emitter.emit(
         'request',
@@ -120,7 +129,7 @@ export class NodeClientRequest extends ClientRequest {
         );
       }
 
-      if (!this.ignoredDomains.includes(this.url.hostname)) {
+      if (this.isInterceptable) {
         emitResponse(this.requestId as string, args[0], this.emitter);
       }
     }

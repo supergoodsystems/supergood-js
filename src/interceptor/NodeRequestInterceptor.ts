@@ -9,6 +9,8 @@ export type ClientRequestModules = Map<Protocol, typeof http | typeof https>;
 
 export interface NodeRequestInterceptorOptions {
   ignoredDomains?: string[];
+  allowLocalUrls?: boolean;
+  baseUrl?: string;
 }
 
 export class NodeRequestInterceptor {
@@ -38,7 +40,9 @@ export class NodeRequestInterceptor {
 
       const options = {
         emitter: this.emitter,
-        ignoredDomains: this.options.ignoredDomains
+        ignoredDomains: this.options.ignoredDomains,
+        allowLocalUrls: this.options.allowLocalUrls,
+        baseUrl: this.options.baseUrl,
       };
 
       // @ts-ignore

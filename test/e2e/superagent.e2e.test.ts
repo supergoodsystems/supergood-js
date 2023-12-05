@@ -17,7 +17,8 @@ describe('superagent library', () => {
     await Supergood.init(
       {
         clientId: SUPERGOOD_CLIENT_ID,
-        clientSecret: SUPERGOOD_CLIENT_SECRET
+        clientSecret: SUPERGOOD_CLIENT_SECRET,
+        config: { allowLocalUrls: true }
       },
       SUPERGOOD_SERVER
     );

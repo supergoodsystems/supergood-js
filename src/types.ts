@@ -30,11 +30,16 @@ interface ResponseType {
 interface ConfigType {
   flushInterval: number;
   ignoredDomains: string[];
+  allowLocalUrls: boolean;
   cacheTtl: number;
   keysToHash: string[];
   eventSinkEndpoint: string; // Defaults to {baseUrl}/events if not provided
   errorSinkEndpoint: string; // Defaults to {baseUrl}/errors if not provided
   waitAfterClose: number;
+}
+
+interface MetadataType {
+  serviceName?: string;
 }
 
 interface EventRequestType {
@@ -62,6 +67,7 @@ interface InfoPayloadType {
   data?: EventRequestType[];
   packageName?: string;
   packageVersion?: string;
+  metadata?: MetadataType;
 }
 
 interface LoggerType {
@@ -84,5 +90,6 @@ export type {
   LoggerType,
   ConfigType,
   ErrorPayloadType,
-  BodyType
+  BodyType,
+  MetadataType
 };

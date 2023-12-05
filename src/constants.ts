@@ -2,6 +2,7 @@ const defaultConfig = {
   flushInterval: 1000,
   eventSinkEndpoint: '/events',
   errorSinkEndpoint: '/errors',
+  allowLocalUrls: false,
   keysToHash: [],
   ignoredDomains: [],
 
