@@ -4,7 +4,8 @@ import {
   RequestType,
   ResponseType,
   EventRequestType,
-  ErrorPayloadType
+  ErrorPayloadType,
+  ConfigType
 } from './types';
 import crypto from 'node:crypto';
 import { postError } from './api';
@@ -84,7 +85,8 @@ const getHeaderOptions = (
   };
 };
 
-const hashValuesFromKeys = (
+// format: redacted:<data-length>:<data-type>
+const redactedValuesFromKeys = (
   obj: { request?: RequestType; response?: ResponseType },
   keysToHash: Array<string>
 ) => {
@@ -93,7 +95,7 @@ const hashValuesFromKeys = (
     const keyString = keysToHash[i];
     const value = _get(objCopy, keyString);
     if (value) {
-      objCopy = _set(objCopy, keyString, hashValue(value));
+      objCopy = _set(objCopy, keyString, redactedValue(value));
     }
   }
   return objCopy;
@@ -107,21 +109,13 @@ const safeParseJson = (json: string) => {
   }
 };
 
-const hashValue = (
+const redactedValue = (
   input: string | Record<string, string> | [Record<string, string>] | undefined
 ) => {
-  const hash = crypto.createHash('sha1');
   if (!input) return '';
-
-  if (Array.isArray(input)) {
-    return [hash.update(JSON.stringify(input)).digest('base64')];
-  }
-  if (typeof input === 'object') {
-    return { hashed: hash.update(JSON.stringify(input)).digest('base64') };
-  }
-  if (typeof input === 'string') {
-    return hash.update(input).digest('base64');
-  }
+  let dataLength = new Blob([input as any]).size;
+  const dataType = typeof input;
+  return `redacted:${dataLength}:${dataType}`;
 };
 
 const getPayloadSize = (
@@ -144,7 +138,7 @@ const prepareData = (
   events: Array<EventRequestType>,
   keysToHash: Array<string>
 ) => {
-  return events.filter((e) => hashValuesFromKeys(e, keysToHash));
+  return events.filter((e) => redactedValuesFromKeys(e, keysToHash));
 };
 
 const post = (
@@ -252,14 +246,18 @@ const get = (
   });
 }
 
+const processRemoteConfig = (oldConfig: ConfigType, newConfig: ConfigType) => {
+  const { ignoredDomains, keysToHash } = oldConfig;
+}
+
 const sleep = (ms: number) => {
   return new Promise((resolve) => setTimeout(resolve, ms));
 };
 
 export {
   getHeaderOptions,
-  hashValue,
-  hashValuesFromKeys,
+  redactedValue,
+  redactedValuesFromKeys,
   logger,
   safeParseJson,
   prepareData,

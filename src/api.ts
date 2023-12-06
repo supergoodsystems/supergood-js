@@ -38,4 +38,4 @@ const fetchConfig = async (configUrl: string, options: HeaderOptionType) => {
   return response;
 }
 
-export { postError, postEvents };
+export { postError, postEvents, fetchConfig };

@@ -30,12 +30,14 @@ interface ResponseType {
 
 interface ConfigType {
   flushInterval: number;
+  configFetchInterval: number;
   ignoredDomains: string[];
   allowLocalUrls: boolean;
   cacheTtl: number;
   keysToHash: string[];
   eventSinkEndpoint: string; // Defaults to {baseUrl}/events if not provided
   errorSinkEndpoint: string; // Defaults to {baseUrl}/errors if not provided
+  configFetchEndpoint: string; // Defaults to {baseUrl}/config if not provided
   waitAfterClose: number;
 }
 

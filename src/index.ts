@@ -7,7 +7,7 @@ import {
   prepareData,
   sleep
 } from './utils';
-import { postEvents } from './api';
+import { postEvents, fetchConfig } from './api';
 
 import {
   HeaderOptionType,
@@ -34,6 +34,7 @@ import { FetchInterceptor } from './interceptor/FetchInterceptor';
 const Supergood = () => {
   let eventSinkUrl: string;
   let errorSinkUrl: string;
+  let configFetchUrl: string;
 
   let headerOptions: HeaderOptionType;
   let supergoodConfig: ConfigType;
@@ -102,6 +103,7 @@ const Supergood = () => {
 
     errorSinkUrl = `${baseUrl}${supergoodConfig.errorSinkEndpoint}`;
     eventSinkUrl = `${baseUrl}${supergoodConfig.eventSinkEndpoint}`;
+    configFetchUrl = `${baseUrl}${supergoodConfig.configFetchEndpoint}`;
 
     headerOptions = getHeaderOptions(clientId, clientSecret);
     log = logger({ errorSinkUrl, headerOptions });
@@ -196,6 +198,16 @@ const Supergood = () => {
     // Flushes the cache every <flushInterval> milliseconds
     interval = setInterval(flushCache, supergoodConfig.flushInterval);
     interval.unref();
+
+    // Fetch config from server
+    setInterval(async () => {
+      try {
+        const config = await fetchConfig(configFetchUrl, headerOptions);
+        console.log(JSON.stringify(config, null, 2));
+      } catch(e) {
+        console.log(e);
+      }
+    }, supergoodConfig.configFetchInterval);
   };
 
   const cacheRequest = async (request: RequestType, baseUrl: string) => {
