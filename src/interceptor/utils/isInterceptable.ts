@@ -1,6 +1,6 @@
 const commonLocalUrlTlds = ['local'];
 
-const containsAnyPartial = (array, targetString) => {
+const containsAnyPartial = (array: string[], targetString: string) => {
   return array.some(partial => targetString.includes(partial));
 };
 
