@@ -1,5 +1,9 @@
 const commonLocalUrlTlds = ['local'];
 
+const containsAnyPartial = (array, targetString) => {
+  return array.some(partial => targetString.includes(partial));
+};
+
 export function isInterceptable({
   url,
   ignoredDomains,
@@ -35,7 +39,7 @@ export function isInterceptable({
   }
 
   // Ignore requests that have been explicitly excluded
-  if (ignoredDomains.includes(url.hostname)) {
+  if (containsAnyPartial(ignoredDomains, url.hostname)) {
     return false;
   }
 
