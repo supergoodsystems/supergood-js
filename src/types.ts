@@ -39,6 +39,10 @@ interface ConfigType {
 }
 
 interface MetadataType {
+  numberOfEvents?: number;
+  payloadSize?: number;
+  requestUrls?: string[];
+  requestUrl?: string;
   serviceName?: string;
 }
 
