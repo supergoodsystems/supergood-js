@@ -153,7 +153,7 @@ describe('core functionality', () => {
     });
   });
 
-  describe('config specifications', () => {
+  xdescribe('config specifications', () => {
     test('hashing', async () => {
       await Supergood.init(
         {

@@ -117,6 +117,7 @@ const Supergood = () => {
         if (supergoodConfig.remoteConfig && !interceptorWasInitialized) {
           interceptor.setup();
           interceptorWasInitialized = true;
+          log.debug('Ready to intercept requests', { config: supergoodConfig });
         }
       } catch (e) {
         log.error(errors.FETCHING_CONFIG, { config: supergoodConfig }, e as Error)
@@ -125,7 +126,9 @@ const Supergood = () => {
 
     // Fetch and process remote config upon initialization
     // Also start up the interception if a remote config is present
-    await fetchAndProcessRemoteConfig();
+    // await fetchAndProcessRemoteConfig();
+    const initializeInterceptors = () => {
+    interceptor.setup();
 
     // Continue fetching the remote config every <remoteConfigFetchInterval> milliseconds
     remoteConfigFetchInterval = setInterval(fetchAndProcessRemoteConfig, supergoodConfig.remoteConfigFetchInterval);
