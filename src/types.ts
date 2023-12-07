@@ -2,7 +2,6 @@ interface HeaderOptionType {
   headers: {
     'Content-Type': string;
     Authorization: string;
-    'content-encoding'?: string;
   };
 }
 
@@ -30,16 +29,30 @@ interface ResponseType {
 
 interface ConfigType {
   flushInterval: number;
-  configFetchInterval: number;
+  remoteConfigFetchInterval: number;
   ignoredDomains: string[];
   allowLocalUrls: boolean;
   cacheTtl: number;
   keysToHash: string[];
+  remoteConfigFetchEndpoint: string; // Defaults to {baseUrl}/config if not provided
   eventSinkEndpoint: string; // Defaults to {baseUrl}/events if not provided
   errorSinkEndpoint: string; // Defaults to {baseUrl}/errors if not provided
-  configFetchEndpoint: string; // Defaults to {baseUrl}/config if not provided
   waitAfterClose: number;
+  remoteConfig: RemoteConfigType;
 }
+
+interface EndpointConfigType {
+  location: string;
+  regex: string;
+  ignored: boolean;
+  sensitiveKeys: Array<string>;
+}
+
+interface RemoteConfigType {
+  [domain: string]: {
+    [endpointName: string]: EndpointConfigType;
+  };
+};
 
 interface MetadataType {
   numberOfEvents?: number;
@@ -98,5 +111,7 @@ export type {
   ConfigType,
   ErrorPayloadType,
   BodyType,
-  MetadataType
+  MetadataType,
+  RemoteConfigType,
+  EndpointConfigType
 };

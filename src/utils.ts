@@ -5,7 +5,9 @@ import {
   ResponseType,
   EventRequestType,
   ErrorPayloadType,
-  ConfigType
+  ConfigType,
+  RemoteConfigType,
+  EndpointConfigType
 } from './types';
 import crypto from 'node:crypto';
 import { postError } from './api';
@@ -39,7 +41,6 @@ const logger = ({
         JSON.stringify(payload, null, 2),
         error
       );
-      console.log({ reportOut, errorSinkUrl });
       if (reportOut && errorSinkUrl) {
         postError(
           errorSinkUrl,
@@ -85,20 +86,33 @@ const getHeaderOptions = (
   };
 };
 
-// format: redacted:<data-length>:<data-type>
-const redactedValuesFromKeys = (
+const marshalKeypath = (keypath: string) => {
+  const [first] = keypath.split('.');
+  if(first === 'request_headers') return keypath.replace('request_headers', 'request.headers');
+  if(first === 'request_body') return keypath.replace('request_body', 'request.body');
+  if(first === 'response_headers') return keypath.replace('response_headers', 'response.headers');
+  if(first === 'response_body') return keypath.replace('response_body', 'response.body');
+  return keypath;
+}
+
+const redactValuesFromKeys = (
   obj: { request?: RequestType; response?: ResponseType },
-  keysToHash: Array<string>
+  remoteConfig: RemoteConfigType
 ) => {
-  let objCopy = { ...obj };
-  for (let i = 0; i < keysToHash.length; i++) {
-    const keyString = keysToHash[i];
-    const value = _get(objCopy, keyString);
-    if (value) {
-      objCopy = _set(objCopy, keyString, redactedValue(value));
+  const endpointConfig = getEndpointConfigForRequest(obj.request as RequestType, remoteConfig);
+  if (!endpointConfig || !endpointConfig?.sensitiveKeys?.length) return obj;
+  else {
+    const sensitiveKeys = endpointConfig.sensitiveKeys;
+    let objCopy = { ...obj };
+    for (let i = 0; i < sensitiveKeys.length; i++) {
+      const keyPath = marshalKeypath(sensitiveKeys[i]);
+      const value = _get(objCopy, keyPath);
+      if (value) {
+        objCopy = _set(objCopy, keyPath, redactValue(value));
+      }
     }
+    return objCopy;
   }
-  return objCopy;
 };
 
 const safeParseJson = (json: string) => {
@@ -109,36 +123,41 @@ const safeParseJson = (json: string) => {
   }
 };
 
-const redactedValue = (
+const redactValue = (
   input: string | Record<string, string> | [Record<string, string>] | undefined
 ) => {
-  if (!input) return '';
-  let dataLength = new Blob([input as any]).size;
-  const dataType = typeof input;
-  return `redacted:${dataLength}:${dataType}`;
-};
+  let dataLength;
+  let dataType;
 
-const getPayloadSize = (
-  input: string | Record<string, string> | [Record<string, string>] | undefined
-) => {
-  if (!input) return 0;
-
-  if (Array.isArray(input)) {
-    return JSON.stringify(input).length;
+  if(!input) {
+    dataLength = 0;
+    dataType = 'null';
   }
-  if (typeof input === 'object') {
-    return JSON.stringify(input).length;
+  else if (Array.isArray(input)) {
+    dataLength = input.length;
+    dataType = 'array';
   }
-  if (typeof input === 'string') {
-    return input.length;
+  else if (typeof input === 'object') {
+    dataLength = new Blob([input.toString()]).size;
+    dataType = 'object';
+  } else if (typeof input === 'string') {
+    dataLength = input.length;
+    dataType = 'string';
+  } else if (typeof input === 'number') {
+    dataLength = (input as number).toString().length;
+    dataType = Number.isInteger(input) ? 'integer' : 'float';
+  } else if (typeof input === 'boolean') {
+    dataLength = 1;
+    dataType = 'boolean';
   }
+  return `redacted:${dataLength}:${dataType}`
 };
 
 const prepareData = (
   events: Array<EventRequestType>,
-  keysToHash: Array<string>
+  remoteConfig: RemoteConfigType,
 ) => {
-  return events.filter((e) => redactedValuesFromKeys(e, keysToHash));
+  return events.filter((e) => redactValuesFromKeys(e, remoteConfig));
 };
 
 const post = (
@@ -246,22 +265,91 @@ const get = (
   });
 }
 
-const processRemoteConfig = (oldConfig: ConfigType, newConfig: ConfigType) => {
-  const { ignoredDomains, keysToHash } = oldConfig;
+type RemoteConfigPayload = Array<{
+  domain: string;
+  endpoints: Array<{
+    name: string;
+    matchingRegex: {
+      regex: string;
+      location: string;
+    };
+    endpointConfiguration: {
+      action: string;
+      sensitiveKeys: Array<
+        {
+          keyPath: string;
+        }>;
+    }
+  }>;
+}>;
+
+
+const processRemoteConfig = (remoteConfigPayload: RemoteConfigPayload) => {
+  return (remoteConfigPayload || []).reduce((remoteConfig, domainConfig) => {
+    const { domain, endpoints } = domainConfig;
+    const endpointConfig = endpoints.reduce((endpointConfig, endpoint) => {
+      const { matchingRegex, endpointConfiguration } = endpoint;
+      const { regex, location } = matchingRegex;
+      const { action, sensitiveKeys } = endpointConfiguration;
+      endpointConfig[regex] = {
+        location,
+        regex,
+        ignored: action === 'Ignore',
+        sensitiveKeys: (sensitiveKeys || []).map((key) => key.keyPath)
+      };
+      return endpointConfig;
+    }, {} as { [endpointName: string]: EndpointConfigType });
+    remoteConfig[domain] = endpointConfig;
+    return remoteConfig;
+  }, {} as RemoteConfigType);
 }
 
 const sleep = (ms: number) => {
   return new Promise((resolve) => setTimeout(resolve, ms));
 };
 
+const getStrRepresentationFromPath = (request: RequestType, location: string) => {
+  const url = new URL(request.url);
+  if(location === 'domain') return url.hostname.toString();
+  if(location === 'url') return url.toString();
+  if(location === 'path') return url.pathname.toString();
+  if(location === 'request_headers') return request.headers.toString();
+  if(location === 'request_body') return request.body?.toString();
+  return request[location as keyof RequestType]?.toString();
+}
+
+const getEndpointConfigForRequest = (request: RequestType, remoteConfig: RemoteConfigType) => {
+  const domains = Object.keys(remoteConfig);
+  const domain = domains.find((domain) => request.url.includes(domain));
+  // If the domain doesn't exist in the config, then we return nothing
+  if (!domain) return null;
+  const endpointConfigs = remoteConfig[domain];
+  for (let i = 0; i < Object.keys(endpointConfigs).length; i++) {
+    const endpointConfig = endpointConfigs[i];
+    const { regex, location } = endpointConfig;
+    const regexObj = new RegExp(regex);
+    const strRepresentation = getStrRepresentationFromPath(request, location);
+    if (!strRepresentation) continue;
+    else {
+      const match = regexObj.test(strRepresentation);
+      if (match) {
+        return endpointConfig;
+      }
+    }
+  }
+  return null;
+}
+
 export {
+  processRemoteConfig,
   getHeaderOptions,
-  redactedValue,
-  redactedValuesFromKeys,
+  redactValue,
+  redactValuesFromKeys,
   logger,
   safeParseJson,
   prepareData,
   sleep,
   post,
-  get
+  get,
+  getEndpointConfigForRequest
 };

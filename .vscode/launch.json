@@ -1,0 +1,22 @@
+{
+  "configurations": [
+  {
+    "command": "yarn worker:data",
+    "name": "Run Data Worker",
+    "request": "launch",
+    "type": "node-terminal"
+  },
+  {
+    "command": "yarn worker:cron",
+    "name": "Run Cron Worker",
+    "request": "launch",
+    "type": "node-terminal"
+  },
+  {
+    "command": "yarn server",
+    "name": "Run Server",
+    "request": "launch",
+    "type": "node-terminal"
+  },
+  ]
+}

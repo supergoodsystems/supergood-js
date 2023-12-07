@@ -1,11 +1,11 @@
 const defaultConfig = {
   flushInterval: 1000,
-  configFetchInterval: 5000,
+  remoteConfigFetchInterval: 10000,
   eventSinkEndpoint: '/events',
   errorSinkEndpoint: '/errors',
   configFetchEndpoint: '/config',
   allowLocalUrls: false,
-  keysToHash: [],
+  keysToRedact: [],
   ignoredDomains: [],
 
   // After the close command is sent, wait for this many milliseconds before

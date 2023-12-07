@@ -29,13 +29,12 @@ const postEvents = async (
     data,
     options.headers.Authorization
   );
-
   return response;
 };
 
-const fetchConfig = async (configUrl: string, options: HeaderOptionType) => {
+const fetchRemoteConfig = async (configUrl: string, options: HeaderOptionType) => {
   const response = await get(configUrl, options.headers.Authorization);
-  return response;
+  return JSON.parse(response);
 }
 
-export { postError, postEvents, fetchConfig };
+export { postError, postEvents, fetchRemoteConfig };

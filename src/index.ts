@@ -5,17 +5,18 @@ import {
   logger,
   safeParseJson,
   prepareData,
-  sleep
+  sleep,
+  processRemoteConfig,
+  getEndpointConfigForRequest
 } from './utils';
-import { postEvents, fetchConfig } from './api';
+import { postEvents, fetchRemoteConfig } from './api';
 
 import {
   HeaderOptionType,
   EventRequestType,
   ConfigType,
   LoggerType,
-  RequestType,
-  MetadataType
+  RequestType
 } from './types';
 import {
   defaultConfig,
@@ -34,17 +35,17 @@ import { FetchInterceptor } from './interceptor/FetchInterceptor';
 const Supergood = () => {
   let eventSinkUrl: string;
   let errorSinkUrl: string;
-  let configFetchUrl: string;
+  let remoteConfigFetchUrl: string;
 
   let headerOptions: HeaderOptionType;
   let supergoodConfig: ConfigType;
-  let supergoodMetadata: MetadataType;
 
   let requestCache: NodeCache;
   let responseCache: NodeCache;
 
   let log: LoggerType;
-  let interval: NodeJS.Timeout;
+  let flushInterval: NodeJS.Timeout;
+  let remoteConfigFetchInterval: NodeJS.Timeout;
 
   let localOnly = false;
 
@@ -60,7 +61,6 @@ const Supergood = () => {
       clientId?: string;
       clientSecret?: string;
       config?: Partial<ConfigType>;
-      metadata?: Partial<MetadataType>;
     } = {
       clientId: process.env.SUPERGOOD_CLIENT_ID as string,
       clientSecret: process.env.SUPERGOOD_CLIENT_SECRET as string,
@@ -80,7 +80,6 @@ const Supergood = () => {
       ...defaultConfig,
       ...config
     } as ConfigType;
-    supergoodMetadata = metadata as MetadataType;
 
     requestCache = new NodeCache({
       stdTTL: 0
@@ -103,12 +102,33 @@ const Supergood = () => {
 
     errorSinkUrl = `${baseUrl}${supergoodConfig.errorSinkEndpoint}`;
     eventSinkUrl = `${baseUrl}${supergoodConfig.eventSinkEndpoint}`;
-    configFetchUrl = `${baseUrl}${supergoodConfig.configFetchEndpoint}`;
+    remoteConfigFetchUrl = `${baseUrl}${supergoodConfig.remoteConfigFetchEndpoint}`;
 
     headerOptions = getHeaderOptions(clientId, clientSecret);
     log = logger({ errorSinkUrl, headerOptions });
 
-    interceptor.setup();
+    const fetchAndProcessRemoteConfig = async () => {
+      try {
+        const remoteConfigPayload = await fetchRemoteConfig(remoteConfigFetchUrl, headerOptions);
+        supergoodConfig = {
+          ...supergoodConfig,
+          remoteConfig: processRemoteConfig(remoteConfigPayload)
+        };
+        if (supergoodConfig.remoteConfig && !interceptorWasInitialized) {
+          interceptor.setup();
+          interceptorWasInitialized = true;
+        }
+      } catch (e) {
+        log.error(errors.FETCHING_CONFIG, { config: supergoodConfig }, e as Error)
+      }
+    };
+
+    // Fetch and process remote config upon initialization
+    // Also start up the interception if a remote config is present
+    await fetchAndProcessRemoteConfig();
+
+    // Continue fetching the remote config every <remoteConfigFetchInterval> milliseconds
+    remoteConfigFetchInterval = setInterval(fetchAndProcessRemoteConfig, supergoodConfig.remoteConfigFetchInterval);
 
     interceptor.on(
       'request',
@@ -196,18 +216,8 @@ const Supergood = () => {
     );
 
     // Flushes the cache every <flushInterval> milliseconds
-    interval = setInterval(flushCache, supergoodConfig.flushInterval);
-    interval.unref();
-
-    // Fetch config from server
-    setInterval(async () => {
-      try {
-        const config = await fetchConfig(configFetchUrl, headerOptions);
-        console.log(JSON.stringify(config, null, 2));
-      } catch(e) {
-        console.log(e);
-      }
-    }, supergoodConfig.configFetchInterval);
+    flushInterval = setInterval(flushCache, supergoodConfig.flushInterval);
+    flushInterval.unref();
   };
 
   const cacheRequest = async (request: RequestType, baseUrl: string) => {
@@ -235,7 +245,7 @@ const Supergood = () => {
 
     const responseArray = prepareData(
       Object.values(responseCache.mget(responseCacheKeys)),
-      supergoodConfig.keysToHash
+      supergoodConfig.remoteConfig
     ) as Array<EventRequestType>;
 
     let data = [...responseArray];
@@ -244,7 +254,7 @@ const Supergood = () => {
     if (force) {
       const requestArray = prepareData(
         Object.values(requestCache.mget(requestCacheKeys)),
-        supergoodConfig.keysToHash
+        supergoodConfig.remoteConfig
       ) as Array<EventRequestType>;
       data = [...requestArray, ...responseArray];
     }
@@ -256,7 +266,7 @@ const Supergood = () => {
 
     try {
       if (localOnly) {
-        log.debug(JSON.stringify(data, null, 2));
+        log.debug(JSON.stringify(data, null, 2), { force });
       } else {
         await postEvents(eventSinkUrl, data, headerOptions);
       }
@@ -266,18 +276,14 @@ const Supergood = () => {
       if (error.message === errors.UNAUTHORIZED) {
         log.error(
           errors.UNAUTHORIZED,
-          {
-            config: supergoodConfig,
-            metadata: {
-              ...supergoodMetadata
-            }
-          },
+          { config: supergoodConfig },
           error,
           {
             reportOut: false
           }
         );
-        clearInterval(interval);
+        clearInterval(flushInterval);
+        clearInterval(remoteConfigFetchInterval);
         interceptor.teardown();
       } else {
         log.error(
@@ -309,7 +315,8 @@ const Supergood = () => {
 
   // Stops the interval and disposes of the interceptor
   const close = async (force = true) => {
-    clearInterval(interval);
+    clearInterval(flushInterval);
+    clearInterval(remoteConfigFetchInterval);
 
     // If there are hanging requests, wait a second
     if (requestCache.keys().length > 0) {
