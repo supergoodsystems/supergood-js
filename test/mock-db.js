@@ -4,6 +4,21 @@ const db = {
       id: 1,
       title: 'json-server',
       author: 'typicode'
+    },
+    {
+      id: 2,
+      title: 'nodejs',
+      author: 'alex'
+    },
+    {
+      id: 3,
+      title: 'typescript',
+      author: 'zack'
+    },
+    {
+      id: 4,
+      title: 'python',
+      author: 'steve'
     }
   ],
   comments: [

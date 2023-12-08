@@ -5,7 +5,6 @@ const defaultConfig = {
   errorSinkEndpoint: '/errors',
   configFetchEndpoint: '/config',
   allowLocalUrls: false,
-  keysToRedact: [],
   ignoredDomains: [],
 
   // After the close command is sent, wait for this many milliseconds before

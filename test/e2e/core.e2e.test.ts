@@ -32,7 +32,6 @@ describe('core functionality', () => {
         },
         SUPERGOOD_SERVER
       );
-
       const numberOfHttpCalls = 5;
       for (let i = 0; i < numberOfHttpCalls; i++) {
         await axios.get(`${MOCK_DATA_SERVER}/posts`);

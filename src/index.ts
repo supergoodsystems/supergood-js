@@ -114,19 +114,11 @@ const Supergood = () => {
           ...supergoodConfig,
           remoteConfig: processRemoteConfig(remoteConfigPayload)
         };
-        if (supergoodConfig.remoteConfig && !interceptorWasInitialized) {
-          interceptor.setup();
-          interceptorWasInitialized = true;
-          log.debug('Ready to intercept requests', { config: supergoodConfig });
-        }
       } catch (e) {
         log.error(errors.FETCHING_CONFIG, { config: supergoodConfig }, e as Error)
       }
     };
 
-    // Fetch and process remote config upon initialization
-    // Also start up the interception if a remote config is present
-    // await fetchAndProcessRemoteConfig();
     const initializeInterceptors = () => {
     interceptor.setup();
 
@@ -218,9 +210,19 @@ const Supergood = () => {
       }
     );
 
+    // Fetch the initial config and process it
+    await fetchAndProcessRemoteConfig();
+    initializeInterceptors();
+
+    // Fetch the config ongoing every <remoteConfigFetchInterval> milliseconds
+    remoteConfigFetchInterval = setInterval(fetchAndProcessRemoteConfig, supergoodConfig.remoteConfigFetchInterval);
+
     // Flushes the cache every <flushInterval> milliseconds
     flushInterval = setInterval(flushCache, supergoodConfig.flushInterval);
+
+    // https://httptoolkit.com/blog/unblocking-node-with-unref/
     flushInterval.unref();
+    remoteConfigFetchInterval.unref();
   };
 
   const cacheRequest = async (request: RequestType, baseUrl: string) => {

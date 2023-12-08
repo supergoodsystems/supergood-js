@@ -9,10 +9,12 @@ export const SUPERGOOD_SERVER = `http://localhost:${SUPERGOOD_SERVER_PORT}`;
 
 export const SUPERGOOD_CONFIG = {
   flushInterval: 30000,
+  remoteConfigFetchInterval: 10000,
   cacheTtl: 0,
   eventSinkEndpoint: `/events`,
   errorSinkEndpoint: `/errors`,
-  keysToHash: ['request.body', 'response.body'],
+  configFetchEndpoint: '/config',
+  allowLocalUrls: true,
   ignoredDomains: []
 };
 

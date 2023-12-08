@@ -5,11 +5,11 @@ import {
   ResponseType,
   EventRequestType,
   ErrorPayloadType,
-  ConfigType,
+  RemoteConfigPayloadType,
   RemoteConfigType,
-  EndpointConfigType
+  EndpointConfigType,
+  SensitiveKeyMetadata
 } from './types';
-import crypto from 'node:crypto';
 import { postError } from './api';
 import { name, version } from '../package.json';
 import https from 'https';
@@ -86,32 +86,89 @@ const getHeaderOptions = (
   };
 };
 
-const marshalKeypath = (keypath: string) => {
-  const [first] = keypath.split('.');
-  if(first === 'request_headers') return keypath.replace('request_headers', 'request.headers');
-  if(first === 'request_body') return keypath.replace('request_body', 'request.body');
-  if(first === 'response_headers') return keypath.replace('response_headers', 'response.headers');
-  if(first === 'response_body') return keypath.replace('response_body', 'response.body');
+const marshalKeyPath = (keypath: string) => {
+  if(/^request_headers/.test(keypath)) return keypath.replace('request_headers', 'request.headers');
+  if(/^request_body/.test(keypath)) return keypath.replace('request_body', 'request.body');
+  if(/^response_headers/.test(keypath)) return keypath.replace('response_headers', 'response.headers');
+  if(/^response_body/.test(keypath)) return keypath.replace('response_body', 'response.body');
   return keypath;
 }
 
-const redactValuesFromKeys = (
-  obj: { request?: RequestType; response?: ResponseType },
-  remoteConfig: RemoteConfigType
-) => {
-  const endpointConfig = getEndpointConfigForRequest(obj.request as RequestType, remoteConfig);
-  if (!endpointConfig || !endpointConfig?.sensitiveKeys?.length) return obj;
-  else {
-    const sensitiveKeys = endpointConfig.sensitiveKeys;
-    let objCopy = { ...obj };
-    for (let i = 0; i < sensitiveKeys.length; i++) {
-      const keyPath = marshalKeypath(sensitiveKeys[i]);
-      const value = _get(objCopy, keyPath);
-      if (value) {
-        objCopy = _set(objCopy, keyPath, redactValue(value));
+const unmarshalKeyPath = (keypath: string) => {
+  if(/^request\.headers/.test(keypath)) return keypath.replace('request.headers', 'request_headers');
+  if(/^request\.body/.test(keypath)) return keypath.replace('request.body', 'request_body');
+  if(/^response\.headers/.test(keypath)) return keypath.replace('response.headers', 'response_headers');
+  if(/^response\.body/.test(keypath)) return keypath.replace('response.body', 'response_body');
+  return keypath;
+}
+
+const expandSensitiveKeySetForArrays = (obj: any, sensitiveKeys: Array<string>): Array<string> => {
+  const expandKey = (key: string, obj: any): Array<string> => {
+    // Split the key by dots, considering the array brackets as part of the key
+    const parts = key.match(/[^.\[\]]+|\[\d*\]|\[\*\]/g) || [];
+
+    // Recursively expand the key
+    return expand(parts, obj, '');
+  };
+
+  const expand = (parts: string[], obj: any, keyPath: string): Array<string> => {
+    const path = keyPath;
+    if (parts.length === 0) {
+      return [path]; // Remove trailing dot
+    }
+    const part = parts[0];
+    const isProperty = !part.startsWith('[');
+    const separator = path && isProperty ? '.' : '';
+
+    // Check for array notations
+    if (/\[\*?\]/.test(part)) {
+      if (!Array.isArray(obj)) {
+        return [];
+      }
+      // Expand for each element in the array
+      return obj.flatMap((_, index) =>
+        expand(parts.slice(1), obj[index], `${path}${separator}[${index}]`)
+      );
+    } else if (part.startsWith('[') && part.endsWith(']')) {
+      // Specific index in the array
+      const index = parseInt(part.slice(1, -1), 10);
+      if (!isNaN(index) && index < obj.length) {
+        return expand(parts.slice(1), obj[index], `${path}${separator}${part}`);
+      } else {
+        return [];
+      }
+    } else {
+      // Regular object property
+      if (obj && typeof obj === 'object' && part in obj) {
+        return expand(parts.slice(1), obj[part], `${path}${separator}${part}`);
+      } else {
+        return [];
       }
     }
-    return objCopy;
+  };
+
+  return sensitiveKeys.flatMap(key => expandKey(key, obj));
+};
+
+const redactValuesFromKeys = (
+  event: { request?: RequestType; response?: ResponseType },
+  remoteConfig: RemoteConfigType
+): { event: { request?: RequestType; response?: ResponseType }, sensitiveKeyMetadata: Array<SensitiveKeyMetadata> } => {
+  let sensitiveKeyMetadata: Array<SensitiveKeyMetadata> = [];
+  const endpointConfig = getEndpointConfigForRequest(event.request as RequestType, remoteConfig);
+  if (!endpointConfig || !endpointConfig?.sensitiveKeys?.length) return { event, sensitiveKeyMetadata };
+  else {
+    const sensitiveKeys = expandSensitiveKeySetForArrays(event, endpointConfig.sensitiveKeys.map(key => marshalKeyPath(key)))
+    for (let i = 0; i < sensitiveKeys.length; i++) {
+      const keyPath = sensitiveKeys[i];
+      // Add sensitive key for array expansion
+      const value = _get(event, keyPath);
+      if (value) {
+        _set(event, keyPath, null);
+        sensitiveKeyMetadata.push({ keyPath: unmarshalKeyPath(keyPath), ...redactValue(value) });
+      }
+    }
+    return { event, sensitiveKeyMetadata };
   }
 };
 
@@ -150,14 +207,20 @@ const redactValue = (
     dataLength = 1;
     dataType = 'boolean';
   }
-  return `redacted:${dataLength}:${dataType}`
+  return { length: dataLength, type: dataType };
 };
 
 const prepareData = (
   events: Array<EventRequestType>,
   remoteConfig: RemoteConfigType,
 ) => {
-  return events.filter((e) => redactValuesFromKeys(e, remoteConfig));
+  return events.map((e) => {
+    const { event, sensitiveKeyMetadata } = redactValuesFromKeys(e, remoteConfig);
+    return ({
+      ...event,
+      metadata: { sensitiveKeys: sensitiveKeyMetadata }
+    })
+  })
 };
 
 const post = (
@@ -265,26 +328,7 @@ const get = (
   });
 }
 
-type RemoteConfigPayload = Array<{
-  domain: string;
-  endpoints: Array<{
-    name: string;
-    matchingRegex: {
-      regex: string;
-      location: string;
-    };
-    endpointConfiguration: {
-      action: string;
-      sensitiveKeys: Array<
-        {
-          keyPath: string;
-        }>;
-    }
-  }>;
-}>;
-
-
-const processRemoteConfig = (remoteConfigPayload: RemoteConfigPayload) => {
+const processRemoteConfig = (remoteConfigPayload: RemoteConfigPayloadType) => {
   return (remoteConfigPayload || []).reduce((remoteConfig, domainConfig) => {
     const { domain, endpoints } = domainConfig;
     const endpointConfig = endpoints.reduce((endpointConfig, endpoint) => {
@@ -321,11 +365,13 @@ const getStrRepresentationFromPath = (request: RequestType, location: string) =>
 const getEndpointConfigForRequest = (request: RequestType, remoteConfig: RemoteConfigType) => {
   const domains = Object.keys(remoteConfig);
   const domain = domains.find((domain) => request.url.includes(domain));
+
   // If the domain doesn't exist in the config, then we return nothing
   if (!domain) return null;
   const endpointConfigs = remoteConfig[domain];
+
   for (let i = 0; i < Object.keys(endpointConfigs).length; i++) {
-    const endpointConfig = endpointConfigs[i];
+    const endpointConfig = endpointConfigs[Object.keys(endpointConfigs)[i]];
     const { regex, location } = endpointConfig;
     const regexObj = new RegExp(regex);
     const strRepresentation = getStrRepresentationFromPath(request, location);
@@ -351,5 +397,6 @@ export {
   sleep,
   post,
   get,
-  getEndpointConfigForRequest
+  getEndpointConfigForRequest,
+  expandSensitiveKeySetForArrays
 };
