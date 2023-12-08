@@ -1,32 +1,21 @@
 import http from 'http';
 import https from 'https';
-import { EventEmitter } from 'events';
 import { request } from './http.request';
 import { get } from './http.get';
 import { Protocol } from './NodeClientRequest';
+import { Interceptor, NodeRequestInterceptorOptions } from './Interceptor';
 
 export type ClientRequestModules = Map<Protocol, typeof http | typeof https>;
 
-export interface NodeRequestInterceptorOptions {
-  ignoredDomains?: string[];
-  allowLocalUrls?: boolean;
-  baseUrl?: string;
-}
-
-export class NodeRequestInterceptor {
+export class NodeRequestInterceptor extends Interceptor {
   private modules: ClientRequestModules;
-  private subscriptions: Array<() => void> = [];
-  private emitter: EventEmitter;
-  private options: NodeRequestInterceptorOptions;
 
   constructor(options?: NodeRequestInterceptorOptions) {
-    this.emitter = new EventEmitter();
+    super(options);
 
     this.modules = new Map();
     this.modules.set('http', http);
     this.modules.set('https', https);
-
-    this.options = options ?? {};
   }
 
   public setup() {
@@ -42,7 +31,7 @@ export class NodeRequestInterceptor {
         emitter: this.emitter,
         ignoredDomains: this.options.ignoredDomains,
         allowLocalUrls: this.options.allowLocalUrls,
-        baseUrl: this.options.baseUrl,
+        baseUrl: this.options.baseUrl
       };
 
       // @ts-ignore
@@ -51,16 +40,5 @@ export class NodeRequestInterceptor {
       // @ts-ignore
       requestModule.get = get(protocol, options);
     }
-  }
-
-  public on(event: string, listener: (...args: any[]) => void): void {
-    this.emitter.on(event, listener);
-  }
-
-  public teardown() {
-    for (const unsubscribe of this.subscriptions) {
-      unsubscribe();
-    }
-    this.emitter.removeAllListeners();
   }
 }

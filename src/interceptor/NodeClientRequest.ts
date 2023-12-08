@@ -8,13 +8,10 @@ import {
   ClientRequestWriteArgs,
   normalizeClientRequestWriteArgs
 } from './utils/normalizeClientRequestWriteArgs';
-import {
-  createHeadersFromIncomingHttpHeaders,
-  getIncomingMessageBody
-} from './utils/getIncomingMessageBody';
 import { IsomorphicRequest } from './utils/IsomorphicRequest';
 import { getArrayBuffer } from './utils/bufferUtils';
 import { isInterceptable } from './utils/isInterceptable';
+import { IsomorphicResponse } from './utils/IsomorphicResponse';
 
 export type NodeClientOptions = {
   emitter: EventEmitter;
@@ -115,18 +112,10 @@ export class NodeClientRequest extends ClientRequest {
         message: IncomingMessage,
         emitter: EventEmitter
       ) {
-        const response = args[0] as IncomingMessage;
-        const responseBody = await getIncomingMessageBody(message);
-        emitter.emit(
-          'response',
-          {
-            status: response.statusCode || 200,
-            statusText: response.statusMessage || 'OK',
-            headers: createHeadersFromIncomingHttpHeaders(message.headers),
-            body: responseBody
-          },
-          requestId
+        const isomorphicResponse = await IsomorphicResponse.fromIncomingMessage(
+          message
         );
+        emitter.emit('response', isomorphicResponse, requestId);
       }
 
       if (this.isInterceptable) {

@@ -83,4 +83,17 @@ export class IsomorphicRequest {
   public clone(): IsomorphicRequest {
     return new IsomorphicRequest(this);
   }
+
+  static async fromFetchRequest(request: Request): Promise<IsomorphicRequest> {
+    const requestClone = request.clone();
+    const url = new URL(requestClone.url);
+    const body = await requestClone.arrayBuffer();
+
+    return new IsomorphicRequest(url, {
+      body,
+      method: requestClone.method || 'GET',
+      credentials: 'same-origin',
+      headers: requestClone.headers as Headers
+    });
+  }
 }
