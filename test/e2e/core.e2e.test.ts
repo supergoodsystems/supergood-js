@@ -108,7 +108,7 @@ describe('core functionality', () => {
         },
         SUPERGOOD_SERVER
       );
-      axios.get(`${MOCK_DATA_SERVER}/200?sleep=2000`);
+      axios.get(`${MOCK_DATA_SERVER}/200?sleep=3000`);
       await sleep(1000);
       await Supergood.close();
 

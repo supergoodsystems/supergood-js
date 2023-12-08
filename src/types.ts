@@ -72,6 +72,9 @@ interface MetadataType {
 interface EventRequestType {
   request: RequestType;
   response: ResponseType;
+  metadata?: {
+    sensitiveKeys: Array<SensitiveKeyMetadata>;
+  };
 }
 
 // interface EventResponseType {}

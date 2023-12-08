@@ -392,7 +392,6 @@ it('will prepare the data appropriately for posting to the server', () => {
   };
 
   const events = prepareData([obj], remoteConfig);
-  console.log(JSON.stringify(events, null, 2))
   expect(_get(events[0], 'response.body.name')).toBeTruthy();
   expect(events[0].metadata.sensitiveKeys.length).toEqual(1)
 });

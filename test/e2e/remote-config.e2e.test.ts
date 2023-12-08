@@ -10,6 +10,7 @@ import {
 import { RemoteConfigPayloadType } from '../../src/types';
 import { getEvents } from '../utils/function-call-args';
 import { mockApi } from '../utils/mock-api';
+import _get from 'lodash.get';
 
 describe('remote config functionality', () => {
 
@@ -91,7 +92,7 @@ describe('remote config functionality', () => {
     await Supergood.close();
     const eventsPosted = getEvents(postEventsMock);
     expect(eventsPosted.length).toEqual(1);
-    expect((eventsPosted[0]?.response?.body as any).name).toEqual('redacted:8:string')
+    expect(_get(eventsPosted[0], 'metadata.sensitiveKeys[0].length')).toEqual(8)
   })
 
   it('fetches remote config and redacts sensitive keys within an array', async () => {
@@ -123,7 +124,6 @@ describe('remote config functionality', () => {
     await fetch(`${MOCK_DATA_SERVER}/posts`);
     await Supergood.close();
     const eventsPosted = getEvents(postEventsMock);
-    console.log(eventsPosted[0]?.response?.body)
     expect(eventsPosted.length).toEqual(1);
   })
 
