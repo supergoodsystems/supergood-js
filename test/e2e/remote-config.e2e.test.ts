@@ -11,6 +11,7 @@ import { RemoteConfigPayloadType } from '../../src/types';
 import { getEvents } from '../utils/function-call-args';
 import { mockApi } from '../utils/mock-api';
 import _get from 'lodash.get';
+import { fetchRemoteConfig } from '../../src/api';
 
 describe('remote config functionality', () => {
 
@@ -127,15 +128,19 @@ describe('remote config functionality', () => {
     expect(eventsPosted.length).toEqual(1);
   })
 
-  it('fetches remote config with invalid sensitive key format, logs an error but continues on', () => {
-    expect(true).toBeTruthy();
-  })
-
-  it('fetches remote config and redacts sensitive keys within an array which is nested within an array', () => {
-    expect(true).toBeTruthy();
-  })
-
-  it('does not intercept anything if the remote config can not be fetched', () => {
-    expect(true).toBeTruthy();
+  it('does not intercept anything if the remote config can not be fetched', async () => {
+    const fetchRemoteConfigFunction = () => { throw new Error('Cant fetch remote config') };
+    const { postEventsMock } = mockApi({ fetchRemoteConfigFunction });
+    await Supergood.init(
+      {
+        config: { ...SUPERGOOD_CONFIG, allowLocalUrls: true },
+        clientId: SUPERGOOD_CLIENT_ID,
+        clientSecret: SUPERGOOD_CLIENT_SECRET
+      },
+      SUPERGOOD_SERVER
+    );
+    await fetch(`${MOCK_DATA_SERVER}/posts`);
+    await Supergood.close();
+    expect(postEventsMock).toHaveBeenCalledTimes(0);
   })
 });
