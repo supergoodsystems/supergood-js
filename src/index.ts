@@ -16,7 +16,8 @@ import {
   EventRequestType,
   ConfigType,
   LoggerType,
-  RequestType
+  RequestType,
+  MetadataType
 } from './types';
 import {
   defaultConfig,
@@ -39,6 +40,7 @@ const Supergood = () => {
 
   let headerOptions: HeaderOptionType;
   let supergoodConfig: ConfigType;
+  let supergoodMetadata: MetadataType;
 
   let requestCache: NodeCache;
   let responseCache: NodeCache;
@@ -61,6 +63,7 @@ const Supergood = () => {
       clientId?: string;
       clientSecret?: string;
       config?: Partial<ConfigType>;
+      metadata?: Partial<MetadataType>;
     } = {
       clientId: process.env.SUPERGOOD_CLIENT_ID as string,
       clientSecret: process.env.SUPERGOOD_CLIENT_SECRET as string,
@@ -80,6 +83,7 @@ const Supergood = () => {
       ...defaultConfig,
       ...config
     } as ConfigType;
+    supergoodMetadata = metadata as MetadataType;
 
     requestCache = new NodeCache({
       stdTTL: 0

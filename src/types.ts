@@ -149,4 +149,5 @@ export type {
   RemoteConfigType,
   EndpointConfigType,
   RemoteConfigPayloadType,
+  MetadataType
 };
