@@ -285,7 +285,7 @@ const Supergood = () => {
       if (error.message === errors.UNAUTHORIZED) {
         log.error(
           errors.UNAUTHORIZED,
-          { config: supergoodConfig },
+          { config: supergoodConfig, metadata: { ...supergoodMetadata }},
           error,
           {
             reportOut: false
