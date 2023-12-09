@@ -10,5 +10,5 @@ module.exports = {
     '^.+\\.(js)$': 'babel-jest'
   },
   transformIgnorePatterns: [],
-  setupFilesAfterEnv: ['./setupTests.ts'],
+  setupFilesAfterEnv: ['./setupTests.ts']
 };
