@@ -1,8 +1,5 @@
 import { Agent } from 'http';
 import { RequestOptions, Agent as HttpsAgent } from 'https';
-import { pinoLogger } from '../../logger';
-
-const logger = pinoLogger.child({ module: 'utils getUrlByRequestOptions' });
 
 // Request instance constructed by the "request" library
 // has a "self" property that has a "uri" field. This is
@@ -131,46 +128,20 @@ function getHostname(host: string, port?: number): string {
  * Creates a `URL` instance from a given `RequestOptions` object.
  */
 export function getUrlByRequestOptions(options: ResolvedRequestOptions): URL {
-  logger.debug('request options', options);
-
   if (options.uri) {
-    logger.debug(
-      'constructing url from explicitly provided "options.uri": %s',
-      options.uri
-    );
     return new URL(options.uri.href);
   }
 
-  logger.debug('figuring out url from request options...');
-
   const protocol = getProtocolByRequestOptions(options);
-  logger.debug('protocol', protocol);
-
   const host = getHostByRequestOptions(options);
-  logger.debug('host', host);
-
   const port = getPortByRequestOptions(options);
-  logger.debug('port', port);
-
   const hostname = getHostname(host, port);
-  logger.debug('hostname', hostname);
-
   const path = options.path || DEFAULT_PATH;
-  logger.debug('path', path);
-
   const credentials = getAuthByRequestOptions(options);
-  logger.debug('credentials', credentials);
-
-  const authString = credentials
-    ? `${credentials.username}:${credentials.password}@`
-    : '';
-  logger.debug('auth string:', authString);
-
   const url = new URL(`${protocol}//${hostname}${path}`);
+
   url.username = credentials?.username || '';
   url.password = credentials?.password || '';
-
-  logger.debug('created url:', url);
 
   return url;
 }

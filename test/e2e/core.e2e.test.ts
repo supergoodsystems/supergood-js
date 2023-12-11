@@ -4,7 +4,7 @@ import axios from 'axios';
 import fetch from 'node-fetch';
 
 import Supergood from '../../src';
-import { errors } from '../../src/constants';
+import { LocalClientId, LocalClientSecret, errors } from '../../src/constants';
 import { EventRequestType } from '../../src/types';
 
 import { sleep } from '../../src/utils';
@@ -195,7 +195,10 @@ describe('core functionality', () => {
     test('ignores requests to ignored domains', async () => {
       await Supergood.init(
         {
-          config: { ignoredDomains: ['supergood-testbed.herokuapp.com'], allowLocalUrls: true },
+          config: {
+            ignoredDomains: ['supergood-testbed.herokuapp.com'],
+            allowLocalUrls: true
+          },
           clientId: SUPERGOOD_CLIENT_ID,
           clientSecret: SUPERGOOD_CLIENT_SECRET
         },
@@ -318,14 +321,14 @@ describe('core functionality', () => {
       await Supergood.init(
         {
           config: { ...SUPERGOOD_CONFIG, allowLocalUrls: true },
-          clientId: 'local-client-id',
-          clientSecret: 'local-client-secret'
+          clientId: LocalClientId,
+          clientSecret: LocalClientSecret
         },
         SUPERGOOD_SERVER
       );
       await axios.get(`${MOCK_DATA_SERVER}/posts`);
-      expect(postEventsMock).not.toHaveBeenCalled();
       await Supergood.close();
+      expect(postEventsMock).not.toHaveBeenCalled();
     });
   });
 });

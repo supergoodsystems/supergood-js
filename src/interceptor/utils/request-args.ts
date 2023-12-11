@@ -16,9 +16,6 @@ import {
 } from './getUrlByRequestOptions';
 import { cloneObject } from './cloneObject';
 import { isObject } from './isObject';
-import { pinoLogger } from '../../logger';
-
-const logger = pinoLogger.child({ module: 'request-args' });
 
 export type HttpRequestCallback = (response: IncomingMessage) => void;
 
@@ -36,24 +33,18 @@ function resolveRequestOptions(
   // Calling `fetch` provides only URL to `ClientRequest`
   // without any `RequestOptions` or callback.
   if (typeof args[1] === 'undefined' || typeof args[1] === 'function') {
-    logger.debug('request options not provided, deriving from the url', url);
     return getRequestOptionsByUrl(url);
   }
 
   if (args[1]) {
-    logger.debug('has custom RequestOptions!', args[1]);
     const requestOptionsFromUrl = getRequestOptionsByUrl(url);
-
-    logger.debug('derived RequestOptions from the URL:', requestOptionsFromUrl);
 
     /**
      * Clone the request options to lock their state
      * at the moment they are provided to `ClientRequest`.
      * @see https://github.com/mswjs/interceptors/issues/86
      */
-    logger.debug('cloning RequestOptions...');
     const clonedRequestOptions = cloneObject(args[1]);
-    logger.debug('successfully cloned RequestOptions!', clonedRequestOptions);
 
     return {
       ...requestOptionsFromUrl,
@@ -61,7 +52,6 @@ function resolveRequestOptions(
     };
   }
 
-  logger.debug('using an empty object as request options');
   return {} as RequestOptions;
 }
 
@@ -108,9 +98,6 @@ export function normalizeClientRequestArgs(
   let options: ResolvedRequestOptions;
   let callback: HttpRequestCallback | undefined;
 
-  logger.debug('arguments', args);
-  logger.debug('using default protocol:', defaultProtocol);
-
   // Support "http.request()" calls without any arguments.
   // That call results in a "GET http://localhost" request.
   if (args.length === 0) {
@@ -122,25 +109,14 @@ export function normalizeClientRequestArgs(
   // Convert a url string into a URL instance
   // and derive request options from it.
   if (typeof args[0] === 'string') {
-    logger.debug('first argument is a location string:', args[0]);
-
     url = new URL(args[0]);
-    logger.debug('created a url:', url);
-
-    const requestOptionsFromUrl = getRequestOptionsByUrl(url);
-    logger.debug('request options from url:', requestOptionsFromUrl);
-
     options = resolveRequestOptions(args, url);
-    logger.debug('resolved request options:', options);
-
     callback = resolveCallback(args);
   }
   // Handle a given URL instance as-is
   // and derive request options from it.
   else if (args[0] instanceof URL) {
     url = args[0];
-    logger.debug('first argument is a URL:', url);
-
     // Check if the second provided argument is RequestOptions.
     // If it is, check if "options.path" was set and rewrite it
     // on the input URL.
@@ -151,16 +127,12 @@ export function normalizeClientRequestArgs(
     }
 
     options = resolveRequestOptions(args, url);
-    logger.debug('derived request options:', options);
-
     callback = resolveCallback(args);
   }
   // Handle a legacy URL instance and re-normalize from either a RequestOptions object
   // or a WHATWG URL.
   else if ('hash' in args[0] && !('method' in args[0])) {
     const [legacyUrl] = args;
-    logger.debug('first argument is a legacy URL:', legacyUrl);
-
     if (legacyUrl.hostname === null) {
       /**
        * We are dealing with a relative url, so use the path as an "option" and
@@ -169,8 +141,6 @@ export function normalizeClientRequestArgs(
        * with the behaviour in ClientRequest.
        * @see https://github.com/nodejs/node/blob/d84f1312915fe45fe0febe888db692c74894c382/lib/_http_client.js#L122
        */
-      logger.debug('given legacy URL is relative (no hostname)');
-
       return isObject(args[1])
         ? normalizeClientRequestArgs(
             defaultProtocol,
@@ -183,9 +153,6 @@ export function normalizeClientRequestArgs(
             args[1] as HttpRequestCallback
           );
     }
-
-    logger.debug('given legacy url is absolute');
-
     // We are dealing with an absolute URL, so convert to WHATWG and try again.
     const resolvedUrl = new URL(legacyUrl.href);
 
@@ -204,15 +171,10 @@ export function normalizeClientRequestArgs(
   // and derive the URL instance from it.
   else if (isObject(args[0])) {
     options = args[0] as any;
-    logger.debug('first argument is RequestOptions:', options);
-
     // When handling a "RequestOptions" object without an explicit "protocol",
     // infer the protocol from the request issuing module (http/https).
     options.protocol = options.protocol || defaultProtocol;
-    logger.debug('normalized request options:', options);
-
     url = getUrlByRequestOptions(options);
-    logger.debug('created a URL from RequestOptions:', url.href);
 
     callback = resolveCallback(args);
   } else {
@@ -241,7 +203,6 @@ export function normalizeClientRequestArgs(
         : new HttpAgent();
 
     options.agent = agent;
-    logger.debug('resolved fallback agent:', agent);
   }
 
   /**
@@ -253,18 +214,9 @@ export function normalizeClientRequestArgs(
    * @see https://github.com/nodejs/node/blob/418ff70b810f0e7112d48baaa72932a56cfa213b/lib/_http_client.js#L157-L159
    */
   if (!options._defaultAgent) {
-    logger.debug(
-      'has no default agent, setting the default agent for "%s"',
-      options.protocol
-    );
-
     options._defaultAgent =
       options.protocol === 'https:' ? httpsGlobalAgent : httpGlobalAgent;
   }
-
-  logger.debug('successfully resolved url:', url.href);
-  logger.debug('successfully resolved options:', options);
-  logger.debug('successfully resolved callback:', callback);
 
   return [url, options, callback];
 }

@@ -1,7 +1,3 @@
-import { pinoLogger } from '../../logger';
-
-const logger = pinoLogger.child({ module: 'http normalizeWriteArgs' });
-
 export type ClientRequestWriteCallback = (error?: Error | null) => void;
 export type ClientRequestWriteArgs = [
   chunk: string | Buffer,
@@ -18,8 +14,6 @@ export type NormalizedClientRequestWriteArgs = [
 export function normalizeClientRequestWriteArgs(
   args: ClientRequestWriteArgs
 ): NormalizedClientRequestWriteArgs {
-  logger.debug('normalizing ClientRequest.write arguments...', args);
-
   const chunk = args[0];
   const encoding =
     typeof args[1] === 'string' ? (args[1] as BufferEncoding) : undefined;
@@ -30,10 +24,6 @@ export function normalizeClientRequestWriteArgs(
     encoding,
     callback
   ];
-  logger.debug(
-    'successfully normalized ClientRequest.write arguments:',
-    writeArgs
-  );
 
   return writeArgs;
 }
