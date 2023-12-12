@@ -87,18 +87,18 @@ const getHeaderOptions = (
 };
 
 const marshalKeyPath = (keypath: string) => {
-  if(/^request_headers/.test(keypath)) return keypath.replace('request_headers', 'request.headers');
-  if(/^request_body/.test(keypath)) return keypath.replace('request_body', 'request.body');
-  if(/^response_headers/.test(keypath)) return keypath.replace('response_headers', 'response.headers');
-  if(/^response_body/.test(keypath)) return keypath.replace('response_body', 'response.body');
+  if(/^requestHeaders/.test(keypath)) return keypath.replace('requestHeaders', 'request.headers');
+  if(/^requestBody/.test(keypath)) return keypath.replace('requestBody', 'request.body');
+  if(/^responseHeaders/.test(keypath)) return keypath.replace('responseHeaders', 'response.headers');
+  if(/^responseBody/.test(keypath)) return keypath.replace('responseBody', 'response.body');
   return keypath;
 }
 
 const unmarshalKeyPath = (keypath: string) => {
-  if(/^request\.headers/.test(keypath)) return keypath.replace('request.headers', 'request_headers');
-  if(/^request\.body/.test(keypath)) return keypath.replace('request.body', 'request_body');
-  if(/^response\.headers/.test(keypath)) return keypath.replace('response.headers', 'response_headers');
-  if(/^response\.body/.test(keypath)) return keypath.replace('response.body', 'response_body');
+  if(/^request\.headers/.test(keypath)) return keypath.replace('request.headers', 'requestHeaders');
+  if(/^request\.body/.test(keypath)) return keypath.replace('request.body', 'requestBody');
+  if(/^response\.headers/.test(keypath)) return keypath.replace('response.headers', 'responseHeaders');
+  if(/^response\.body/.test(keypath)) return keypath.replace('response.body', 'responseBody');
   return keypath;
 }
 
@@ -357,8 +357,8 @@ const getStrRepresentationFromPath = (request: RequestType, location: string) =>
   if(location === 'domain') return url.hostname.toString();
   if(location === 'url') return url.toString();
   if(location === 'path') return url.pathname.toString();
-  if(location === 'request_headers') return request.headers.toString();
-  if(location === 'request_body') return request.body?.toString();
+  if(location === 'requestHeaders') return request.headers.toString();
+  if(location === 'requestBody') return request.body?.toString();
   return request[location as keyof RequestType]?.toString();
 }
 

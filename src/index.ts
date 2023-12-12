@@ -124,95 +124,104 @@ const Supergood = () => {
     };
 
     const initializeInterceptors = () => {
-    interceptor.setup();
+      interceptor.setup();
+      interceptor.on(
+        'request',
+        async (request: IsomorphicRequest, requestId: string) => {
+          // Don't intercept if there's no remote config set
+          // to avoid sensitive keys being sent to the SG server.
+          if(!supergoodConfig.remoteConfig) return;
 
-    // Continue fetching the remote config every <remoteConfigFetchInterval> milliseconds
-    remoteConfigFetchInterval = setInterval(fetchAndProcessRemoteConfig, supergoodConfig.remoteConfigFetchInterval);
-
-    interceptor.on(
-      'request',
-      async (request: IsomorphicRequest, requestId: string) => {
-        try {
-          const url = new URL(request.url);
-          // Meant for debug and testing purposes
-
-          if (url.pathname === TestErrorPath) {
-            throw new Error(errors.TEST_ERROR);
-          }
-
-          const body = await request.clone().text();
-          const requestData = {
-            id: requestId,
-            headers: Object.fromEntries(request.headers.entries()),
-            method: request.method,
-            url: url.href,
-            path: url.pathname,
-            search: url.search,
-            body: safeParseJson(body),
-            requestedAt: new Date()
-          } as RequestType;
-
-          cacheRequest(requestData, baseUrl);
-        } catch (e) {
-          log.error(
-            errors.CACHING_REQUEST,
-            {
-              config: supergoodConfig,
-              metadata: {
-                requestUrl: request.url.toString(),
-                payloadSize: serialize(request).length,
-                ...supergoodMetadata
-              }
-            },
-            e as Error,
-            {
-              reportOut: !localOnly
+          try {
+            const url = new URL(request.url);
+            // Meant for debug and testing purposes
+            if (url.pathname === TestErrorPath) {
+              throw new Error(errors.TEST_ERROR);
             }
-          );
-        }
-      }
-    );
 
-    interceptor.on(
-      'response',
-      async (response: IsomorphicResponse, requestId: string) => {
-        let requestData = { url: '' };
-        let responseData = {};
+            const body = await request.clone().text();
+            const requestData = {
+              id: requestId,
+              headers: Object.fromEntries(request.headers.entries()),
+              method: request.method,
+              url: url.href,
+              path: url.pathname,
+              search: url.search,
+              body: safeParseJson(body),
+              requestedAt: new Date()
+            } as RequestType;
 
-        try {
-          const requestData = requestCache.get(requestId) as {
-            request: RequestType;
-          };
+            const endpointConfig = getEndpointConfigForRequest(requestData, supergoodConfig.remoteConfig);
+            if (endpointConfig?.ignored) return;
 
-          if (requestData) {
-            const responseData = {
-              response: {
-                headers: Object.fromEntries(response.headers.entries()),
-                status: response.status,
-                statusText: response.statusText,
-                body: response.body && safeParseJson(response.body),
-                respondedAt: new Date()
+            cacheRequest(requestData, baseUrl);
+          } catch (e) {
+            log.error(
+              errors.CACHING_REQUEST,
+              {
+                config: supergoodConfig,
+                metadata: {
+                  requestUrl: request.url.toString(),
+                  payloadSize: serialize(request).length,
+                  ...supergoodMetadata
+                }
               },
-              ...requestData
-            } as EventRequestType;
-            cacheResponse(responseData, baseUrl);
-          }
-        } catch (e) {
-          log.error(
-            errors.CACHING_RESPONSE,
-            {
-              config: supergoodConfig,
-              metadata: {
-                ...supergoodMetadata,
-                requestUrl: requestData.url,
-                payloadSize: responseData ? serialize(responseData).length : 0
+              e as Error,
+              {
+                reportOut: !localOnly
               }
-            },
-            e as Error
-          );
+            );
+          }
         }
-      }
-    );
+      );
+
+      interceptor.on(
+        'response',
+        async (response: IsomorphicResponse, requestId: string) => {
+          let requestData = { url: '' };
+          let responseData = {};
+
+          if(!supergoodConfig.remoteConfig) return;
+
+          try {
+            const requestData = requestCache.get(requestId) as {
+              request: RequestType;
+            };
+
+            if (requestData) {
+
+              const endpointConfig = getEndpointConfigForRequest(requestData.request, supergoodConfig.remoteConfig);
+              if (endpointConfig?.ignored) return;
+
+              const responseData = {
+                response: {
+                  headers: Object.fromEntries(response.headers.entries()),
+                  status: response.status,
+                  statusText: response.statusText,
+                  body: response.body && safeParseJson(response.body),
+                  respondedAt: new Date()
+                },
+                ...requestData
+              } as EventRequestType;
+              cacheResponse(responseData, baseUrl);
+            }
+          } catch (e) {
+            log.error(
+              errors.CACHING_RESPONSE,
+              {
+                config: supergoodConfig,
+                metadata: {
+                  ...supergoodMetadata,
+                  requestUrl: requestData.url,
+                  payloadSize: responseData ? serialize(responseData).length : 0
+                }
+              },
+              e as Error
+            );
+          }
+        }
+      );
+    };
 
     // Fetch the initial config and process it
     await fetchAndProcessRemoteConfig();
