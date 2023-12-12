@@ -195,7 +195,7 @@ const redactValue = (
     dataType = 'array';
   }
   else if (typeof input === 'object') {
-    dataLength = new Blob([input.toString()]).size;
+    dataLength = new Blob([JSON.stringify(input)]).size;
     dataType = 'object';
   } else if (typeof input === 'string') {
     dataLength = input.length;

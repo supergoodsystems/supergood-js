@@ -3,7 +3,7 @@ const defaultConfig = {
   remoteConfigFetchInterval: 10000,
   eventSinkEndpoint: '/events',
   errorSinkEndpoint: '/errors',
-  configFetchEndpoint: '/config',
+  remoteConfigFetchEndpoint: '/config',
   allowLocalUrls: false,
   ignoredDomains: [],
 

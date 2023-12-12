@@ -10,7 +10,7 @@ import {
   getEndpointConfigForRequest
 } from './utils';
 import { postEvents, fetchRemoteConfig } from './api';
-
+import v8 from 'v8';
 import {
   HeaderOptionType,
   EventRequestType,
@@ -220,13 +220,12 @@ const Supergood = () => {
 
     // Fetch the config ongoing every <remoteConfigFetchInterval> milliseconds
     remoteConfigFetchInterval = setInterval(fetchAndProcessRemoteConfig, supergoodConfig.remoteConfigFetchInterval);
+    remoteConfigFetchInterval.unref();
 
     // Flushes the cache every <flushInterval> milliseconds
     flushInterval = setInterval(flushCache, supergoodConfig.flushInterval);
-
     // https://httptoolkit.com/blog/unblocking-node-with-unref/
     flushInterval.unref();
-    remoteConfigFetchInterval.unref();
   };
 
   const cacheRequest = async (request: RequestType, baseUrl: string) => {
@@ -248,7 +247,7 @@ const Supergood = () => {
 
   // Force flush cache means don't wait for responses
   const flushCache = async ({ force } = { force: false }) => {
-    log.debug('Flushing Cache ...', { force });
+    // log.debug('Flushing Cache ...', { force });
     const responseCacheKeys = responseCache.keys();
     const requestCacheKeys = requestCache.keys();
 
@@ -269,7 +268,7 @@ const Supergood = () => {
     }
 
     if (data.length === 0) {
-      log.debug('Nothing to flush', { force });
+      // log.debug('Nothing to flush', { force });
       return;
     }
 
@@ -279,13 +278,16 @@ const Supergood = () => {
       } else {
         await postEvents(eventSinkUrl, data, headerOptions);
       }
-      log.debug(`Flushed ${data.length} events`, { force });
+      if (data.length) {
+        log.debug(`Flushed ${data.length} events`, { force });
+        log.debug(`Flushing Ids: ${data.map((event) => event.request.id)}`)
+      }
     } catch (e) {
       const error = e as Error;
       if (error.message === errors.UNAUTHORIZED) {
         log.error(
           errors.UNAUTHORIZED,
-          { config: supergoodConfig, metadata: { ...supergoodMetadata }},
+          { config: supergoodConfig, metadata: { ...supergoodMetadata } },
           error,
           {
             reportOut: false
