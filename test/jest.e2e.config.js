@@ -4,10 +4,11 @@ module.exports = {
   preset: 'ts-jest',
   testEnvironment: 'node',
   clearMocks: true,
-  roots: ['<rootDir>/test'],
+  roots: ['<rootDir>/e2e'],
   transform: {
-    '^.+\\.(ts|tsx)$': 'ts-jest',
+    '^.+\\.(ts|tsx)$': ['ts-jest', { tsconfig: './test/tsconfig.test.json' }],
     '^.+\\.(js)$': 'babel-jest'
   },
-  transformIgnorePatterns: []
+  transformIgnorePatterns: [],
+  setupFilesAfterEnv: ['./setupTests.ts'],
 };

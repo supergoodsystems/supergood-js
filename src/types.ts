@@ -1,6 +1,3 @@
-import { InteractiveIsomorphicRequest } from 'supergood-interceptors';
-import { Response } from 'node-fetch';
-
 interface HeaderOptionType {
   headers: {
     'Content-Type': string;
@@ -33,11 +30,20 @@ interface ResponseType {
 interface ConfigType {
   flushInterval: number;
   ignoredDomains: string[];
+  allowLocalUrls: boolean;
   cacheTtl: number;
   keysToHash: string[];
   eventSinkEndpoint: string; // Defaults to {baseUrl}/events if not provided
   errorSinkEndpoint: string; // Defaults to {baseUrl}/errors if not provided
   waitAfterClose: number;
+}
+
+interface MetadataType {
+  numberOfEvents?: number;
+  payloadSize?: number;
+  requestUrls?: string[];
+  requestUrl?: string;
+  serviceName?: string;
 }
 
 interface EventRequestType {
@@ -57,7 +63,7 @@ type ErrorPayloadType = {
 
 interface InfoPayloadType {
   config: ConfigType;
-  request?: Omit<InteractiveIsomorphicRequest, 'respondWith'>;
+  request?: Request;
   response?: Omit<
     Response,
     'buffer' | 'size' | 'textConverted' | 'timeout' | 'headers'
@@ -65,6 +71,7 @@ interface InfoPayloadType {
   data?: EventRequestType[];
   packageName?: string;
   packageVersion?: string;
+  metadata?: MetadataType;
 }
 
 interface LoggerType {
@@ -87,5 +94,6 @@ export type {
   LoggerType,
   ConfigType,
   ErrorPayloadType,
-  BodyType
+  BodyType,
+  MetadataType
 };

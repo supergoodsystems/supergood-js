@@ -1,22 +1,21 @@
-import { IsomorphicRequest } from 'supergood-interceptors';
 import NodeCache from 'node-cache';
+import { serialize } from 'v8';
 import {
   getHeaderOptions,
   logger,
   safeParseJson,
   prepareData,
-  shouldCachePayload,
   sleep
 } from './utils';
 import { postEvents } from './api';
 
-import { ClientRequestInterceptor } from 'supergood-interceptors/lib/interceptors/ClientRequest';
 import {
   HeaderOptionType,
   EventRequestType,
   ConfigType,
   LoggerType,
-  RequestType
+  RequestType,
+  MetadataType
 } from './types';
 import {
   defaultConfig,
@@ -26,6 +25,11 @@ import {
   LocalClientSecret
 } from './constants';
 import onExit from 'signal-exit';
+import { NodeRequestInterceptor } from './interceptor/NodeRequestInterceptor';
+import { IsomorphicRequest } from './interceptor/utils/IsomorphicRequest';
+import { IsomorphicResponse } from './interceptor/utils/IsomorphicResponse';
+import { BatchInterceptor } from './interceptor/BatchInterceptor';
+import { FetchInterceptor } from './interceptor/FetchInterceptor';
 
 const Supergood = () => {
   let eventSinkUrl: string;
@@ -33,6 +37,7 @@ const Supergood = () => {
 
   let headerOptions: HeaderOptionType;
   let supergoodConfig: ConfigType;
+  let supergoodMetadata: MetadataType;
 
   let requestCache: NodeCache;
   let responseCache: NodeCache;
@@ -42,21 +47,24 @@ const Supergood = () => {
 
   let localOnly = false;
 
-  let interceptor: ClientRequestInterceptor;
+  let interceptor: BatchInterceptor;
 
   const init = async (
     {
       clientId,
       clientSecret,
-      config
+      config,
+      metadata
     }: {
       clientId?: string;
       clientSecret?: string;
       config?: Partial<ConfigType>;
+      metadata?: Partial<MetadataType>;
     } = {
       clientId: process.env.SUPERGOOD_CLIENT_ID as string,
       clientSecret: process.env.SUPERGOOD_CLIENT_SECRET as string,
-      config: {} as Partial<ConfigType>
+      config: {} as Partial<ConfigType>,
+      metadata: {} as Partial<MetadataType>
     },
     baseUrl = process.env.SUPERGOOD_BASE_URL || 'https://api.supergood.ai'
   ) => {
@@ -71,6 +79,7 @@ const Supergood = () => {
       ...defaultConfig,
       ...config
     } as ConfigType;
+    supergoodMetadata = metadata as MetadataType;
 
     requestCache = new NodeCache({
       stdTTL: 0
@@ -78,9 +87,18 @@ const Supergood = () => {
     responseCache = new NodeCache({
       stdTTL: 0
     });
-    interceptor = new ClientRequestInterceptor({
-      ignoredDomains: supergoodConfig.ignoredDomains
-    });
+    const interceptorOpts = {
+      ignoredDomains: supergoodConfig.ignoredDomains,
+      allowLocalUrls: supergoodConfig.allowLocalUrls,
+      baseUrl
+    };
+
+    interceptor = new BatchInterceptor([
+      new NodeRequestInterceptor(interceptorOpts),
+      ...(FetchInterceptor.checkEnvironment()
+        ? [new FetchInterceptor(interceptorOpts)]
+        : [])
+    ]);
 
     errorSinkUrl = `${baseUrl}${supergoodConfig.errorSinkEndpoint}`;
     eventSinkUrl = `${baseUrl}${supergoodConfig.eventSinkEndpoint}`;
@@ -88,68 +106,92 @@ const Supergood = () => {
     headerOptions = getHeaderOptions(clientId, clientSecret);
     log = logger({ errorSinkUrl, headerOptions });
 
-    interceptor.apply();
-    interceptor.on('request', async (request: IsomorphicRequest) => {
-      const requestId = request.id;
-      try {
-        const url = new URL(request.url);
-        // Meant for debug and testing purposes
-        if (url.pathname === TestErrorPath) {
-          throw new Error(errors.TEST_ERROR);
-        }
+    interceptor.setup();
 
-        const body = await request.clone().text();
-        const requestData = {
-          id: requestId,
-          headers: Object.fromEntries(request.headers.entries()),
-          method: request.method,
-          url: url.href,
-          path: url.pathname,
-          search: url.search,
-          body: safeParseJson(body),
-          requestedAt: new Date()
-        } as RequestType;
+    interceptor.on(
+      'request',
+      async (request: IsomorphicRequest, requestId: string) => {
+        try {
+          const url = new URL(request.url);
+          // Meant for debug and testing purposes
 
-        cacheRequest(requestData, baseUrl);
-      } catch (e) {
-        log.error(
-          errors.CACHING_REQUEST,
-          { config: supergoodConfig },
-          e as Error,
-          {
-            reportOut: !localOnly
+          if (url.pathname === TestErrorPath) {
+            throw new Error(errors.TEST_ERROR);
           }
-        );
-      }
-    });
 
-    interceptor.on('response', async (request, response) => {
-      const requestId = request.id;
-      try {
-        const requestData = requestCache.get(requestId) as {
-          request: RequestType;
-        };
-        if (requestData) {
-          const responseData = {
-            response: {
-              headers: Object.fromEntries(response.headers.entries()),
-              status: response.status,
-              statusText: response.statusText,
-              body: response.body && safeParseJson(response.body),
-              respondedAt: new Date()
+          const body = await request.clone().text();
+          const requestData = {
+            id: requestId,
+            headers: Object.fromEntries(request.headers.entries()),
+            method: request.method,
+            url: url.href,
+            path: url.pathname,
+            search: url.search,
+            body: safeParseJson(body),
+            requestedAt: new Date()
+          } as RequestType;
+
+          cacheRequest(requestData, baseUrl);
+        } catch (e) {
+          log.error(
+            errors.CACHING_REQUEST,
+            {
+              config: supergoodConfig,
+              metadata: {
+                requestUrl: request.url.toString(),
+                payloadSize: serialize(request).length,
+                ...supergoodMetadata
+              }
             },
-            ...requestData
-          } as EventRequestType;
-          cacheResponse(responseData, baseUrl);
+            e as Error,
+            {
+              reportOut: !localOnly
+            }
+          );
         }
-      } catch (e) {
-        log.error(
-          errors.CACHING_RESPONSE,
-          { config: supergoodConfig },
-          e as Error
-        );
       }
-    });
+    );
+
+    interceptor.on(
+      'response',
+      async (response: IsomorphicResponse, requestId: string) => {
+        let requestData = { url: '' };
+        let responseData = {};
+
+        try {
+          const requestData = requestCache.get(requestId) as {
+            request: RequestType;
+          };
+
+          if (requestData) {
+            const responseData = {
+              response: {
+                headers: Object.fromEntries(response.headers.entries()),
+                status: response.status,
+                statusText: response.statusText,
+                body: response.body && safeParseJson(response.body),
+                respondedAt: new Date()
+              },
+              ...requestData
+            } as EventRequestType;
+            cacheResponse(responseData, baseUrl);
+          }
+        } catch (e) {
+          log.error(
+            errors.CACHING_RESPONSE,
+            {
+              config: supergoodConfig,
+              metadata: {
+                ...supergoodMetadata,
+                requestUrl: requestData.url,
+                payloadSize: responseData ? serialize(responseData).length : 0
+              }
+            },
+            e as Error
+          );
+        }
+      }
+    );
 
     // Flushes the cache every <flushInterval> milliseconds
     interval = setInterval(flushCache, supergoodConfig.flushInterval);
@@ -157,24 +199,20 @@ const Supergood = () => {
   };
 
   const cacheRequest = async (request: RequestType, baseUrl: string) => {
-    if (shouldCachePayload(request.url, baseUrl)) {
-      requestCache.set(request.id, { request });
-      log.debug('Setting Request Cache', {
-        request
-      });
-    }
+    requestCache.set(request.id, { request });
+    log.debug('Setting Request Cache', {
+      request
+    });
   };
 
   const cacheResponse = async (event: EventRequestType, baseUrl: string) => {
-    if (shouldCachePayload(event.request.url, baseUrl)) {
-      responseCache.set(event.request.id, event);
-      log.debug('Setting Response Cache', {
-        id: event.request.id,
-        ...event
-      });
-      requestCache.del(event.request.id);
-      log.debug('Deleting Request Cache', { id: event.request.id });
-    }
+    responseCache.set(event.request.id, event);
+    log.debug('Setting Response Cache', {
+      id: event.request.id,
+      ...event
+    });
+    requestCache.del(event.request.id);
+    log.debug('Deleting Request Cache', { id: event.request.id });
   };
 
   // Force flush cache means don't wait for responses
@@ -216,18 +254,31 @@ const Supergood = () => {
       if (error.message === errors.UNAUTHORIZED) {
         log.error(
           errors.UNAUTHORIZED,
-          { config: supergoodConfig },
+          {
+            config: supergoodConfig,
+            metadata: {
+              ...supergoodMetadata
+            }
+          },
           error,
           {
             reportOut: false
           }
         );
         clearInterval(interval);
-        interceptor.dispose();
+        interceptor.teardown();
       } else {
         log.error(
           errors.POSTING_EVENTS,
-          { config: supergoodConfig },
+          {
+            config: supergoodConfig,
+            metadata: {
+              numberOfEvents: data.length,
+              payloadSize: serialize(data).length,
+              requestUrls: data.map((event) => event?.request?.url),
+              ...supergoodMetadata
+            }
+          },
           error,
           {
             reportOut: !localOnly
@@ -253,7 +304,7 @@ const Supergood = () => {
       await sleep(supergoodConfig.waitAfterClose);
     }
 
-    interceptor.dispose();
+    interceptor.teardown();
     await flushCache({ force });
     return false;
   };
