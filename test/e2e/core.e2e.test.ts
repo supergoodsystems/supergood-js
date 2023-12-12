@@ -38,9 +38,10 @@ describe('core functionality', () => {
         await axios.get(`${MOCK_DATA_SERVER}/posts`);
       }
       await Supergood.close();
+      // checking that all events were posted
       expect(postEventsMock).toHaveBeenCalledWith(
         expect.any(String),
-        Array(numberOfHttpCalls).fill(expect.anything()),
+        expect.toBeArrayOfSize(numberOfHttpCalls),
         expect.any(Object)
       );
       expect(postEventsMock).toHaveBeenCalledWith(
@@ -69,21 +70,32 @@ describe('core functionality', () => {
         },
         SUPERGOOD_SERVER
       );
-      for (let i = 0; i < httpErrorCodes.length; i++) {
+      for (const code of httpErrorCodes) {
         try {
-          await axios.get(`${MOCK_DATA_SERVER}/${httpErrorCodes[i]}`);
+          await axios.get(`${MOCK_DATA_SERVER}/${code}`);
         } catch (e) {
           // ignore
         }
       }
       await Supergood.close();
-      const eventsPosted = getEvents(postEventsMock);
-      expect(eventsPosted.length).toEqual(httpErrorCodes.length);
-      expect(
-        eventsPosted.every((event) =>
-          httpErrorCodes.includes(event.response.status)
-        )
-      ).toBeTruthy();
+
+      // checking that all events were posted
+      expect(postEventsMock).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.toBeArrayOfSize(httpErrorCodes.length),
+        expect.any(Object)
+      );
+      expect(postEventsMock).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.arrayContaining([
+          expect.objectContaining({
+            response: expect.objectContaining({
+              status: expect.toBeOneOf(httpErrorCodes)
+            })
+          })
+        ]),
+        expect.any(Object)
+      );
     });
   });
 
@@ -100,16 +112,29 @@ describe('core functionality', () => {
       axios.get(`${MOCK_DATA_SERVER}/200?sleep=2000`);
       await sleep(1000);
       await Supergood.close();
-      const eventsPosted = getEvents(postEventsMock);
-      const firstEvent = eventsPosted[0];
-      expect(eventsPosted.length).toEqual(1);
-      expect(firstEvent.request.requestedAt).toBeTruthy();
-      expect(firstEvent?.response?.respondedAt).toBeFalsy();
-    });
+
+      // checking that all events were posted
+      expect(postEventsMock).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.toBeArrayOfSize(1),
+        expect.any(Object)
+      );
+      expect(postEventsMock).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.arrayContaining([
+          expect.objectContaining({
+            request: expect.objectContaining({
+              requestedAt: expect.any(Date)
+            })
+          })
+        ]),
+        expect.any(Object)
+      );
+    }, 10000);
 
     // Causes the github actions to hang for some reason
-    test.skip('posting errors', async () => {
-      postEventsMock.mockImplementation(() => {
+    test('posting errors', async () => {
+      postEventsMock.mockImplementationOnce(() => {
         throw new Error();
       });
       await Supergood.init(

@@ -6,7 +6,7 @@ module.exports = {
   clearMocks: true,
   roots: ['<rootDir>/e2e'],
   transform: {
-    '^.+\\.(ts|tsx)$': 'ts-jest',
+    '^.+\\.(ts|tsx)$': ['ts-jest', { tsconfig: './test/tsconfig.test.json' }],
     '^.+\\.(js)$': 'babel-jest'
   },
   transformIgnorePatterns: [],

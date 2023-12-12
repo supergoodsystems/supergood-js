@@ -1,4 +1,5 @@
 import NodeCache from 'node-cache';
+import { serialize } from 'v8';
 import {
   getHeaderOptions,
   logger,
@@ -138,7 +139,7 @@ const Supergood = () => {
               config: supergoodConfig,
               metadata: {
                 requestUrl: request.url.toString(),
-                payloadSize: new Blob([request as any]).size,
+                payloadSize: serialize(request).length,
                 ...supergoodMetadata
               }
             },
@@ -183,9 +184,7 @@ const Supergood = () => {
               metadata: {
                 ...supergoodMetadata,
                 requestUrl: requestData.url,
-                payloadSize: responseData
-                  ? new Blob([responseData as BlobPart]).size
-                  : 0
+                payloadSize: responseData ? serialize(responseData).length : 0
               }
             },
             e as Error
@@ -275,7 +274,7 @@ const Supergood = () => {
             config: supergoodConfig,
             metadata: {
               numberOfEvents: data.length,
-              payloadSize: new Blob([(data || {}) as any]).size,
+              payloadSize: serialize(data).length,
               requestUrls: data.map((event) => event?.request?.url),
               ...supergoodMetadata
             }
