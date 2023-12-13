@@ -75,7 +75,7 @@ describe('remote config functionality', () => {
         endpointConfiguration: {
           action: 'Allow',
           sensitiveKeys: [{
-            keyPath: 'response_body.name'
+            keyPath: 'responseBody.name'
           }]
         }
       }]
