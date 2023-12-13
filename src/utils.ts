@@ -103,7 +103,6 @@ const unmarshalKeyPath = (keypath: string) => {
 }
 
 const expandSensitiveKeySetForArrays = (obj: any, sensitiveKeys: Array<string>): Array<string> => {
-  console.log({ sensitiveKeys })
   const expandKey = (key: string, obj: any): Array<string> => {
     // Split the key by dots, considering the array brackets as part of the key
     const parts = key.match(/[^.\[\]]+|\[\d*\]|\[\*\]/g) || [];
@@ -157,7 +156,6 @@ const redactValuesFromKeys = (
 ): { event: { request?: RequestType; response?: ResponseType }, sensitiveKeyMetadata: Array<SensitiveKeyMetadata> } => {
   let sensitiveKeyMetadata: Array<SensitiveKeyMetadata> = [];
   const endpointConfig = getEndpointConfigForRequest(event.request as RequestType, remoteConfig);
-  console.log({ endpointConfig })
   if (!endpointConfig || !endpointConfig?.sensitiveKeys?.length) return { event, sensitiveKeyMetadata };
   else {
     const sensitiveKeys = expandSensitiveKeySetForArrays(event, endpointConfig.sensitiveKeys.map(key => marshalKeyPath(key)))

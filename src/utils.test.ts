@@ -364,7 +364,11 @@ it('will prepare the data appropriately for posting to the server', () => {
       path: '/posts',
       search: '',
       requestedAt: new Date(),
-      body: {},
+      body: {
+        blogType: {
+          name: 'My Blog',
+        }
+      },
     },
     response: {
       headers: {},
@@ -373,6 +377,10 @@ it('will prepare the data appropriately for posting to the server', () => {
       respondedAt: new Date(),
       body: {
         name: 'My Blog',
+        user: {
+          name: 'John Doe',
+          email: 'john@doe.com',
+        },
         comments: [
           1,2,3,4
         ]
@@ -386,12 +394,13 @@ it('will prepare the data appropriately for posting to the server', () => {
         location: 'path',
         regex: '/posts',
         ignored: false,
-        sensitiveKeys: ['responseBody.comments']
+        sensitiveKeys: ['responseBody.user.email', 'requestBody.blogType.name']
       }
     }
   };
 
   const events = prepareData([obj], remoteConfig);
-  expect(_get(events[0], 'response.body.name')).toBeTruthy();
-  expect(events[0].metadata.sensitiveKeys.length).toEqual(1)
+  expect(_get(events[0], 'response.body.user.email')).toBeFalsy();
+  expect(_get(events[0], 'request.body.blogType.name')).toBeFalsy();
+  expect(events[0].metadata.sensitiveKeys.length).toEqual(2)
 });
