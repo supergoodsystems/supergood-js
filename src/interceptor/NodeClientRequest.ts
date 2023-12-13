@@ -18,9 +18,6 @@ export type NodeClientOptions = {
   allowLocalUrls: boolean;
   baseUrl?: string;
   ignoredDomains?: string[];
-  allowLocalUrls: boolean;
-  baseUrl?: string;
-  ignoredDomains?: string[];
 };
 
 export type Protocol = 'http' | 'https';
