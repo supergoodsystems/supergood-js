@@ -185,7 +185,7 @@ it('redacts values from keys with proper marshalling', () => {
         location: 'path',
         regex: '/posts',
         ignored: false,
-        sensitiveKeys: ['request_body.posts[].title']
+        sensitiveKeys: ['requestBody.posts[].title']
       }
     }
   };
@@ -193,7 +193,7 @@ it('redacts values from keys with proper marshalling', () => {
   const redactedObj = redactValuesFromKeys(obj, remoteConfig);
   expect(_get(redactedObj, 'event.request.body.posts[0].title')).toBeNull();
   expect(redactedObj.sensitiveKeyMetadata[0]).toEqual({
-    keyPath: "request_body.posts[0].title",
+    keyPath: "requestBody.posts[0].title",
     type: "string",
     length: 11,
   })
@@ -302,7 +302,7 @@ it('redacts values from keys of nested array', () => {
         location: 'path',
         regex: '/posts',
         ignored: false,
-        sensitiveKeys: ['request_body.posts[].comments[].body']
+        sensitiveKeys: ['requestBody.posts[].comments[].body']
       }
     }
   };
@@ -310,7 +310,7 @@ it('redacts values from keys of nested array', () => {
   const redactedObj = redactValuesFromKeys(obj, remoteConfig);
   expect(_get(redactedObj, 'event.request.body.posts[0].comments[0].body')).toBeNull();
   expect(redactedObj.sensitiveKeyMetadata[0]).toEqual({
-    keyPath: "request_body.posts[0].comments[0].body",
+    keyPath: "requestBody.posts[0].comments[0].body",
     type: "string",
     length: 12,
   })
@@ -386,7 +386,7 @@ it('will prepare the data appropriately for posting to the server', () => {
         location: 'path',
         regex: '/posts',
         ignored: false,
-        sensitiveKeys: ['response_body.comments']
+        sensitiveKeys: ['responseBody.comments']
       }
     }
   };

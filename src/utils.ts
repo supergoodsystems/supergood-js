@@ -87,22 +87,23 @@ const getHeaderOptions = (
 };
 
 const marshalKeyPath = (keypath: string) => {
-  if(/^requestHeaders/.test(keypath)) return keypath.replace('requestHeaders', 'request.headers');
-  if(/^requestBody/.test(keypath)) return keypath.replace('requestBody', 'request.body');
-  if(/^responseHeaders/.test(keypath)) return keypath.replace('responseHeaders', 'response.headers');
-  if(/^responseBody/.test(keypath)) return keypath.replace('responseBody', 'response.body');
+  if (/^requestHeaders/.test(keypath)) return keypath.replace('requestHeaders', 'request.headers');
+  if (/^requestBody/.test(keypath)) return keypath.replace('requestBody', 'request.body');
+  if (/^responseHeaders/.test(keypath)) return keypath.replace('responseHeaders', 'response.headers');
+  if (/^responseBody/.test(keypath)) return keypath.replace('responseBody', 'response.body');
   return keypath;
 }
 
 const unmarshalKeyPath = (keypath: string) => {
-  if(/^request\.headers/.test(keypath)) return keypath.replace('request.headers', 'requestHeaders');
-  if(/^request\.body/.test(keypath)) return keypath.replace('request.body', 'requestBody');
-  if(/^response\.headers/.test(keypath)) return keypath.replace('response.headers', 'responseHeaders');
-  if(/^response\.body/.test(keypath)) return keypath.replace('response.body', 'responseBody');
+  if (/^request\.headers/.test(keypath)) return keypath.replace('request.headers', 'requestHeaders');
+  if (/^request\.body/.test(keypath)) return keypath.replace('request.body', 'requestBody');
+  if (/^response\.headers/.test(keypath)) return keypath.replace('response.headers', 'responseHeaders');
+  if (/^response\.body/.test(keypath)) return keypath.replace('response.body', 'responseBody');
   return keypath;
 }
 
 const expandSensitiveKeySetForArrays = (obj: any, sensitiveKeys: Array<string>): Array<string> => {
+  console.log({ sensitiveKeys })
   const expandKey = (key: string, obj: any): Array<string> => {
     // Split the key by dots, considering the array brackets as part of the key
     const parts = key.match(/[^.\[\]]+|\[\d*\]|\[\*\]/g) || [];
@@ -156,6 +157,7 @@ const redactValuesFromKeys = (
 ): { event: { request?: RequestType; response?: ResponseType }, sensitiveKeyMetadata: Array<SensitiveKeyMetadata> } => {
   let sensitiveKeyMetadata: Array<SensitiveKeyMetadata> = [];
   const endpointConfig = getEndpointConfigForRequest(event.request as RequestType, remoteConfig);
+  console.log({ endpointConfig })
   if (!endpointConfig || !endpointConfig?.sensitiveKeys?.length) return { event, sensitiveKeyMetadata };
   else {
     const sensitiveKeys = expandSensitiveKeySetForArrays(event, endpointConfig.sensitiveKeys.map(key => marshalKeyPath(key)))
@@ -186,7 +188,7 @@ const redactValue = (
   let dataLength;
   let dataType;
 
-  if(!input) {
+  if (!input) {
     dataLength = 0;
     dataType = 'null';
   }
@@ -354,11 +356,11 @@ const sleep = (ms: number) => {
 
 const getStrRepresentationFromPath = (request: RequestType, location: string) => {
   const url = new URL(request.url);
-  if(location === 'domain') return url.hostname.toString();
-  if(location === 'url') return url.toString();
-  if(location === 'path') return url.pathname.toString();
-  if(location === 'requestHeaders') return request.headers.toString();
-  if(location === 'requestBody') return request.body?.toString();
+  if (location === 'domain') return url.hostname.toString();
+  if (location === 'url') return url.toString();
+  if (location === 'path') return url.pathname.toString();
+  if (location === 'requestHeaders') return request.headers.toString();
+  if (location === 'requestBody') return request.body?.toString();
   return request[location as keyof RequestType]?.toString();
 }
 
