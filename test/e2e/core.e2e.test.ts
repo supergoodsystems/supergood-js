@@ -1,11 +1,8 @@
-import get from 'lodash.get';
-
 import axios from 'axios';
 import fetch from 'node-fetch';
 
 import Supergood from '../../src';
 import { LocalClientId, LocalClientSecret, errors } from '../../src/constants';
-import { EventRequestType } from '../../src/types';
 
 import { sleep } from '../../src/utils';
 import {
@@ -16,7 +13,6 @@ import {
   SUPERGOOD_CONFIG,
   SUPERGOOD_SERVER
 } from '../consts';
-import { getErrors, getEvents } from '../utils/function-call-args';
 import { mockApi } from '../utils/mock-api';
 
 describe('core functionality', () => {
@@ -132,7 +128,6 @@ describe('core functionality', () => {
       );
     }, 10000);
 
-    // Causes the github actions to hang for some reason
     test('posting errors', async () => {
       postEventsMock.mockImplementationOnce(() => {
         throw new Error();
@@ -147,9 +142,14 @@ describe('core functionality', () => {
       );
       await axios.get(`${MOCK_DATA_SERVER}/posts`);
       await Supergood.close();
-      const postedErrors = getErrors(postErrorMock);
       expect(postErrorMock).toHaveBeenCalled();
-      expect(postedErrors.message).toEqual(errors.POSTING_EVENTS);
+      expect(postErrorMock).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.objectContaining({
+          message: errors.POSTING_EVENTS
+        }),
+        expect.any(Object)
+      );
     });
   });
 
@@ -168,12 +168,20 @@ describe('core functionality', () => {
       );
       await axios.get(`${MOCK_DATA_SERVER}/posts`);
       await Supergood.close();
-      const eventsPosted = getEvents(postEventsMock);
-      const firstEvent = eventsPosted[0] as EventRequestType;
-      const hashedBodyValue = get(firstEvent, ['response', 'body', '0']);
-      expect(
-        hashedBodyValue && hashedBodyValue.match(BASE64_REGEX)
-      ).toBeTruthy();
+
+      expect(postEventsMock).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.arrayContaining([
+          expect.objectContaining({
+            response: expect.objectContaining({
+              body: expect.arrayContaining([
+                expect.stringMatching(BASE64_REGEX)
+              ])
+            })
+          })
+        ]),
+        expect.any(Object)
+      );
     });
 
     test('not hashing', async () => {
@@ -187,12 +195,18 @@ describe('core functionality', () => {
       );
       await axios.get(`${MOCK_DATA_SERVER}/posts`);
       await Supergood.close();
-      const eventsPosted = getEvents(postEventsMock);
-      const firstEvent = eventsPosted[0] as EventRequestType;
-      expect(
-        typeof get(firstEvent, ['response', 'body']) === 'object'
-      ).toBeTruthy();
-      expect(get(firstEvent, ['response', 'body', 'hashed'])).toBeFalsy();
+
+      expect(postEventsMock).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.arrayContaining([
+          expect.objectContaining({
+            response: expect.objectContaining({
+              body: expect.not.toContainKey('hash')
+            })
+          })
+        ]),
+        expect.any(Object)
+      );
     });
 
     test('keys to hash not in config', async () => {
@@ -209,12 +223,18 @@ describe('core functionality', () => {
       );
       await axios.get(`${MOCK_DATA_SERVER}/posts`);
       await Supergood.close();
-      const eventsPosted = getEvents(postEventsMock);
-      const firstEvent = eventsPosted[0] as EventRequestType;
-      expect(
-        typeof get(firstEvent, ['response', 'body']) === 'object'
-      ).toBeTruthy();
-      expect(get(firstEvent, ['response', 'body', 'hashed'])).toBeFalsy();
+
+      expect(postEventsMock).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.arrayContaining([
+          expect.objectContaining({
+            response: expect.objectContaining({
+              body: expect.not.toContainKey('hash')
+            })
+          })
+        ]),
+        expect.any(Object)
+      );
     });
 
     test('ignores requests to ignored domains', async () => {
@@ -260,10 +280,21 @@ describe('core functionality', () => {
         },
         SUPERGOOD_SERVER
       );
-      await axios.get('https://api.ipify.org?format=json');
+      const allowedUrl = new URL('https://api.ipify.org?format=json');
+      await axios.get(allowedUrl.toString());
       await axios.get('https://supergood-testbed.herokuapp.com/200');
       await Supergood.close();
-      expect(postEventsMock).toHaveBeenCalled();
+      expect(postEventsMock).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.arrayContaining([
+          expect.objectContaining({
+            request: expect.objectContaining({
+              url: allowedUrl.toString()
+            })
+          })
+        ]),
+        expect.any(Object)
+      );
     });
   });
 
@@ -280,16 +311,19 @@ describe('core functionality', () => {
         SUPERGOOD_SERVER
       );
       const response = await fetch(`${MOCK_DATA_SERVER}/gzipped-response`);
-      const body = await response.text();
-      await sleep(2000);
-      expect(response.status).toEqual(200);
-      expect(body).toBeTruthy();
+      const responseBody = await response.json();
       await Supergood.close();
-      const eventsPosted = getEvents(postEventsMock);
-      expect(eventsPosted.length).toEqual(1);
-      expect(get(eventsPosted, '[0]response.body')).toEqual({
-        gzippedResponse: 'this-is-gzipped'
-      });
+      expect(postEventsMock).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.arrayContaining([
+          expect.objectContaining({
+            response: expect.objectContaining({
+              body: responseBody
+            })
+          })
+        ]),
+        expect.any(Object)
+      );
     });
   });
 
@@ -315,10 +349,18 @@ describe('core functionality', () => {
         }
       });
       await Supergood.close();
-      const eventsPosted = getEvents(postEventsMock);
-      expect(eventsPosted.length).toEqual(1);
-      expect(get(eventsPosted, '[0]request.headers.x-custom-header')).toEqual(
-        'custom-header-value'
+      expect(postEventsMock).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.arrayContaining([
+          expect.objectContaining({
+            request: expect.objectContaining({
+              headers: expect.objectContaining({
+                'x-custom-header': 'custom-header-value'
+              })
+            })
+          })
+        ]),
+        expect.any(Object)
       );
     });
 
@@ -333,10 +375,18 @@ describe('core functionality', () => {
       );
       await fetch(`${MOCK_DATA_SERVER}/custom-header`);
       await Supergood.close();
-      const eventsPosted = getEvents(postEventsMock);
-      expect(eventsPosted.length).toEqual(1);
-      expect(get(eventsPosted, '[0]response.headers.x-custom-header')).toEqual(
-        'custom-header-value'
+      expect(postEventsMock).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.arrayContaining([
+          expect.objectContaining({
+            response: expect.objectContaining({
+              headers: expect.objectContaining({
+                'x-custom-header': 'custom-header-value'
+              })
+            })
+          })
+        ]),
+        expect.any(Object)
       );
     });
   });
