@@ -198,7 +198,7 @@ describe('core functionality', () => {
       await axios.get('https://supergood-testbed.herokuapp.com/200');
       await Supergood.close();
       expect(postEventsMock).not.toHaveBeenCalled();
-    });
+    }, 10000);
 
     it('should operate normally when ignored domains is empty', async () => {
       await Supergood.init(
@@ -212,7 +212,7 @@ describe('core functionality', () => {
       await axios.get('https://supergood-testbed.herokuapp.com/200');
       await Supergood.close();
       expect(postEventsMock).toHaveBeenCalled();
-    });
+    }, 10000);
 
     it('should only post events for specified domains and ignore everything else', async () => {
       await Supergood.init(
@@ -236,7 +236,7 @@ describe('core functionality', () => {
           url: allowedUrl.toString()
         })
       });
-    });
+    }, 10000);
   });
 
   describe('encoding', () => {
