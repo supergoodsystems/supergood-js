@@ -255,17 +255,11 @@ describe('core functionality', () => {
       const responseBody = await response.json();
       await Supergood.close();
 
-      expect(postEventsMock).toHaveBeenCalledWith(
-        expect.any(String),
-        expect.arrayContaining([
-          expect.objectContaining({
-            response: expect.objectContaining({
-              body: responseBody
-            })
-          })
-        ]),
-        expect.any(Object)
-      );
+      checkPostedEvents(postEventsMock, 1, {
+        response: expect.objectContaining({
+          body: responseBody
+        })
+      });
     });
   });
 
@@ -292,19 +286,13 @@ describe('core functionality', () => {
       });
       await Supergood.close();
 
-      expect(postEventsMock).toHaveBeenCalledWith(
-        expect.any(String),
-        expect.arrayContaining([
-          expect.objectContaining({
-            request: expect.objectContaining({
-              headers: expect.objectContaining({
-                'x-custom-header': 'custom-header-value'
-              })
-            })
+      checkPostedEvents(postEventsMock, 1, {
+        request: expect.objectContaining({
+          headers: expect.objectContaining({
+            'x-custom-header': 'custom-header-value'
           })
-        ]),
-        expect.any(Object)
-      );
+        })
+      });
     });
 
     it('should capture custom response headers', async () => {
@@ -318,19 +306,14 @@ describe('core functionality', () => {
       );
       await fetch(`${MOCK_DATA_SERVER}/custom-header`);
       await Supergood.close();
-      expect(postEventsMock).toHaveBeenCalledWith(
-        expect.any(String),
-        expect.arrayContaining([
-          expect.objectContaining({
-            response: expect.objectContaining({
-              headers: expect.objectContaining({
-                'x-custom-header': 'custom-header-value'
-              })
-            })
+
+      checkPostedEvents(postEventsMock, 1, {
+        response: expect.objectContaining({
+          headers: expect.objectContaining({
+            'x-custom-header': 'custom-header-value'
           })
-        ]),
-        expect.any(Object)
-      );
+        })
+      });
     });
   });
 
