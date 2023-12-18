@@ -65,11 +65,11 @@ const Supergood = () => {
       config?: Partial<ConfigType>;
       metadata?: Partial<MetadataType>;
     } = {
-      clientId: process.env.SUPERGOOD_CLIENT_ID as string,
-      clientSecret: process.env.SUPERGOOD_CLIENT_SECRET as string,
-      config: {} as Partial<ConfigType>,
-      metadata: {} as Partial<MetadataType>
-    },
+        clientId: process.env.SUPERGOOD_CLIENT_ID as string,
+        clientSecret: process.env.SUPERGOOD_CLIENT_SECRET as string,
+        config: {} as Partial<ConfigType>,
+        metadata: {} as Partial<MetadataType>
+      },
     baseUrl = process.env.SUPERGOOD_BASE_URL || 'https://api.supergood.ai'
   ) => {
     if (!clientId) throw new Error(errors.NO_CLIENT_ID);
@@ -130,7 +130,7 @@ const Supergood = () => {
         async (request: IsomorphicRequest, requestId: string) => {
           // Don't intercept if there's no remote config set
           // to avoid sensitive keys being sent to the SG server.
-          if(!supergoodConfig.remoteConfig) return;
+          if (!supergoodConfig.remoteConfig) return;
 
           try {
             const url = new URL(request.url);
@@ -181,7 +181,7 @@ const Supergood = () => {
           let requestData = { url: '' };
           let responseData = {};
 
-          if(!supergoodConfig.remoteConfig) return;
+          if (!supergoodConfig.remoteConfig) return;
 
           try {
             const requestData = requestCache.get(requestId) as {
@@ -289,7 +289,6 @@ const Supergood = () => {
       }
       if (data.length) {
         log.debug(`Flushed ${data.length} events`, { force });
-        log.debug(`Flushing Ids: ${data.map((event) => event.request.id)}`)
       }
     } catch (e) {
       const error = e as Error;

@@ -165,6 +165,7 @@ const redactValuesFromKeys = (
       const value = _get(event, keyPath);
       if (value) {
         _set(event, keyPath, null);
+        // Don't return <string-length>:<string-type> for null values
         sensitiveKeyMetadata.push({ keyPath: unmarshalKeyPath(keyPath), ...redactValue(value) });
       }
     }
