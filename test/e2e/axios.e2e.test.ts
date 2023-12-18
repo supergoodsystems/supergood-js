@@ -7,8 +7,8 @@ import {
   SUPERGOOD_CLIENT_SECRET,
   SUPERGOOD_SERVER
 } from '../consts';
-import { getEvents } from '../utils/function-call-args';
 import { mockApi } from '../utils/mock-api';
+import { checkPostedEvents } from '../utils/function-call-args';
 
 describe('axios library', () => {
   const { postEventsMock } = mockApi();
@@ -30,10 +30,12 @@ describe('axios library', () => {
     const response = await axios.get(`${MOCK_DATA_SERVER}/posts`);
     expect(response.status).toEqual(200);
     await Supergood.close();
-    const eventsPosted = getEvents(postEventsMock);
 
-    expect(eventsPosted.length).toEqual(1);
-    expect(eventsPosted[0].response.body).toEqual(response.data);
+    checkPostedEvents(postEventsMock, 1, {
+      response: expect.objectContaining({
+        body: response.data
+      })
+    });
   });
 
   it('POST /posts', async () => {
@@ -45,9 +47,11 @@ describe('axios library', () => {
     expect(response.status).toEqual(201);
     await Supergood.close();
 
-    const eventsPosted = getEvents(postEventsMock);
-    expect(eventsPosted[0].request.body).toEqual(body);
-    expect(eventsPosted[0].response.body).toEqual(response.data);
-    expect(eventsPosted.length).toEqual(1);
+    checkPostedEvents(postEventsMock, 1, {
+      response: expect.objectContaining({
+        body: response.data
+      }),
+      request: expect.objectContaining({ body })
+    });
   });
 });
