@@ -5,7 +5,14 @@ interface HeaderOptionType {
   };
 }
 
-type BodyType = Record<string, string>;
+type JSONValue = string | number | boolean | null | JSONArray | JSONObject;
+
+interface JSONArray extends Array<JSONValue> {}
+interface JSONObject {
+  [key: string]: JSONValue;
+}
+
+type BodyType = JSONObject
 
 interface RequestType {
   id: string;
@@ -29,14 +36,30 @@ interface ResponseType {
 
 interface ConfigType {
   flushInterval: number;
+  remoteConfigFetchInterval: number;
   ignoredDomains: string[];
   allowLocalUrls: boolean;
   cacheTtl: number;
   keysToHash: string[];
+  remoteConfigFetchEndpoint: string; // Defaults to {baseUrl}/config if not provided
   eventSinkEndpoint: string; // Defaults to {baseUrl}/events if not provided
   errorSinkEndpoint: string; // Defaults to {baseUrl}/errors if not provided
   waitAfterClose: number;
+  remoteConfig: RemoteConfigType;
 }
+
+interface EndpointConfigType {
+  location: string;
+  regex: string;
+  ignored: boolean;
+  sensitiveKeys: Array<string>;
+}
+
+interface RemoteConfigType {
+  [domain: string]: {
+    [endpointName: string]: EndpointConfigType;
+  };
+};
 
 interface MetadataType {
   numberOfEvents?: number;
@@ -49,6 +72,9 @@ interface MetadataType {
 interface EventRequestType {
   request: RequestType;
   response: ResponseType;
+  metadata?: {
+    sensitiveKeys: Array<SensitiveKeyMetadata>;
+  };
 }
 
 // interface EventResponseType {}
@@ -85,6 +111,30 @@ interface LoggerType {
   debug: (message: string, payload?: any) => void;
 }
 
+type RemoteConfigPayloadType = Array<{
+  domain: string;
+  endpoints: Array<{
+    name: string;
+    matchingRegex: {
+      regex: string;
+      location: string;
+    };
+    endpointConfiguration: {
+      action: string;
+      sensitiveKeys: Array<
+        {
+          keyPath: string;
+        }>;
+    }
+  }>;
+}>;
+
+type SensitiveKeyMetadata = {
+  keyPath?: string;
+  length?: number;
+  type?: string;
+};
+
 export type {
   HeaderOptionType,
   RequestType,
@@ -95,5 +145,9 @@ export type {
   ConfigType,
   ErrorPayloadType,
   BodyType,
+  SensitiveKeyMetadata,
+  RemoteConfigType,
+  EndpointConfigType,
+  RemoteConfigPayloadType,
   MetadataType
 };

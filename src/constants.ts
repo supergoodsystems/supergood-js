@@ -1,14 +1,15 @@
 const defaultConfig = {
   flushInterval: 1000,
+  remoteConfigFetchInterval: 10000,
   eventSinkEndpoint: '/events',
   errorSinkEndpoint: '/errors',
+  remoteConfigFetchEndpoint: '/config',
   allowLocalUrls: false,
-  keysToHash: [],
   ignoredDomains: [],
 
   // After the close command is sent, wait for this many milliseconds before
   // exiting. This gives any hanging responses a chance to return.
-  waitAfterClose: 1000
+  waitAfterClose: 1000,
 };
 
 const errors = {

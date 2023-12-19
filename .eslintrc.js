@@ -6,19 +6,14 @@ module.exports = {
     node: true,
     'jest/globals': true
   },
-  extends: [
-    'eslint:recommended',
-    'plugin:react/recommended',
-    'plugin:@typescript-eslint/eslint-recommended',
-    'plugin:@typescript-eslint/recommended',
-    'prettier'
-  ],
-  parser: '@typescript-eslint/parser',
+  extends: ['eslint:recommended', 'prettier'],
   overrides: [],
   parserOptions: {
-    ecmaVersion: 'latest'
+    ecmaVersion: 'latest',
+    sourceType: 'module',
+    allowImportExportEverywhere: true
   },
-  plugins: ['react', 'prettier', 'jest', '@typescript-eslint'],
+  plugins: ['prettier', 'jest'],
   rules: {
     // 'indent': ['error', 2],
     // 'quotes': ['error', 'single'],
@@ -28,5 +23,11 @@ module.exports = {
     // 'no-multi-spaces': ['error'],
     // 'max-len': ['error', 80],
     'prettier/prettier': 2
+    // 'react/jsx-max-props-per-line': [
+    //   1,
+    //   {
+    //     maximum: 1
+    //   }
+    // ]
   }
 };

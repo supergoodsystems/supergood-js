@@ -121,6 +121,10 @@ export class NodeClientRequest extends ClientRequest {
       if (this.isInterceptable) {
         emitResponse(this.requestId as string, args[0], this.emitter);
       }
+
+      if (this.isInterceptable) {
+        emitResponse(this.requestId as string, args[0], this.emitter);
+      }
     }
 
     return super.emit(event as string, ...args);

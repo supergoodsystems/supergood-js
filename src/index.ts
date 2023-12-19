@@ -5,10 +5,12 @@ import {
   logger,
   safeParseJson,
   prepareData,
-  sleep
+  sleep,
+  processRemoteConfig,
+  getEndpointConfigForRequest
 } from './utils';
-import { postEvents } from './api';
-
+import { postEvents, fetchRemoteConfig } from './api';
+import v8 from 'v8';
 import {
   HeaderOptionType,
   EventRequestType,
@@ -34,6 +36,7 @@ import { FetchInterceptor } from './interceptor/FetchInterceptor';
 const Supergood = () => {
   let eventSinkUrl: string;
   let errorSinkUrl: string;
+  let remoteConfigFetchUrl: string;
 
   let headerOptions: HeaderOptionType;
   let supergoodConfig: ConfigType;
@@ -43,7 +46,8 @@ const Supergood = () => {
   let responseCache: NodeCache;
 
   let log: LoggerType;
-  let interval: NodeJS.Timeout;
+  let flushInterval: NodeJS.Timeout;
+  let remoteConfigFetchInterval: NodeJS.Timeout;
 
   let localOnly = false;
 
@@ -61,11 +65,11 @@ const Supergood = () => {
       config?: Partial<ConfigType>;
       metadata?: Partial<MetadataType>;
     } = {
-      clientId: process.env.SUPERGOOD_CLIENT_ID as string,
-      clientSecret: process.env.SUPERGOOD_CLIENT_SECRET as string,
-      config: {} as Partial<ConfigType>,
-      metadata: {} as Partial<MetadataType>
-    },
+        clientId: process.env.SUPERGOOD_CLIENT_ID as string,
+        clientSecret: process.env.SUPERGOOD_CLIENT_SECRET as string,
+        config: {} as Partial<ConfigType>,
+        metadata: {} as Partial<MetadataType>
+      },
     baseUrl = process.env.SUPERGOOD_BASE_URL || 'https://api.supergood.ai'
   ) => {
     if (!clientId) throw new Error(errors.NO_CLIENT_ID);
@@ -102,100 +106,135 @@ const Supergood = () => {
 
     errorSinkUrl = `${baseUrl}${supergoodConfig.errorSinkEndpoint}`;
     eventSinkUrl = `${baseUrl}${supergoodConfig.eventSinkEndpoint}`;
+    remoteConfigFetchUrl = `${baseUrl}${supergoodConfig.remoteConfigFetchEndpoint}`;
 
     headerOptions = getHeaderOptions(clientId, clientSecret);
     log = logger({ errorSinkUrl, headerOptions });
 
-    interceptor.setup();
+    const fetchAndProcessRemoteConfig = async () => {
+      try {
+        const remoteConfigPayload = await fetchRemoteConfig(remoteConfigFetchUrl, headerOptions);
+        supergoodConfig = {
+          ...supergoodConfig,
+          remoteConfig: processRemoteConfig(remoteConfigPayload)
+        };
+      } catch (e) {
+        log.error(errors.FETCHING_CONFIG, { config: supergoodConfig }, e as Error)
+      }
+    };
 
-    interceptor.on(
-      'request',
-      async (request: IsomorphicRequest, requestId: string) => {
-        try {
-          const url = new URL(request.url);
-          // Meant for debug and testing purposes
+    const initializeInterceptors = () => {
+      interceptor.setup();
+      interceptor.on(
+        'request',
+        async (request: IsomorphicRequest, requestId: string) => {
+          // Don't intercept if there's no remote config set
+          // to avoid sensitive keys being sent to the SG server.
+          if (!supergoodConfig.remoteConfig) return;
 
-          if (url.pathname === TestErrorPath) {
-            throw new Error(errors.TEST_ERROR);
-          }
-
-          const body = await request.clone().text();
-          const requestData = {
-            id: requestId,
-            headers: Object.fromEntries(request.headers.entries()),
-            method: request.method,
-            url: url.href,
-            path: url.pathname,
-            search: url.search,
-            body: safeParseJson(body),
-            requestedAt: new Date()
-          } as RequestType;
-
-          cacheRequest(requestData, baseUrl);
-        } catch (e) {
-          log.error(
-            errors.CACHING_REQUEST,
-            {
-              config: supergoodConfig,
-              metadata: {
-                requestUrl: request.url.toString(),
-                payloadSize: serialize(request).length,
-                ...supergoodMetadata
-              }
-            },
-            e as Error,
-            {
-              reportOut: !localOnly
+          try {
+            const url = new URL(request.url);
+            // Meant for debug and testing purposes
+            if (url.pathname === TestErrorPath) {
+              throw new Error(errors.TEST_ERROR);
             }
-          );
-        }
-      }
-    );
 
-    interceptor.on(
-      'response',
-      async (response: IsomorphicResponse, requestId: string) => {
-        let requestData = { url: '' };
-        let responseData = {};
+            const body = await request.clone().text();
+            const requestData = {
+              id: requestId,
+              headers: Object.fromEntries(request.headers.entries()),
+              method: request.method,
+              url: url.href,
+              path: url.pathname,
+              search: url.search,
+              body: safeParseJson(body),
+              requestedAt: new Date()
+            } as RequestType;
 
-        try {
-          const requestData = requestCache.get(requestId) as {
-            request: RequestType;
-          };
+            const endpointConfig = getEndpointConfigForRequest(requestData, supergoodConfig.remoteConfig);
+            if (endpointConfig?.ignored) return;
 
-          if (requestData) {
-            const responseData = {
-              response: {
-                headers: Object.fromEntries(response.headers.entries()),
-                status: response.status,
-                statusText: response.statusText,
-                body: response.body && safeParseJson(response.body),
-                respondedAt: new Date()
+            cacheRequest(requestData, baseUrl);
+          } catch (e) {
+            log.error(
+              errors.CACHING_REQUEST,
+              {
+                config: supergoodConfig,
+                metadata: {
+                  requestUrl: request.url.toString(),
+                  payloadSize: serialize(request).length,
+                  ...supergoodMetadata
+                }
               },
-              ...requestData
-            } as EventRequestType;
-            cacheResponse(responseData, baseUrl);
-          }
-        } catch (e) {
-          log.error(
-            errors.CACHING_RESPONSE,
-            {
-              config: supergoodConfig,
-              metadata: {
-                ...supergoodMetadata,
-                requestUrl: requestData.url,
-                payloadSize: responseData ? serialize(responseData).length : 0
+              e as Error,
+              {
+                reportOut: !localOnly
               }
-            },
-            e as Error
-          );
+            );
+          }
         }
-      }
-    );
+      );
+
+      interceptor.on(
+        'response',
+        async (response: IsomorphicResponse, requestId: string) => {
+          let requestData = { url: '' };
+          let responseData = {};
+
+          if (!supergoodConfig.remoteConfig) return;
+
+          try {
+            const requestData = requestCache.get(requestId) as {
+              request: RequestType;
+            };
+
+            if (requestData) {
+
+              const endpointConfig = getEndpointConfigForRequest(requestData.request, supergoodConfig.remoteConfig);
+              if (endpointConfig?.ignored) return;
+
+              const responseData = {
+                response: {
+                  headers: Object.fromEntries(response.headers.entries()),
+                  status: response.status,
+                  statusText: response.statusText,
+                  body: response.body && safeParseJson(response.body),
+                  respondedAt: new Date()
+                },
+                ...requestData
+              } as EventRequestType;
+              cacheResponse(responseData, baseUrl);
+            }
+          } catch (e) {
+            log.error(
+              errors.CACHING_RESPONSE,
+              {
+                config: supergoodConfig,
+                metadata: {
+                  ...supergoodMetadata,
+                  requestUrl: requestData.url,
+                  payloadSize: responseData ? serialize(responseData).length : 0
+                }
+              },
+              e as Error
+            );
+          }
+        }
+      );
+    };
+
+    // Fetch the initial config and process it
+    await fetchAndProcessRemoteConfig();
+    initializeInterceptors();
+
+    // Fetch the config ongoing every <remoteConfigFetchInterval> milliseconds
+    remoteConfigFetchInterval = setInterval(fetchAndProcessRemoteConfig, supergoodConfig.remoteConfigFetchInterval);
+    remoteConfigFetchInterval.unref();
 
     // Flushes the cache every <flushInterval> milliseconds
-    interval = setInterval(flushCache, supergoodConfig.flushInterval);
-    interval.unref();
+    flushInterval = setInterval(flushCache, supergoodConfig.flushInterval);
+    // https://httptoolkit.com/blog/unblocking-node-with-unref/
+    flushInterval.unref();
   };
 
   const cacheRequest = async (request: RequestType, baseUrl: string) => {
@@ -217,13 +256,13 @@ const Supergood = () => {
 
   // Force flush cache means don't wait for responses
   const flushCache = async ({ force } = { force: false }) => {
-    log.debug('Flushing Cache ...', { force });
+    // log.debug('Flushing Cache ...', { force });
     const responseCacheKeys = responseCache.keys();
     const requestCacheKeys = requestCache.keys();
 
     const responseArray = prepareData(
       Object.values(responseCache.mget(responseCacheKeys)),
-      supergoodConfig.keysToHash
+      supergoodConfig.remoteConfig
     ) as Array<EventRequestType>;
 
     let data = [...responseArray];
@@ -232,40 +271,38 @@ const Supergood = () => {
     if (force) {
       const requestArray = prepareData(
         Object.values(requestCache.mget(requestCacheKeys)),
-        supergoodConfig.keysToHash
+        supergoodConfig.remoteConfig
       ) as Array<EventRequestType>;
       data = [...requestArray, ...responseArray];
     }
 
     if (data.length === 0) {
-      log.debug('Nothing to flush', { force });
+      // log.debug('Nothing to flush', { force });
       return;
     }
 
     try {
       if (localOnly) {
-        log.debug(JSON.stringify(data, null, 2));
+        log.debug(JSON.stringify(data, null, 2), { force });
       } else {
         await postEvents(eventSinkUrl, data, headerOptions);
       }
-      log.debug(`Flushed ${data.length} events`, { force });
+      if (data.length) {
+        log.debug(`Flushed ${data.length} events`, { force });
+      }
     } catch (e) {
       const error = e as Error;
       if (error.message === errors.UNAUTHORIZED) {
         log.error(
           errors.UNAUTHORIZED,
-          {
-            config: supergoodConfig,
-            metadata: {
-              ...supergoodMetadata
-            }
-          },
+          { config: supergoodConfig, metadata: { ...supergoodMetadata } },
           error,
           {
             reportOut: false
           }
         );
-        clearInterval(interval);
+        clearInterval(flushInterval);
+        clearInterval(remoteConfigFetchInterval);
         interceptor.teardown();
       } else {
         log.error(
@@ -297,7 +334,8 @@ const Supergood = () => {
 
   // Stops the interval and disposes of the interceptor
   const close = async (force = true) => {
-    clearInterval(interval);
+    clearInterval(flushInterval);
+    clearInterval(remoteConfigFetchInterval);
 
     // If there are hanging requests, wait a second
     if (requestCache.keys().length > 0) {

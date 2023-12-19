@@ -1,5 +1,5 @@
 import { HeaderOptionType, EventRequestType, ErrorPayloadType } from './types';
-import { post } from './utils';
+import { post, get } from './utils';
 
 const postError = async (
   errorSinkUrl: string,
@@ -29,8 +29,12 @@ const postEvents = async (
     data,
     options.headers.Authorization
   );
-
   return response;
 };
 
-export { postError, postEvents };
+const fetchRemoteConfig = async (configUrl: string, options: HeaderOptionType) => {
+  const response = await get(configUrl, options.headers.Authorization);
+  return JSON.parse(response);
+}
+
+export { postError, postEvents, fetchRemoteConfig };
