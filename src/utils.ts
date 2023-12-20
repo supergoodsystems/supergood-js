@@ -15,7 +15,6 @@ import { name, version } from '../package.json';
 import https from 'https';
 import http from 'http';
 import { errors } from './constants';
-
 import _set from 'lodash.set';
 import _get from 'lodash.get';
 
@@ -224,6 +223,10 @@ const prepareData = (
   })
 };
 
+const getByteSize = (s: string) => {
+  return new TextEncoder().encode(s).length;
+};
+
 const post = (
   url: string,
   data: Array<EventRequestType> | ErrorPayloadType,
@@ -231,12 +234,11 @@ const post = (
 ): Promise<string> => {
   const dataString = JSON.stringify(data);
   const packageVersion = version;
-
   const options = {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'Content-Length': dataString.length,
+      'Content-Length': getByteSize(dataString),
       Authorization: authorization,
       'supergood-api': 'supergood-js',
       'supergood-api-version': packageVersion
