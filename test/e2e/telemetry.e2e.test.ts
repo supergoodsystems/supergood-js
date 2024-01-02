@@ -18,15 +18,19 @@ describe('telemetry posting', () => {
       {
         config: { ...SUPERGOOD_CONFIG, allowLocalUrls: true },
         clientId: SUPERGOOD_CLIENT_ID,
-        clientSecret: SUPERGOOD_CLIENT_SECRET
+        clientSecret: SUPERGOOD_CLIENT_SECRET,
+        metadata: {
+          serviceName: "test-service-name",
+        }
       },
       SUPERGOOD_SERVER
     );
     await axios.get(`${MOCK_DATA_SERVER}/posts`);
     await Supergood.close();
-    const { keys, size } = getTelemetry(postTelemetryMock);
+    const { keys, size, serviceName } = getTelemetry(postTelemetryMock);
     expect(keys).toEqual(1);
     expect(size).toEqual(160);
+    expect(serviceName).toEqual("test-service-name");
   })
 
 })
