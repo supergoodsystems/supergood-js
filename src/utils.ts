@@ -8,7 +8,8 @@ import {
   RemoteConfigPayloadType,
   RemoteConfigType,
   EndpointConfigType,
-  SensitiveKeyMetadata
+  SensitiveKeyMetadata,
+  TelemetryType
 } from './types';
 import { postError } from './api';
 import { name, version } from '../package.json';
@@ -229,7 +230,7 @@ const getByteSize = (s: string) => {
 
 const post = (
   url: string,
-  data: Array<EventRequestType> | ErrorPayloadType,
+  data: Array<EventRequestType> | ErrorPayloadType | TelemetryType,
   authorization: string
 ): Promise<string> => {
   const dataString = JSON.stringify(data);

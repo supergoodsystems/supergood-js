@@ -27,5 +27,9 @@ export const mockApi = (
     .spyOn(api, 'fetchRemoteConfig')
     .mockImplementation(fetchRemoteConfigFunction ?? (async () => fetchRemoteConfigResponse ?? ([] as any)));
 
-  return { postEventsMock, postErrorMock, fetchRemoteConfigMock };
+  const postTelemetryMock = jest
+    .spyOn(api, 'postTelemetry')
+    .mockImplementation((async (_, payload) => ({ payload } as any)));
+
+  return { postEventsMock, postErrorMock, fetchRemoteConfigMock, postTelemetryMock };
 }

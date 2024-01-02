@@ -44,8 +44,15 @@ interface ConfigType {
   remoteConfigFetchEndpoint: string; // Defaults to {baseUrl}/config if not provided
   eventSinkEndpoint: string; // Defaults to {baseUrl}/events if not provided
   errorSinkEndpoint: string; // Defaults to {baseUrl}/errors if not provided
+  telemetryEndpoint: string; // Defaults to {baseUrl}/telemetry if not provided
   waitAfterClose: number;
   remoteConfig: RemoteConfigType;
+}
+
+interface TelemetryType {
+  cacheKeys: number;
+  cacheSize: number;
+  serviceName?: string;
 }
 
 interface EndpointConfigType {
@@ -62,8 +69,8 @@ interface RemoteConfigType {
 };
 
 interface MetadataType {
-  numberOfEvents?: number;
-  payloadSize?: number;
+  keys?: number;
+  size?: number;
   requestUrls?: string[];
   requestUrl?: string;
   serviceName?: string;
@@ -149,5 +156,6 @@ export type {
   RemoteConfigType,
   EndpointConfigType,
   RemoteConfigPayloadType,
-  MetadataType
+  MetadataType,
+  TelemetryType
 };

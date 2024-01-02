@@ -4,6 +4,7 @@ const defaultConfig = {
   eventSinkEndpoint: '/events',
   errorSinkEndpoint: '/errors',
   remoteConfigFetchEndpoint: '/config',
+  telemetryEndpoint: '/telemetry',
   allowLocalUrls: false,
   ignoredDomains: [],
 
@@ -18,6 +19,7 @@ const errors = {
   DUMPING_DATA_TO_DISK: 'Error Dumping Data to Disk',
   POSTING_EVENTS: 'Error Posting Events',
   POSTING_ERRORS: 'Error Posting Errors',
+  POSTING_TELEMETRY: 'Error Posting Telemetry',
   FETCHING_CONFIG: 'Error Fetching Config',
   WRITING_TO_DISK: 'Error writing to disk',
   TEST_ERROR: 'Test Error for Testing Purposes',

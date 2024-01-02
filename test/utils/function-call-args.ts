@@ -1,4 +1,4 @@
-import { ErrorPayloadType, EventRequestType } from '../../src/types';
+import { ErrorPayloadType, EventRequestType, TelemetryType } from '../../src/types';
 
 export const getEvents = (
   mockedPostEvents: jest.SpyInstance
@@ -14,6 +14,14 @@ export const getErrors = (
   return Object.values(
     mockedPostError.mock.calls.flat()
   )[1] as ErrorPayloadType;
+};
+
+export const getTelemetry = (
+  mockedPostTelemetry: jest.SpyInstance
+): TelemetryType => {
+  return Object.values(
+    mockedPostTelemetry.mock.calls.flat()
+  )[1] as TelemetryType;
 };
 
 export function checkPostedEvents(

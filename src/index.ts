@@ -9,7 +9,7 @@ import {
   processRemoteConfig,
   getEndpointConfigForRequest
 } from './utils';
-import { postEvents, fetchRemoteConfig } from './api';
+import { postEvents, fetchRemoteConfig, postTelemetry } from './api';
 import v8 from 'v8';
 import {
   HeaderOptionType,
@@ -37,6 +37,7 @@ const Supergood = () => {
   let eventSinkUrl: string;
   let errorSinkUrl: string;
   let remoteConfigFetchUrl: string;
+  let telemetryUrl: string;
 
   let headerOptions: HeaderOptionType;
   let supergoodConfig: ConfigType;
@@ -107,6 +108,7 @@ const Supergood = () => {
     errorSinkUrl = `${baseUrl}${supergoodConfig.errorSinkEndpoint}`;
     eventSinkUrl = `${baseUrl}${supergoodConfig.eventSinkEndpoint}`;
     remoteConfigFetchUrl = `${baseUrl}${supergoodConfig.remoteConfigFetchEndpoint}`;
+    telemetryUrl = `${baseUrl}${supergoodConfig.telemetryEndpoint}`;
 
     headerOptions = getHeaderOptions(clientId, clientSecret);
     log = logger({ errorSinkUrl, headerOptions });
@@ -162,8 +164,8 @@ const Supergood = () => {
                 config: supergoodConfig,
                 metadata: {
                   requestUrl: request.url.toString(),
-                  payloadSize: serialize(request).length,
-                  ...supergoodMetadata
+                  size: serialize(request).length,
+                  ...supergoodMetadata,
                 }
               },
               e as Error,
@@ -211,9 +213,9 @@ const Supergood = () => {
               {
                 config: supergoodConfig,
                 metadata: {
-                  ...supergoodMetadata,
                   requestUrl: requestData.url,
-                  payloadSize: responseData ? serialize(responseData).length : 0
+                  size: responseData ? serialize(responseData).length : 0,
+                  ...supergoodMetadata
                 }
               },
               e as Error
@@ -281,6 +283,31 @@ const Supergood = () => {
       return;
     }
 
+    const { keys, vsize } = responseCache.getStats();
+
+    try {
+      // Post the telemetry after the events make it, but before we delete the cache
+      await postTelemetry(telemetryUrl, { cacheKeys: keys, cacheSize: vsize, ...supergoodMetadata }, headerOptions);
+    } catch (e) {
+      const error = e as Error;
+      log.error(
+        errors.POSTING_TELEMETRY,
+        {
+          config: supergoodConfig,
+          metadata: {
+            keys,
+            size: vsize,
+            requestUrls: data.map((event) => event?.request?.url),
+            ...supergoodMetadata
+          }
+        },
+        error,
+        {
+          reportOut: !localOnly
+        }
+      )
+    }
+
     try {
       if (localOnly) {
         log.debug(JSON.stringify(data, null, 2), { force });
@@ -310,8 +337,8 @@ const Supergood = () => {
           {
             config: supergoodConfig,
             metadata: {
-              numberOfEvents: data.length,
-              payloadSize: serialize(data).length,
+              keys: data.length,
+              size: serialize(data).length,
               requestUrls: data.map((event) => event?.request?.url),
               ...supergoodMetadata
             }
