@@ -287,7 +287,7 @@ const Supergood = () => {
 
     try {
       // Post the telemetry after the events make it, but before we delete the cache
-      await postTelemetry(telemetryUrl, { keys, size: vsize, ...supergoodMetadata }, headerOptions);
+      await postTelemetry(telemetryUrl, { cacheKeys: keys, cacheSize: vsize, ...supergoodMetadata }, headerOptions);
     } catch (e) {
       const error = e as Error;
       log.error(

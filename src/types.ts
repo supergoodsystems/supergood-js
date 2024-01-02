@@ -50,8 +50,8 @@ interface ConfigType {
 }
 
 interface TelemetryType {
-  keys: number;
-  size: number;
+  cacheKeys: number;
+  cacheSize: number;
   serviceName?: string;
 }
 
