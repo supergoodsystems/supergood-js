@@ -71,7 +71,6 @@ interface RemoteConfigType {
 interface MetadataType {
   keys?: number;
   size?: number;
-  requestUrls?: string[];
   requestUrl?: string;
   serviceName?: string;
 }

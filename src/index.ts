@@ -297,7 +297,6 @@ const Supergood = () => {
           metadata: {
             keys,
             size: vsize,
-            requestUrls: data.map((event) => event?.request?.url),
             ...supergoodMetadata
           }
         },
@@ -339,7 +338,6 @@ const Supergood = () => {
             metadata: {
               keys: data.length,
               size: serialize(data).length,
-              requestUrls: data.map((event) => event?.request?.url),
               ...supergoodMetadata
             }
           },
