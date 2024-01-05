@@ -12,6 +12,7 @@ import { IsomorphicRequest } from './utils/IsomorphicRequest';
 import { getArrayBuffer } from './utils/bufferUtils';
 import { isInterceptable } from './utils/isInterceptable';
 import { IsomorphicResponse } from './utils/IsomorphicResponse';
+import { cloneIncomingMessage } from './utils/cloneIncomingMessage';
 
 export type NodeClientOptions = {
   emitter: EventEmitter;
@@ -106,7 +107,12 @@ export class NodeClientRequest extends ClientRequest {
   emit(event: 'pipe', src: Readable): boolean;
   emit(event: 'unpipe', src: Readable): boolean;
   emit(event: string | symbol, ...args: any[]): boolean {
+
     if (event === 'response') {
+      const response = args[0] as IncomingMessage;
+      const firstClone = cloneIncomingMessage(response);
+      const secondClone = cloneIncomingMessage(response);
+
       async function emitResponse(
         requestId: string,
         message: IncomingMessage,
@@ -119,12 +125,10 @@ export class NodeClientRequest extends ClientRequest {
       }
 
       if (this.isInterceptable) {
-        emitResponse(this.requestId as string, args[0], this.emitter);
+        emitResponse(this.requestId as string, secondClone, this.emitter);
       }
 
-      if (this.isInterceptable) {
-        emitResponse(this.requestId as string, args[0], this.emitter);
-      }
+      return super.emit(event as string, firstClone, ...args.slice(1));
     }
 
     return super.emit(event as string, ...args);
