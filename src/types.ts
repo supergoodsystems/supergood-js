@@ -47,6 +47,10 @@ interface ConfigType {
   telemetryEndpoint: string; // Defaults to {baseUrl}/telemetry if not provided
   waitAfterClose: number;
   remoteConfig: RemoteConfigType;
+  logRequestHeaders: boolean;
+  logRequestBody: boolean;
+  logResponseHeaders: boolean;
+  logResponseBody: boolean;
 }
 
 interface TelemetryType {

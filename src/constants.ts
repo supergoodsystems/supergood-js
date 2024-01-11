@@ -6,6 +6,10 @@ const defaultConfig = {
   remoteConfigFetchEndpoint: '/config',
   telemetryEndpoint: '/telemetry',
   allowLocalUrls: false,
+  logRequestHeaders: true,
+  logRequestBody: true,
+  logResponseHeaders: true,
+  logResponseBody: true,
   ignoredDomains: [],
 
   // After the close command is sent, wait for this many milliseconds before

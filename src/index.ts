@@ -144,12 +144,12 @@ const Supergood = () => {
             const body = await request.clone().text();
             const requestData = {
               id: requestId,
-              headers: Object.fromEntries(request.headers.entries()),
+              headers: supergoodConfig.logRequestHeaders ? Object.fromEntries(request.headers.entries()) : {},
               method: request.method,
               url: url.href,
               path: url.pathname,
               search: url.search,
-              body: safeParseJson(body),
+              body: supergoodConfig.logRequestBody ? safeParseJson(body) : {},
               requestedAt: new Date()
             } as RequestType;
 
@@ -197,10 +197,10 @@ const Supergood = () => {
 
               const responseData = {
                 response: {
-                  headers: Object.fromEntries(response.headers.entries()),
+                  headers: supergoodConfig.logResponseHeaders ? Object.fromEntries(response.headers.entries()) : {},
                   status: response.status,
                   statusText: response.statusText,
-                  body: response.body && safeParseJson(response.body),
+                  body: supergoodConfig.logResponseBody ? response.body && safeParseJson(response.body) : {},
                   respondedAt: new Date()
                 },
                 ...requestData
