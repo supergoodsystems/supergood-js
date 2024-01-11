@@ -262,6 +262,80 @@ describe('core functionality', () => {
     });
   });
 
+  describe('log bodies', () => {
+    it('should not log the requestHeaders if specified in config', async () => {
+      await Supergood.init(
+        {
+          config: { ...SUPERGOOD_CONFIG, allowLocalUrls: true, logRequestHeaders: false },
+          clientId: SUPERGOOD_CLIENT_ID,
+          clientSecret: SUPERGOOD_CLIENT_SECRET,
+        },
+        SUPERGOOD_SERVER
+      );
+      await axios.get(`${MOCK_DATA_SERVER}/posts`);
+      await Supergood.close();
+      checkPostedEvents(postEventsMock, 1, {
+        request: expect.objectContaining({
+          headers: {}
+        })
+      });
+    });
+
+    it('should not log the requestBody if specified in config', async () => {
+      await Supergood.init(
+        {
+          config: { ...SUPERGOOD_CONFIG, allowLocalUrls: true, logRequestBody: false },
+          clientId: SUPERGOOD_CLIENT_ID,
+          clientSecret: SUPERGOOD_CLIENT_SECRET,
+        },
+        SUPERGOOD_SERVER
+      );
+      await axios.get(`${MOCK_DATA_SERVER}/posts`);
+      await Supergood.close();
+      checkPostedEvents(postEventsMock, 1, {
+        request: expect.objectContaining({
+          body: {}
+        })
+      });
+    });
+
+    it('should not log the responseHeaders if specified in config', async () => {
+      await Supergood.init(
+        {
+          config: { ...SUPERGOOD_CONFIG, allowLocalUrls: true, logResponseHeaders: false },
+          clientId: SUPERGOOD_CLIENT_ID,
+          clientSecret: SUPERGOOD_CLIENT_SECRET,
+        },
+        SUPERGOOD_SERVER
+      );
+      await axios.get(`${MOCK_DATA_SERVER}/posts`);
+      await Supergood.close();
+      checkPostedEvents(postEventsMock, 1, {
+        response: expect.objectContaining({
+          headers: {}
+        })
+      });
+    });
+
+    it('should not log the responseBody if specified in config', async () => {
+      await Supergood.init(
+        {
+          config: { ...SUPERGOOD_CONFIG, allowLocalUrls: true, logResponseBody: false },
+          clientId: SUPERGOOD_CLIENT_ID,
+          clientSecret: SUPERGOOD_CLIENT_SECRET,
+        },
+        SUPERGOOD_SERVER
+      );
+      await axios.get(`${MOCK_DATA_SERVER}/posts`);
+      await Supergood.close();
+      checkPostedEvents(postEventsMock, 1, {
+        response: expect.objectContaining({
+          body: {}
+        })
+      });
+    });
+  })
+
   describe('headers', () => {
     it('should capture custom request headers', async () => {
       await Supergood.init(

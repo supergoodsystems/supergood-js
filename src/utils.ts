@@ -35,12 +35,14 @@ const logger = ({
       error: Error,
       { reportOut }: { reportOut: boolean } = { reportOut: true }
     ) => {
-      console.error(
-        new Date().toISOString(),
-        `${packageName}@${packageVersion}: ${message}`,
-        JSON.stringify(payload, null, 2),
-        error
-      );
+      if (process.env.SUPERGOOD_LOG_LEVEL === 'debug') {
+        console.error(
+          new Date().toISOString(),
+          `${packageName}@${packageVersion}: ${message}`,
+          JSON.stringify(payload, null, 2),
+          error
+        );
+      }
       if (reportOut && errorSinkUrl) {
         postError(
           errorSinkUrl,
