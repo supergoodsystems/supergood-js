@@ -27,10 +27,14 @@ describe('telemetry posting', () => {
       },
       SUPERGOOD_SERVER
     );
+
     await axios.get(`${MOCK_DATA_SERVER}/posts`);
+
     await Supergood.close();
+
     const { cacheKeys, cacheSize, serviceName } =
       getTelemetry(postTelemetryMock);
+
     expect(cacheKeys).toEqual(1);
     expect(cacheSize).toEqual(160);
     expect(serviceName).toEqual('test-service-name');
