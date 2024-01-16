@@ -107,7 +107,6 @@ export class NodeClientRequest extends ClientRequest {
   emit(event: 'pipe', src: Readable): boolean;
   emit(event: 'unpipe', src: Readable): boolean;
   emit(event: string | symbol, ...args: any[]): boolean {
-
     if (event === 'response') {
       const response = args[0] as IncomingMessage;
       const firstClone = cloneIncomingMessage(response);
