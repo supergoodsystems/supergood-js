@@ -119,67 +119,18 @@ describe('core functionality', () => {
   });
 
   xdescribe('config specifications', () => {
-    test('hashing', async () => {
+    it('should ignore requests to ip addresses if allowIpAddresses is false', async () => {
       await Supergood.init(
         {
-          config: {
-            keysToHash: ['response.body'],
-            allowLocalUrls: true
-          },
+          config: { ...SUPERGOOD_CONFIG, allowIpAddresses: false },
           clientId: SUPERGOOD_CLIENT_ID,
           clientSecret: SUPERGOOD_CLIENT_SECRET
         },
         SUPERGOOD_SERVER
       );
-      await axios.get(`${MOCK_DATA_SERVER}/posts`);
+      await axios.get('https://api.ipify.org?format=json');
       await Supergood.close();
-
-      checkPostedEvents(postEventsMock, 1, {
-        response: expect.objectContaining({
-          body: expect.arrayContaining([expect.stringMatching(BASE64_REGEX)])
-        })
-      });
-    });
-
-    it('should not hash anything', async () => {
-      await Supergood.init(
-        {
-          config: { keysToHash: [], allowLocalUrls: true },
-          clientId: SUPERGOOD_CLIENT_ID,
-          clientSecret: SUPERGOOD_CLIENT_SECRET
-        },
-        SUPERGOOD_SERVER
-      );
-      const response = await axios.get(`${MOCK_DATA_SERVER}/posts`);
-      await Supergood.close();
-
-      checkPostedEvents(postEventsMock, 1, {
-        response: expect.objectContaining({
-          body: response.data
-        })
-      });
-    });
-
-    it('should not hash if provided keys do not exist', async () => {
-      await Supergood.init(
-        {
-          config: {
-            keysToHash: ['thisKeyDoesNotExist', 'response.thisKeyDoesNotExist'],
-            allowLocalUrls: true
-          },
-          clientId: SUPERGOOD_CLIENT_ID,
-          clientSecret: SUPERGOOD_CLIENT_SECRET
-        },
-        SUPERGOOD_SERVER
-      );
-      const response = await axios.get(`${MOCK_DATA_SERVER}/posts`);
-      await Supergood.close();
-
-      checkPostedEvents(postEventsMock, 1, {
-        response: expect.objectContaining({
-          body: response.data
-        })
-      });
+      expect(postEventsMock).not.toHaveBeenCalled();
     });
 
     it('should ignore requests to ignored domains', async () => {
@@ -208,9 +159,9 @@ describe('core functionality', () => {
         },
         SUPERGOOD_SERVER
       );
-      await axios.get('https://supergood-testbed.herokuapp.com/200');
+      await axios.get('https://8.8.8.8/');
       await Supergood.close();
-      expect(postEventsMock).toHaveBeenCalled();
+      expect(postEventsMock).not.toHaveBeenCalled();
     }, 10000);
 
     it('should only post events for specified domains and ignore everything else', async () => {
