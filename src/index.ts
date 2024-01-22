@@ -258,12 +258,20 @@ const Supergood = () => {
 
   // Force flush cache means don't wait for responses
   const flushCache = async ({ force } = { force: false }) => {
-    // log.debug('Flushing Cache ...', { force });
     const responseCacheKeys = responseCache.keys();
     const requestCacheKeys = requestCache.keys();
+    const responseCacheValues = Object.values(responseCache.mget(responseCacheKeys));
+    const requestCacheValues = Object.values(requestCache.mget(requestCacheKeys));
+    const { keys, vsize } = responseCache.getStats();
+
+    // Delete cache before posting and parsing, since everything is loaded in local memory
+    // TODO: Perhaps optionally write to disk if posting fails
+
+    responseCache.del(responseCacheKeys);
+    if (force) requestCache.del(requestCacheKeys);
 
     const responseArray = prepareData(
-      Object.values(responseCache.mget(responseCacheKeys)),
+      responseCacheValues as EventRequestType[],
       supergoodConfig.remoteConfig
     ) as Array<EventRequestType>;
 
@@ -272,18 +280,15 @@ const Supergood = () => {
     // If force, then we need to flush everything, even uncompleted requests
     if (force) {
       const requestArray = prepareData(
-        Object.values(requestCache.mget(requestCacheKeys)),
+        requestCacheValues as EventRequestType[],
         supergoodConfig.remoteConfig
       ) as Array<EventRequestType>;
       data = [...requestArray, ...responseArray];
     }
 
     if (data.length === 0) {
-      // log.debug('Nothing to flush', { force });
       return;
     }
-
-    const { keys, vsize } = responseCache.getStats();
 
     try {
       // Post the telemetry after the events make it, but before we delete the cache
@@ -347,13 +352,6 @@ const Supergood = () => {
           }
         );
       }
-    } finally {
-      // Delete only the keys sent
-      // cache might have been updated
-      responseCache.del(responseCacheKeys);
-
-      // Only flush the request cache if we're forcing a flush
-      if (force) requestCache.del(requestCacheKeys);
     }
   };
 

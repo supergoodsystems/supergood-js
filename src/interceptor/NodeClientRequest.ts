@@ -106,30 +106,30 @@ export class NodeClientRequest extends ClientRequest {
   emit(event: 'finish'): boolean;
   emit(event: 'pipe', src: Readable): boolean;
   emit(event: 'unpipe', src: Readable): boolean;
-  emit(event: string | symbol, ...args: any[]): boolean {
-    if (event === 'response') {
-      const response = args[0] as IncomingMessage;
-      const firstClone = cloneIncomingMessage(response);
-      const secondClone = cloneIncomingMessage(response);
+  emit(event: string | symbol, ...args: any[]) {
+    if (event === 'response' && this.isInterceptable) {
+      try {
+        const response = args[0] as IncomingMessage;
+        const firstClone = cloneIncomingMessage(response);
+        const secondClone = cloneIncomingMessage(response);
+        async function emitResponse(
+          event: string,
+          requestId: string,
+          message: IncomingMessage,
+          emitter: EventEmitter
+        ) {
+          const isomorphicResponse = await IsomorphicResponse.fromIncomingMessage(
+            message
+          );
+          emitter.emit(event, isomorphicResponse, requestId);
+        }
 
-      async function emitResponse(
-        requestId: string,
-        message: IncomingMessage,
-        emitter: EventEmitter
-      ) {
-        const isomorphicResponse = await IsomorphicResponse.fromIncomingMessage(
-          message
-        );
-        emitter.emit('response', isomorphicResponse, requestId);
+        emitResponse('response', this.requestId as string, secondClone, this.emitter)
+        return super.emit(event, firstClone, ...args.slice(1))
+      } catch (e) {
+        return super.emit(event as string, ...args);
       }
-
-      if (this.isInterceptable) {
-        emitResponse(this.requestId as string, secondClone, this.emitter);
-      }
-
-      return super.emit(event as string, firstClone, ...args.slice(1));
     }
-
     return super.emit(event as string, ...args);
   }
 
