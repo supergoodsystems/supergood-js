@@ -39,6 +39,7 @@ interface ConfigType {
   remoteConfigFetchInterval: number;
   ignoredDomains: string[];
   allowLocalUrls: boolean;
+  allowIpAddresses: boolean;
   cacheTtl: number;
   keysToHash: string[];
   remoteConfigFetchEndpoint: string; // Defaults to {baseUrl}/config if not provided

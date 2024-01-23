@@ -31,6 +31,7 @@ export class NodeRequestInterceptor extends Interceptor {
         emitter: this.emitter,
         ignoredDomains: this.options.ignoredDomains,
         allowLocalUrls: this.options.allowLocalUrls,
+        allowIpAddresses: this.options.allowIpAddresses,
         baseUrl: this.options.baseUrl
       };
 

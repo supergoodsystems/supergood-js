@@ -6,6 +6,7 @@ const defaultConfig = {
   remoteConfigFetchEndpoint: '/config',
   telemetryEndpoint: '/telemetry',
   allowLocalUrls: false,
+  allowIpAddresses: false,
   logRequestHeaders: true,
   logRequestBody: true,
   logResponseHeaders: true,

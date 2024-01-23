@@ -19,6 +19,7 @@ export type NodeClientOptions = {
   allowLocalUrls: boolean;
   baseUrl?: string;
   ignoredDomains?: string[];
+  allowIpAddresses: boolean;
 };
 
 export type Protocol = 'http' | 'https';
@@ -49,7 +50,8 @@ export class NodeClientRequest extends ClientRequest {
       url: this.url,
       ignoredDomains: options.ignoredDomains ?? [],
       baseUrl: options.baseUrl ?? '',
-      allowLocalUrls: options.allowLocalUrls ?? false
+      allowLocalUrls: options.allowLocalUrls ?? false,
+      allowIpAddresses: options.allowIpAddresses ?? false
     });
   }
 

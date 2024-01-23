@@ -8,12 +8,14 @@ export function isInterceptable({
   url,
   ignoredDomains,
   baseUrl,
-  allowLocalUrls
+  allowLocalUrls,
+  allowIpAddresses
 }: {
   url: URL;
   ignoredDomains: string[];
   baseUrl: string;
   allowLocalUrls: boolean;
+  allowIpAddresses: boolean;
 }): boolean {
   const { origin: baseOrigin } = new URL(baseUrl);
   const hostname = url.hostname;
@@ -24,7 +26,11 @@ export function isInterceptable({
     return false;
   }
 
-  if (!hostname && !allowLocalUrls) {
+  if (!allowIpAddresses && /^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(hostname)) {
+    return false;
+  }
+
+  if (!allowLocalUrls && !hostname) {
     return false;
   }
 

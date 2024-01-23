@@ -3,6 +3,7 @@ import { EventEmitter } from 'events';
 export interface NodeRequestInterceptorOptions {
   ignoredDomains?: string[];
   allowLocalUrls?: boolean;
+  allowIpAddresses?: boolean;
   baseUrl?: string;
 }
 

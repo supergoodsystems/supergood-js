@@ -118,70 +118,7 @@ describe('core functionality', () => {
     });
   });
 
-  xdescribe('config specifications', () => {
-    test('hashing', async () => {
-      await Supergood.init(
-        {
-          config: {
-            keysToHash: ['response.body'],
-            allowLocalUrls: true
-          },
-          clientId: SUPERGOOD_CLIENT_ID,
-          clientSecret: SUPERGOOD_CLIENT_SECRET
-        },
-        SUPERGOOD_SERVER
-      );
-      await axios.get(`${MOCK_DATA_SERVER}/posts`);
-      await Supergood.close();
-
-      checkPostedEvents(postEventsMock, 1, {
-        response: expect.objectContaining({
-          body: expect.arrayContaining([expect.stringMatching(BASE64_REGEX)])
-        })
-      });
-    });
-
-    it('should not hash anything', async () => {
-      await Supergood.init(
-        {
-          config: { keysToHash: [], allowLocalUrls: true },
-          clientId: SUPERGOOD_CLIENT_ID,
-          clientSecret: SUPERGOOD_CLIENT_SECRET
-        },
-        SUPERGOOD_SERVER
-      );
-      const response = await axios.get(`${MOCK_DATA_SERVER}/posts`);
-      await Supergood.close();
-
-      checkPostedEvents(postEventsMock, 1, {
-        response: expect.objectContaining({
-          body: response.data
-        })
-      });
-    });
-
-    it('should not hash if provided keys do not exist', async () => {
-      await Supergood.init(
-        {
-          config: {
-            keysToHash: ['thisKeyDoesNotExist', 'response.thisKeyDoesNotExist'],
-            allowLocalUrls: true
-          },
-          clientId: SUPERGOOD_CLIENT_ID,
-          clientSecret: SUPERGOOD_CLIENT_SECRET
-        },
-        SUPERGOOD_SERVER
-      );
-      const response = await axios.get(`${MOCK_DATA_SERVER}/posts`);
-      await Supergood.close();
-
-      checkPostedEvents(postEventsMock, 1, {
-        response: expect.objectContaining({
-          body: response.data
-        })
-      });
-    });
-
+  describe('config specifications', () => {
     it('should ignore requests to ignored domains', async () => {
       await Supergood.init(
         {
@@ -209,6 +146,34 @@ describe('core functionality', () => {
         SUPERGOOD_SERVER
       );
       await axios.get('https://supergood-testbed.herokuapp.com/200');
+      await Supergood.close();
+      expect(postEventsMock).toHaveBeenCalled();
+    }, 10000);
+
+    it('should ignore IP addresses by default', async () => {
+      await Supergood.init(
+        {
+          config: { ignoredDomains: [], allowLocalUrls: true },
+          clientId: SUPERGOOD_CLIENT_ID,
+          clientSecret: SUPERGOOD_CLIENT_SECRET
+        },
+        SUPERGOOD_SERVER
+      );
+      const response = await fetch('http://13.107.4.52/');
+      await Supergood.close();
+      expect(postEventsMock).not.toHaveBeenCalled();
+    }, 10000);
+
+    it('should not ignore IP addresses if specified', async () => {
+      await Supergood.init(
+        {
+          config: { ignoredDomains: [], allowLocalUrls: true, allowIpAddresses: true },
+          clientId: SUPERGOOD_CLIENT_ID,
+          clientSecret: SUPERGOOD_CLIENT_SECRET
+        },
+        SUPERGOOD_SERVER
+      );
+      const response = await fetch('http://13.107.4.52/');
       await Supergood.close();
       expect(postEventsMock).toHaveBeenCalled();
     }, 10000);
