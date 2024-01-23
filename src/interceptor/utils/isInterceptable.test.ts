@@ -6,12 +6,14 @@ describe('isInterceptable', () => {
     const ignoredDomains: string[] = [];
     const baseUrl = 'https://api.supergood.ai';
     const allowLocalUrls = false;
+    const allowIpAddresses = false;
 
     const result = isInterceptable({
       url,
       ignoredDomains,
       baseUrl,
-      allowLocalUrls
+      allowLocalUrls,
+      allowIpAddresses,
     });
 
     expect(result).toBe(false);
@@ -22,12 +24,15 @@ describe('isInterceptable', () => {
     const ignoredDomains: string[] = [];
     const baseUrl = 'https://api.supergood.ai';
     const allowLocalUrls = false;
+    const allowIpAddresses = false;
+
 
     const result = isInterceptable({
       url,
       ignoredDomains,
       baseUrl,
-      allowLocalUrls
+      allowLocalUrls,
+      allowIpAddresses,
     });
 
     expect(result).toBe(false);
@@ -38,12 +43,14 @@ describe('isInterceptable', () => {
     const ignoredDomains: string[] = [];
     const baseUrl = 'https://api.supergood.ai';
     const allowLocalUrls = true;
+    const allowIpAddresses = false;
 
     const result = isInterceptable({
       url,
       ignoredDomains,
       baseUrl,
-      allowLocalUrls
+      allowLocalUrls,
+      allowIpAddresses
     });
 
     expect(result).toBe(true);
@@ -54,12 +61,14 @@ describe('isInterceptable', () => {
     const ignoredDomains: string[] = [];
     const baseUrl = 'https://api.supergood.ai';
     const allowLocalUrls = false;
+    const allowIpAddresses = false;
 
     const result = isInterceptable({
       url,
       ignoredDomains,
       baseUrl,
-      allowLocalUrls
+      allowLocalUrls,
+      allowIpAddresses
     });
 
     expect(result).toBe(false);
@@ -70,12 +79,14 @@ describe('isInterceptable', () => {
     const ignoredDomains: string[] = [];
     const baseUrl = 'https://api.supergood.ai';
     const allowLocalUrls = true;
+    const allowIpAddresses = false;
 
     const result = isInterceptable({
       url,
       ignoredDomains,
       baseUrl,
-      allowLocalUrls
+      allowLocalUrls,
+      allowIpAddresses
     });
 
     expect(result).toBe(true);
@@ -86,12 +97,14 @@ describe('isInterceptable', () => {
     const ignoredDomains: string[] = ['somedomain.com'];
     const baseUrl = 'https://api.supergood.ai';
     const allowLocalUrls = false;
+    const allowIpAddresses = false;
 
     const result = isInterceptable({
       url,
       ignoredDomains,
       baseUrl,
-      allowLocalUrls
+      allowLocalUrls,
+      allowIpAddresses
     });
 
     expect(result).toBe(false);

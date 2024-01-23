@@ -27,7 +27,8 @@ export class FetchInterceptor extends Interceptor {
         url: new URL(request.url),
         ignoredDomains: this.options.ignoredDomains ?? [],
         baseUrl: this.options.baseUrl ?? '',
-        allowLocalUrls: this.options.allowLocalUrls ?? false
+        allowLocalUrls: this.options.allowLocalUrls ?? false,
+        allowIpAddresses: this.options.allowIpAddresses ?? false,
       });
 
       if (_isInterceptable) {
