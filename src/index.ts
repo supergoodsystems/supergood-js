@@ -95,6 +95,7 @@ const Supergood = () => {
     const interceptorOpts = {
       ignoredDomains: supergoodConfig.ignoredDomains,
       allowLocalUrls: supergoodConfig.allowLocalUrls,
+      allowIpAddresses: supergoodConfig.allowIpAddresses,
       baseUrl
     };
 
