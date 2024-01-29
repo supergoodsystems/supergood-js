@@ -1,6 +1,10 @@
 import { RequestType, ResponseType } from './types';
-import { prepareData, expandSensitiveKeySetForArrays, redactValuesFromKeys } from './utils';
-import _get from 'lodash.get';
+import {
+  prepareData,
+  expandSensitiveKeySetForArrays,
+  redactValuesFromKeys
+} from './utils';
+import { get as _get } from 'lodash';
 
 it('generates multiple sensitive key paths for an array', () => {
   const obj = {
@@ -176,7 +180,7 @@ it('redacts values from keys with proper marshalling', () => {
           }
         ]
       }
-    },
+    }
   };
 
   const remoteConfig = {
@@ -193,10 +197,10 @@ it('redacts values from keys with proper marshalling', () => {
   const redactedObj = redactValuesFromKeys(obj, remoteConfig);
   expect(_get(redactedObj, 'event.request.body.posts[0].title')).toBeNull();
   expect(redactedObj.sensitiveKeyMetadata[0]).toEqual({
-    keyPath: "requestBody.posts[0].title",
-    type: "string",
-    length: 11,
-  })
+    keyPath: 'requestBody.posts[0].title',
+    type: 'string',
+    length: 11
+  });
 });
 
 it('redacts values from keys of nested array', () => {
@@ -293,7 +297,7 @@ it('redacts values from keys of nested array', () => {
           }
         ]
       }
-    },
+    }
   };
 
   const remoteConfig = {
@@ -308,12 +312,14 @@ it('redacts values from keys of nested array', () => {
   };
 
   const redactedObj = redactValuesFromKeys(obj, remoteConfig);
-  expect(_get(redactedObj, 'event.request.body.posts[0].comments[0].body')).toBeNull();
+  expect(
+    _get(redactedObj, 'event.request.body.posts[0].comments[0].body')
+  ).toBeNull();
   expect(redactedObj.sensitiveKeyMetadata[0]).toEqual({
-    keyPath: "requestBody.posts[0].comments[0].body",
-    type: "string",
-    length: 12,
-  })
+    keyPath: 'requestBody.posts[0].comments[0].body',
+    type: 'string',
+    length: 12
+  });
 });
 
 it('will not blow up or redact anything if the sensitive key is bad', () => {
@@ -329,11 +335,9 @@ it('will not blow up or redact anything if the sensitive key is bad', () => {
       requestedAt: new Date(),
       body: {
         name: 'My Blog',
-        comments: [
-          1,2,3,4
-        ]
+        comments: [1, 2, 3, 4]
       }
-    },
+    }
   };
 
   const remoteConfig = {
@@ -349,9 +353,8 @@ it('will not blow up or redact anything if the sensitive key is bad', () => {
 
   const redactedObj = redactValuesFromKeys(obj, remoteConfig);
   expect(_get(redactedObj, 'event.request.body.name')).toBeTruthy();
-  expect(redactedObj.sensitiveKeyMetadata.length).toEqual(0)
+  expect(redactedObj.sensitiveKeyMetadata.length).toEqual(0);
 });
-
 
 it('will prepare the data appropriately for posting to the server', () => {
   const MOCK_DATA_SERVER = 'http://localhost:3001';
@@ -366,9 +369,9 @@ it('will prepare the data appropriately for posting to the server', () => {
       requestedAt: new Date(),
       body: {
         blogType: {
-          name: 'My Blog',
+          name: 'My Blog'
         }
-      },
+      }
     },
     response: {
       headers: {},
@@ -379,11 +382,9 @@ it('will prepare the data appropriately for posting to the server', () => {
         name: 'My Blog',
         user: {
           name: 'John Doe',
-          email: 'john@doe.com',
+          email: 'john@doe.com'
         },
-        comments: [
-          1,2,3,4
-        ]
+        comments: [1, 2, 3, 4]
       }
     }
   };
@@ -402,5 +403,5 @@ it('will prepare the data appropriately for posting to the server', () => {
   const events = prepareData([obj], remoteConfig);
   expect(_get(events[0], 'response.body.user.email')).toBeFalsy();
   expect(_get(events[0], 'request.body.blogType.name')).toBeFalsy();
-  expect(events[0].metadata.sensitiveKeys.length).toEqual(2)
+  expect(events[0].metadata.sensitiveKeys.length).toEqual(2);
 });

@@ -1,5 +1,5 @@
 import fetch from 'node-fetch';
-import get from 'lodash.get';
+import { get } from 'lodash';
 
 import Supergood from '../../src';
 import {
