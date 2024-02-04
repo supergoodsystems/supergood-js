@@ -1,5 +1,4 @@
-import NodeCache from 'node-cache';
-import { serialize } from 'v8';
+import localForage from "localforage";
 import {
   getHeaderOptions,
   logger,
@@ -9,42 +8,39 @@ import {
   processRemoteConfig,
   getEndpointConfigForRequest
 } from './utils';
-import { postEvents, fetchRemoteConfig, postTelemetry } from './api';
-import v8 from 'v8';
+import { postEvents, fetchRemoteConfig } from './api';
 import {
   HeaderOptionType,
   EventRequestType,
   ConfigType,
   LoggerType,
   RequestType,
-  MetadataType
+  MetadataType,
+  RemoteConfigPayloadType
 } from './types';
 import {
   defaultConfig,
   errors,
   TestErrorPath,
   LocalClientId,
-  LocalClientSecret
 } from './constants';
-import onExit from 'signal-exit';
-import { NodeRequestInterceptor } from './interceptor/NodeRequestInterceptor';
 import { IsomorphicRequest } from './interceptor/utils/IsomorphicRequest';
 import { IsomorphicResponse } from './interceptor/utils/IsomorphicResponse';
-import { BatchInterceptor } from './interceptor/BatchInterceptor';
 import { FetchInterceptor } from './interceptor/FetchInterceptor';
 
 const Supergood = () => {
   let eventSinkUrl: string;
   let errorSinkUrl: string;
   let remoteConfigFetchUrl: string;
-  let telemetryUrl: string;
+  let baseUrl: string;
 
   let headerOptions: HeaderOptionType;
   let supergoodConfig: ConfigType;
   let supergoodMetadata: MetadataType;
 
-  let requestCache: NodeCache;
-  let responseCache: NodeCache;
+  let requestCache: LocalForage;
+  let responseCache: LocalForage;
+  let remoteConfigCache: LocalForage;
 
   let log: LoggerType;
   let flushInterval: NodeJS.Timeout;
@@ -52,31 +48,34 @@ const Supergood = () => {
 
   let localOnly = false;
 
-  let interceptor: BatchInterceptor;
+  let interceptor: FetchInterceptor;
 
   const init = async (
     {
       clientId,
-      clientSecret,
       config,
       metadata
     }: {
       clientId?: string;
-      clientSecret?: string;
       config?: Partial<ConfigType>;
       metadata?: Partial<MetadataType>;
     } = {
-        clientId: process.env.SUPERGOOD_CLIENT_ID as string,
-        clientSecret: process.env.SUPERGOOD_CLIENT_SECRET as string,
+        clientId: '' as string,
         config: {} as Partial<ConfigType>,
         metadata: {} as Partial<MetadataType>
       },
-    baseUrl = process.env.SUPERGOOD_BASE_URL || 'https://api.supergood.ai'
   ) => {
-    if (!clientId) throw new Error(errors.NO_CLIENT_ID);
-    if (!clientSecret) throw new Error(errors.NO_CLIENT_SECRET);
 
-    if (clientId === LocalClientId || clientSecret === LocalClientSecret) {
+    if(typeof window === 'undefined') {
+      console.log('Supergood is only supported in the browser environment')
+      return;
+    } else {
+      console.log('Supergood-browser loaded!')
+    }
+
+    if (!clientId) throw new Error(errors.NO_CLIENT_ID);
+
+    if (clientId === LocalClientId) {
       localOnly = true;
     }
 
@@ -85,41 +84,55 @@ const Supergood = () => {
       ...config
     } as ConfigType;
     supergoodMetadata = metadata as MetadataType;
+    baseUrl = supergoodConfig.baseUrl || 'https://api.supergood.ai'
+    localForage.config({
+      driver: localForage.LOCALSTORAGE,
+      name: 'supergood',
+      version: 1.0,
+      storeName: 'supergood',
+      description: 'Supergood Cache'
+    });
 
-    requestCache = new NodeCache({
-      stdTTL: 0
+    remoteConfigCache = localForage.createInstance({
+      name: 'remoteConfigCache',
     });
-    responseCache = new NodeCache({
-      stdTTL: 0
+
+    requestCache = localForage.createInstance({
+      name: 'requestCache',
     });
+
+    responseCache = localForage.createInstance({
+      name: 'responseCache',
+    });
+
     const interceptorOpts = {
       ignoredDomains: supergoodConfig.ignoredDomains,
       allowLocalUrls: supergoodConfig.allowLocalUrls,
       baseUrl
     };
 
-    interceptor = new BatchInterceptor([
-      new NodeRequestInterceptor(interceptorOpts),
-      ...(FetchInterceptor.checkEnvironment()
-        ? [new FetchInterceptor(interceptorOpts)]
-        : [])
-    ]);
+    interceptor = new FetchInterceptor(interceptorOpts)
 
     errorSinkUrl = `${baseUrl}${supergoodConfig.errorSinkEndpoint}`;
     eventSinkUrl = `${baseUrl}${supergoodConfig.eventSinkEndpoint}`;
     remoteConfigFetchUrl = `${baseUrl}${supergoodConfig.remoteConfigFetchEndpoint}`;
-    telemetryUrl = `${baseUrl}${supergoodConfig.telemetryEndpoint}`;
 
-    headerOptions = getHeaderOptions(clientId, clientSecret);
-    log = logger({ errorSinkUrl, headerOptions });
+    headerOptions = getHeaderOptions(clientId);
+    log = logger({ errorSinkUrl, headerOptions, logLevel: supergoodConfig.logLevel});
 
     const fetchAndProcessRemoteConfig = async () => {
       try {
-        const remoteConfigPayload = await fetchRemoteConfig(remoteConfigFetchUrl, headerOptions);
-        supergoodConfig = {
-          ...supergoodConfig,
-          remoteConfig: processRemoteConfig(remoteConfigPayload)
-        };
+        let remoteConfigPayload = await remoteConfigCache.getItem('remoteConfig');
+        console.log({ remoteConfigPayload })
+        if (!remoteConfigPayload) {
+          console.log("Fetching remote config")
+          remoteConfigPayload = (await fetchRemoteConfig(remoteConfigFetchUrl, headerOptions));
+          console.log({ remoteConfigPayload })
+          remoteConfigCache.setItem('remoteConfig', {
+            ...supergoodConfig,
+            remoteConfig: processRemoteConfig(remoteConfigPayload as RemoteConfigPayloadType)
+          });
+        }
       } catch (e) {
         log.error(errors.FETCHING_CONFIG, { config: supergoodConfig }, e as Error)
       }
@@ -164,7 +177,6 @@ const Supergood = () => {
                 config: supergoodConfig,
                 metadata: {
                   requestUrl: request.url.toString(),
-                  size: serialize(request).length,
                   ...supergoodMetadata,
                 }
               },
@@ -186,7 +198,7 @@ const Supergood = () => {
           if (!supergoodConfig.remoteConfig) return;
 
           try {
-            const requestData = requestCache.get(requestId) as {
+            const requestData = await requestCache.getItem(requestId) as {
               request: RequestType;
             };
 
@@ -214,7 +226,6 @@ const Supergood = () => {
                 config: supergoodConfig,
                 metadata: {
                   requestUrl: requestData.url,
-                  size: responseData ? serialize(responseData).length : 0,
                   ...supergoodMetadata
                 }
               },
@@ -229,82 +240,56 @@ const Supergood = () => {
     await fetchAndProcessRemoteConfig();
     initializeInterceptors();
 
-    // Fetch the config ongoing every <remoteConfigFetchInterval> milliseconds
-    remoteConfigFetchInterval = setInterval(fetchAndProcessRemoteConfig, supergoodConfig.remoteConfigFetchInterval);
-    remoteConfigFetchInterval.unref();
-
     // Flushes the cache every <flushInterval> milliseconds
     flushInterval = setInterval(flushCache, supergoodConfig.flushInterval);
-    // https://httptoolkit.com/blog/unblocking-node-with-unref/
-    flushInterval.unref();
   };
 
   const cacheRequest = async (request: RequestType, baseUrl: string) => {
-    requestCache.set(request.id, { request });
+    await requestCache.setItem(request.id, { request });
     log.debug('Setting Request Cache', {
       request
     });
   };
 
   const cacheResponse = async (event: EventRequestType, baseUrl: string) => {
-    responseCache.set(event.request.id, event);
+    await responseCache.setItem(event.request.id, event);
     log.debug('Setting Response Cache', {
       id: event.request.id,
       ...event
     });
-    requestCache.del(event.request.id);
+    await requestCache.removeItem(event.request.id);
     log.debug('Deleting Request Cache', { id: event.request.id });
   };
 
   // Force flush cache means don't wait for responses
   const flushCache = async ({ force } = { force: false }) => {
     // log.debug('Flushing Cache ...', { force });
-    const responseCacheKeys = responseCache.keys();
-    const requestCacheKeys = requestCache.keys();
 
-    const responseArray = prepareData(
-      Object.values(responseCache.mget(responseCacheKeys)),
-      supergoodConfig.remoteConfig
-    ) as Array<EventRequestType>;
+    let requestArray = [] as EventRequestType[];
+    let responseArray = [] as EventRequestType[];
+
+    await responseCache.iterate((event: EventRequestType, key) => {
+      if(event) {
+        responseArray.push(prepareData(event, supergoodConfig.remoteConfig) as EventRequestType);
+      }
+    });
+    await responseCache.clear();
 
     let data = [...responseArray];
 
     // If force, then we need to flush everything, even uncompleted requests
     if (force) {
-      const requestArray = prepareData(
-        Object.values(requestCache.mget(requestCacheKeys)),
-        supergoodConfig.remoteConfig
-      ) as Array<EventRequestType>;
+      await requestCache.iterate((event: EventRequestType, key) => {
+        if(event) {
+          requestArray.push(prepareData(event, supergoodConfig.remoteConfig) as EventRequestType);
+        }
+      });
+      await requestCache.clear();
       data = [...requestArray, ...responseArray];
     }
 
     if (data.length === 0) {
-      // log.debug('Nothing to flush', { force });
       return;
-    }
-
-    const { keys, vsize } = responseCache.getStats();
-
-    try {
-      // Post the telemetry after the events make it, but before we delete the cache
-      await postTelemetry(telemetryUrl, { cacheKeys: keys, cacheSize: vsize, ...supergoodMetadata }, headerOptions);
-    } catch (e) {
-      const error = e as Error;
-      log.error(
-        errors.POSTING_TELEMETRY,
-        {
-          config: supergoodConfig,
-          metadata: {
-            keys,
-            size: vsize,
-            ...supergoodMetadata
-          }
-        },
-        error,
-        {
-          reportOut: !localOnly
-        }
-      )
     }
 
     try {
@@ -337,7 +322,6 @@ const Supergood = () => {
             config: supergoodConfig,
             metadata: {
               keys: data.length,
-              size: serialize(data).length,
               ...supergoodMetadata
             }
           },
@@ -347,13 +331,6 @@ const Supergood = () => {
           }
         );
       }
-    } finally {
-      // Delete only the keys sent
-      // cache might have been updated
-      responseCache.del(responseCacheKeys);
-
-      // Only flush the request cache if we're forcing a flush
-      if (force) requestCache.del(requestCacheKeys);
     }
   };
 
@@ -363,7 +340,8 @@ const Supergood = () => {
     clearInterval(remoteConfigFetchInterval);
 
     // If there are hanging requests, wait a second
-    if (requestCache.keys().length > 0) {
+    const hangingRequestsArray = await requestCache.keys();
+    if (hangingRequestsArray.length > 0) {
       await sleep(supergoodConfig.waitAfterClose);
     }
 
@@ -372,8 +350,6 @@ const Supergood = () => {
     return false;
   };
 
-  // Set up cleanup catch for exit signals
-  onExit(() => close(), { alwaysLast: true });
   return { close, flushCache, init };
 };
 

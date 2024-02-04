@@ -2,6 +2,7 @@ interface HeaderOptionType {
   headers: {
     'Content-Type': string;
     Authorization: string;
+    'Supergood-api': string;
   };
 }
 
@@ -35,7 +36,9 @@ interface ResponseType {
 }
 
 interface ConfigType {
+  baseUrl: string;
   flushInterval: number;
+  logLevel: string;
   remoteConfigFetchInterval: number;
   ignoredDomains: string[];
   allowLocalUrls: boolean;

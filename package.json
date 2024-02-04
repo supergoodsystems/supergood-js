@@ -1,6 +1,6 @@
 {
-  "name": "supergood",
-  "version": "1.2.5",
+  "name": "supergood-browser",
+  "version": "0.0.1",
   "description": "",
   "main": "dist/src/index.js",
   "types": "dist/src/index.d.ts",
@@ -8,10 +8,10 @@
   "license": "ISC",
   "repository": {
     "type": "git",
-    "url": "git://github.com/supergoodsystems/supergood-js.git"
+    "url": "git://github.com/supergoodsystems/supergood-browser.git"
   },
   "bugs": {
-    "url": "https://github.com/supergoodsystems/supergood-js/issues"
+    "url": "https://github.com/supergoodsystems/supergood-browser/issues"
   },
   "homepage": "https://supergood.ai/",
   "files": [
@@ -40,11 +40,11 @@
   },
   "dependencies": {
     "headers-polyfill": "^4.0.2",
+    "localforage": "^1.10.0",
     "lodash.get": "^4.4.2",
     "lodash.set": "^4.3.2",
     "node-cache": "^5.1.2",
     "pino": "^8.16.2",
-    "signal-exit": "^3.0.7",
     "ts-essentials": "^9.4.1",
     "web-encoding": "^1.1.5"
   },

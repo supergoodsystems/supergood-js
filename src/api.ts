@@ -32,22 +32,9 @@ const postEvents = async (
   return response;
 };
 
-const postTelemetry = async (
-  telemetryUrl: string,
-  data: TelemetryType,
-  options: HeaderOptionType
-) => {
-  const response = await post(
-    telemetryUrl,
-    data,
-    options.headers.Authorization
-  );
-  return response;
-}
-
 const fetchRemoteConfig = async (configUrl: string, options: HeaderOptionType) => {
   const response = await get(configUrl, options.headers.Authorization);
   return JSON.parse(response);
 }
 
-export { postError, postEvents, fetchRemoteConfig, postTelemetry };
+export { postError, postEvents, fetchRemoteConfig };

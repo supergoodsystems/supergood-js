@@ -36,12 +36,10 @@ const errors = {
 
 const TestErrorPath = '/api/supergood-test-error';
 const LocalClientId = 'local-client-id';
-const LocalClientSecret = 'local-client-secret';
 
 export {
   defaultConfig,
   errors,
   TestErrorPath,
   LocalClientId,
-  LocalClientSecret
 };

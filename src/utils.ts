@@ -13,18 +13,18 @@ import {
 } from './types';
 import { postError } from './api';
 import { name, version } from '../package.json';
-import https from 'https';
-import http from 'http';
 import { errors } from './constants';
 import _set from 'lodash.set';
 import _get from 'lodash.get';
 
 const logger = ({
   errorSinkUrl,
-  headerOptions
+  headerOptions,
+  logLevel,
 }: {
   errorSinkUrl?: string;
   headerOptions: HeaderOptionType;
+  logLevel?: string;
 }) => {
   const packageName = name;
   const packageVersion = version;
@@ -35,7 +35,7 @@ const logger = ({
       error: Error,
       { reportOut }: { reportOut: boolean } = { reportOut: true }
     ) => {
-      if (process.env.SUPERGOOD_LOG_LEVEL === 'debug') {
+      if (logLevel === 'debug') {
         console.error(
           new Date().toISOString(),
           `${packageName}@${packageVersion}: ${message}`,
@@ -63,7 +63,7 @@ const logger = ({
       );
     },
     debug: (message: string, payload?: any) => {
-      if (process.env.SUPERGOOD_LOG_LEVEL === 'debug') {
+      if (logLevel === 'debug') {
         console.log(
           new Date().toISOString(),
           `${packageName}@${packageVersion}: ${message}`,
@@ -76,14 +76,15 @@ const logger = ({
 
 const getHeaderOptions = (
   clientId: string,
-  clientSecret: string
 ): HeaderOptionType => {
   return {
     headers: {
       'Content-Type': 'application/json',
       Authorization: `Basic ${Buffer.from(
-        clientId + ':' + clientSecret
-      ).toString('base64')}`
+        clientId
+      ).toString('base64')}`,
+      'Supergood-api': 'supergood-browser',
+
     }
   };
 };
@@ -214,77 +215,38 @@ const redactValue = (
 };
 
 const prepareData = (
-  events: Array<EventRequestType>,
+  event: EventRequestType,
   remoteConfig: RemoteConfigType,
 ) => {
-  return events.map((e) => {
-    const { event, sensitiveKeyMetadata } = redactValuesFromKeys(e, remoteConfig);
-    return ({
-      ...event,
-      metadata: { sensitiveKeys: sensitiveKeyMetadata }
-    })
+  const { event: redactedEvent, sensitiveKeyMetadata } = redactValuesFromKeys(event, remoteConfig);
+  return ({
+    ...redactedEvent,
+    metadata: { sensitiveKeys: sensitiveKeyMetadata }
   })
 };
 
-const getByteSize = (s: string) => {
-  return new TextEncoder().encode(s).length;
-};
-
-const post = (
+const post = async (
   url: string,
   data: Array<EventRequestType> | ErrorPayloadType | TelemetryType,
   authorization: string
 ): Promise<string> => {
   const dataString = JSON.stringify(data);
   const packageVersion = version;
-  const options = {
+  const response = await fetch(url, {
     method: 'POST',
+    mode: 'no-cors',
     headers: {
       'Content-Type': 'application/json',
-      'Content-Length': getByteSize(dataString),
       Authorization: authorization,
-      'supergood-api': 'supergood-js',
+      'supergood-api': 'supergood-browser',
       'supergood-api-version': packageVersion
     },
-    timeout: 5000 // in ms
-  };
-
-  return new Promise((resolve, reject) => {
-    const transport = url.startsWith('https') ? https : http;
-    const req = transport.request(url, options, (res) => {
-      if (res && res.statusCode) {
-        if (res.statusCode === 401) {
-          return reject(new Error(errors.UNAUTHORIZED));
-        }
-
-        if (res.statusCode < 200 || res.statusCode > 299) {
-          return reject(new Error(`HTTP status code ${res.statusCode}`));
-        }
-      }
-
-      const body = [] as Buffer[];
-      res.on('data', (chunk) => body.push(chunk));
-      res.on('end', () => {
-        const resString = Buffer.concat(body).toString();
-        resolve(resString);
-      });
-    });
-
-    req.on('error', (err) => {
-      reject(err);
-    });
-
-    req.on('timeout', () => {
-      req.destroy();
-      reject(new Error('Request time out'));
-    });
-
-    req.write(dataString);
-    req.end();
+    body: dataString,
   });
+  return response.json();
 }
 
-const get = (
+const get = async (
   url: string,
   authorization: string
 ): Promise<string> => {
@@ -295,43 +257,13 @@ const get = (
     headers: {
       Authorization: authorization,
       'supergood-api': 'supergood-js',
-      'supergood-api-version': packageVersion
+      'supergood-api-version': packageVersion,
+      mode: 'no-cors',
     },
-    timeout: 5000 // in ms
   };
 
-  return new Promise((resolve, reject) => {
-    const transport = url.startsWith('https') ? https : http;
-    const req = transport.request(url, options, (res) => {
-      if (res && res.statusCode) {
-        if (res.statusCode === 401) {
-          return reject(new Error(errors.UNAUTHORIZED));
-        }
-
-        if (res.statusCode < 200 || res.statusCode > 299) {
-          return reject(new Error(`HTTP status code ${res.statusCode}`));
-        }
-      }
-
-      const body = [] as Buffer[];
-      res.on('data', (chunk) => body.push(chunk));
-      res.on('end', () => {
-        const resString = Buffer.concat(body).toString();
-        resolve(resString);
-      });
-    });
-
-    req.on('error', (err) => {
-      reject(err);
-    });
-
-    req.on('timeout', () => {
-      req.destroy();
-      reject(new Error('Request time out'));
-    });
-
-    req.end(); // Notice there is no req.write() for GET requests
-  });
+  const response = await fetch(url, options);
+  return response.json();
 }
 
 const processRemoteConfig = (remoteConfigPayload: RemoteConfigPayloadType) => {
