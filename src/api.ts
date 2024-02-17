@@ -10,7 +10,7 @@ const postError = async (
     const response = await post(
       errorSinkUrl,
       errorPayload,
-      options.headers.Authorization
+      options.headers.authorization
     );
     return response;
   } catch (e) {
@@ -27,13 +27,13 @@ const postEvents = async (
   const response = await post(
     eventSinkUrl,
     data,
-    options.headers.Authorization
+    options.headers.authorization
   );
   return response;
 };
 
 const fetchRemoteConfig = async (configUrl: string, options: HeaderOptionType) => {
-  const response = await get(configUrl, options.headers.Authorization);
+  const response = await get(configUrl, options.headers.authorization);
   return JSON.parse(response);
 }
 

@@ -1,7 +1,7 @@
 interface HeaderOptionType {
   headers: {
     'Content-Type': string;
-    Authorization: string;
+    authorization: string;
     'Supergood-api': string;
   };
 }

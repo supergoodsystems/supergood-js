@@ -17,10 +17,11 @@ import { errors } from './constants';
 import _set from 'lodash.set';
 import _get from 'lodash.get';
 
+
 const logger = ({
   errorSinkUrl,
   headerOptions,
-  logLevel,
+  logLevel
 }: {
   errorSinkUrl?: string;
   headerOptions: HeaderOptionType;
@@ -74,38 +75,44 @@ const logger = ({
   };
 };
 
-const getHeaderOptions = (
-  clientId: string,
-): HeaderOptionType => {
+const getHeaderOptions = (clientId: string, clientSecret: string): HeaderOptionType => {
   return {
     headers: {
       'Content-Type': 'application/json',
-      Authorization: `Basic ${Buffer.from(
-        clientId
-      ).toString('base64')}`,
-      'Supergood-api': 'supergood-browser',
-
+      authorization: `Basic ${btoa(`${clientId}:${clientSecret}`)}`,
+      'Supergood-api': 'supergood-browser'
     }
   };
 };
 
 const marshalKeyPath = (keypath: string) => {
-  if (/^requestHeaders/.test(keypath)) return keypath.replace('requestHeaders', 'request.headers');
-  if (/^requestBody/.test(keypath)) return keypath.replace('requestBody', 'request.body');
-  if (/^responseHeaders/.test(keypath)) return keypath.replace('responseHeaders', 'response.headers');
-  if (/^responseBody/.test(keypath)) return keypath.replace('responseBody', 'response.body');
+  if (/^requestHeaders/.test(keypath))
+    return keypath.replace('requestHeaders', 'request.headers');
+  if (/^requestBody/.test(keypath))
+    return keypath.replace('requestBody', 'request.body');
+  if (/^responseHeaders/.test(keypath))
+    return keypath.replace('responseHeaders', 'response.headers');
+  if (/^responseBody/.test(keypath))
+    return keypath.replace('responseBody', 'response.body');
   return keypath;
-}
+};
 
 const unmarshalKeyPath = (keypath: string) => {
-  if (/^request\.headers/.test(keypath)) return keypath.replace('request.headers', 'requestHeaders');
-  if (/^request\.body/.test(keypath)) return keypath.replace('request.body', 'requestBody');
-  if (/^response\.headers/.test(keypath)) return keypath.replace('response.headers', 'responseHeaders');
-  if (/^response\.body/.test(keypath)) return keypath.replace('response.body', 'responseBody');
+  if (/^request\.headers/.test(keypath))
+    return keypath.replace('request.headers', 'requestHeaders');
+  if (/^request\.body/.test(keypath))
+    return keypath.replace('request.body', 'requestBody');
+  if (/^response\.headers/.test(keypath))
+    return keypath.replace('response.headers', 'responseHeaders');
+  if (/^response\.body/.test(keypath))
+    return keypath.replace('response.body', 'responseBody');
   return keypath;
-}
+};
 
-const expandSensitiveKeySetForArrays = (obj: any, sensitiveKeys: Array<string>): Array<string> => {
+const expandSensitiveKeySetForArrays = (
+  obj: any,
+  sensitiveKeys: Array<string>
+): Array<string> => {
   const expandKey = (key: string, obj: any): Array<string> => {
     // Split the key by dots, considering the array brackets as part of the key
     const parts = key.match(/[^.\[\]]+|\[\d*\]|\[\*\]/g) || [];
@@ -114,7 +121,11 @@ const expandSensitiveKeySetForArrays = (obj: any, sensitiveKeys: Array<string>):
     return expand(parts, obj, '');
   };
 
-  const expand = (parts: string[], obj: any, keyPath: string): Array<string> => {
+  const expand = (
+    parts: string[],
+    obj: any,
+    keyPath: string
+  ): Array<string> => {
     const path = keyPath;
     if (parts.length === 0) {
       return [path]; // Remove trailing dot
@@ -150,18 +161,28 @@ const expandSensitiveKeySetForArrays = (obj: any, sensitiveKeys: Array<string>):
     }
   };
 
-  return sensitiveKeys.flatMap(key => expandKey(key, obj));
+  return sensitiveKeys.flatMap((key) => expandKey(key, obj));
 };
 
 const redactValuesFromKeys = (
   event: { request?: RequestType; response?: ResponseType },
   remoteConfig: RemoteConfigType
-): { event: { request?: RequestType; response?: ResponseType }, sensitiveKeyMetadata: Array<SensitiveKeyMetadata> } => {
+): {
+  event: { request?: RequestType; response?: ResponseType };
+  sensitiveKeyMetadata: Array<SensitiveKeyMetadata>;
+} => {
   let sensitiveKeyMetadata: Array<SensitiveKeyMetadata> = [];
-  const endpointConfig = getEndpointConfigForRequest(event.request as RequestType, remoteConfig);
-  if (!endpointConfig || !endpointConfig?.sensitiveKeys?.length) return { event, sensitiveKeyMetadata };
+  const endpointConfig = getEndpointConfigForRequest(
+    event.request as RequestType,
+    remoteConfig
+  );
+  if (!endpointConfig || !endpointConfig?.sensitiveKeys?.length)
+    return { event, sensitiveKeyMetadata };
   else {
-    const sensitiveKeys = expandSensitiveKeySetForArrays(event, endpointConfig.sensitiveKeys.map(key => marshalKeyPath(key)))
+    const sensitiveKeys = expandSensitiveKeySetForArrays(
+      event,
+      endpointConfig.sensitiveKeys.map((key) => marshalKeyPath(key))
+    );
     for (let i = 0; i < sensitiveKeys.length; i++) {
       const keyPath = sensitiveKeys[i];
       // Add sensitive key for array expansion
@@ -169,7 +190,10 @@ const redactValuesFromKeys = (
       if (value) {
         _set(event, keyPath, null);
         // Don't return <string-length>:<string-type> for null values
-        sensitiveKeyMetadata.push({ keyPath: unmarshalKeyPath(keyPath), ...redactValue(value) });
+        sensitiveKeyMetadata.push({
+          keyPath: unmarshalKeyPath(keyPath),
+          ...redactValue(value)
+        });
       }
     }
     return { event, sensitiveKeyMetadata };
@@ -193,12 +217,10 @@ const redactValue = (
   if (!input) {
     dataLength = 0;
     dataType = 'null';
-  }
-  else if (Array.isArray(input)) {
+  } else if (Array.isArray(input)) {
     dataLength = input.length;
     dataType = 'array';
-  }
-  else if (typeof input === 'object') {
+  } else if (typeof input === 'object') {
     dataLength = new Blob([JSON.stringify(input)]).size;
     dataType = 'object';
   } else if (typeof input === 'string') {
@@ -216,13 +238,16 @@ const redactValue = (
 
 const prepareData = (
   event: EventRequestType,
-  remoteConfig: RemoteConfigType,
+  remoteConfig: RemoteConfigType
 ) => {
-  const { event: redactedEvent, sensitiveKeyMetadata } = redactValuesFromKeys(event, remoteConfig);
-  return ({
+  const { event: redactedEvent, sensitiveKeyMetadata } = redactValuesFromKeys(
+    event,
+    remoteConfig
+  );
+  return {
     ...redactedEvent,
     metadata: { sensitiveKeys: sensitiveKeyMetadata }
-  })
+  };
 };
 
 const post = async (
@@ -234,37 +259,36 @@ const post = async (
   const packageVersion = version;
   const response = await fetch(url, {
     method: 'POST',
-    mode: 'no-cors',
+    mode: 'cors',
+    credentials: 'include',
     headers: {
       'Content-Type': 'application/json',
       Authorization: authorization,
       'supergood-api': 'supergood-browser',
       'supergood-api-version': packageVersion
     },
-    body: dataString,
+    body: dataString
   });
-  return response.json();
-}
+  return response.text();
+};
 
-const get = async (
-  url: string,
-  authorization: string
-): Promise<string> => {
+const get = async (url: string, authorization: string): Promise<string> => {
   const packageVersion = version;
 
   const options = {
     method: 'GET',
     headers: {
-      Authorization: authorization,
-      'supergood-api': 'supergood-js',
+      authorization: authorization,
+      'supergood-api': 'supergood-browser',
       'supergood-api-version': packageVersion,
-      mode: 'no-cors',
-    },
+      mode: 'cors',
+      credentials: 'include',
+    }
   };
 
   const response = await fetch(url, options);
-  return response.json();
-}
+  return response.text();
+};
 
 const processRemoteConfig = (remoteConfigPayload: RemoteConfigPayloadType) => {
   return (remoteConfigPayload || []).reduce((remoteConfig, domainConfig) => {
@@ -284,13 +308,16 @@ const processRemoteConfig = (remoteConfigPayload: RemoteConfigPayloadType) => {
     remoteConfig[domain] = endpointConfig;
     return remoteConfig;
   }, {} as RemoteConfigType);
-}
+};
 
 const sleep = (ms: number) => {
   return new Promise((resolve) => setTimeout(resolve, ms));
 };
 
-const getStrRepresentationFromPath = (request: RequestType, location: string) => {
+const getStrRepresentationFromPath = (
+  request: RequestType,
+  location: string
+) => {
   const url = new URL(request.url);
   if (location === 'domain') return url.hostname.toString();
   if (location === 'url') return url.toString();
@@ -298,9 +325,12 @@ const getStrRepresentationFromPath = (request: RequestType, location: string) =>
   if (location === 'requestHeaders') return request.headers.toString();
   if (location === 'requestBody') return request.body?.toString();
   return request[location as keyof RequestType]?.toString();
-}
+};
 
-const getEndpointConfigForRequest = (request: RequestType, remoteConfig: RemoteConfigType) => {
+const getEndpointConfigForRequest = (
+  request: RequestType,
+  remoteConfig: RemoteConfigType
+) => {
   const domains = Object.keys(remoteConfig);
   const domain = domains.find((domain) => request.url.includes(domain));
 
@@ -322,7 +352,7 @@ const getEndpointConfigForRequest = (request: RequestType, remoteConfig: RemoteC
     }
   }
   return null;
-}
+};
 
 export {
   processRemoteConfig,

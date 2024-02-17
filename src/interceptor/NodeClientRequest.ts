@@ -2,7 +2,6 @@ import { ClientRequest, IncomingMessage } from 'http';
 import { EventEmitter } from 'events';
 import { NormalizedClientRequestArgs } from './utils/request-args';
 import { Readable } from 'stream';
-import crypto from 'crypto';
 import { Headers } from 'headers-polyfill';
 import {
   ClientRequestWriteArgs,

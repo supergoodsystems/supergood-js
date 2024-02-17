@@ -1,4 +1,3 @@
-import crypto from 'crypto';
 import { Headers } from 'headers-polyfill';
 import { assert } from 'ts-essentials';
 import { decodeBuffer } from './bufferUtils';

@@ -39,6 +39,7 @@
     "build": "yarn run clean && tsc -p ./tsconfig.lib.json"
   },
   "dependencies": {
+    "@mswjs/interceptors": "^0.25.16",
     "headers-polyfill": "^4.0.2",
     "localforage": "^1.10.0",
     "lodash.get": "^4.4.2",

@@ -1,4 +1,3 @@
-import crypto from 'crypto';
 
 import { IsomorphicRequest } from './utils/IsomorphicRequest';
 import { IsomorphicResponse } from './utils/IsomorphicResponse';
