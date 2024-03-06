@@ -5,6 +5,7 @@ const defaultConfig = {
   errorSinkEndpoint: '/errors',
   remoteConfigFetchEndpoint: '/config',
   telemetryEndpoint: '/telemetry',
+  useRemoteConfig: true,
   allowLocalUrls: false,
   allowIpAddresses: false,
   logRequestHeaders: true,

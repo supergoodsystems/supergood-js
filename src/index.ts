@@ -227,12 +227,19 @@ const Supergood = () => {
     };
 
     // Fetch the initial config and process it
-    await fetchAndProcessRemoteConfig();
+    if(supergoodConfig.useRemoteConfig) {
+      await fetchAndProcessRemoteConfig();
+    } else {
+      supergoodConfig.remoteConfig = supergoodConfig.remoteConfig ?? {};
+    }
+
     initializeInterceptors();
 
-    // Fetch the config ongoing every <remoteConfigFetchInterval> milliseconds
-    remoteConfigFetchInterval = setInterval(fetchAndProcessRemoteConfig, supergoodConfig.remoteConfigFetchInterval);
-    remoteConfigFetchInterval.unref();
+    if(supergoodConfig.useRemoteConfig) {
+      // Fetch the config ongoing every <remoteConfigFetchInterval> milliseconds
+      remoteConfigFetchInterval = setInterval(fetchAndProcessRemoteConfig, supergoodConfig.remoteConfigFetchInterval);
+      remoteConfigFetchInterval.unref();
+    }
 
     // Flushes the cache every <flushInterval> milliseconds
     flushInterval = setInterval(flushCache, supergoodConfig.flushInterval);
