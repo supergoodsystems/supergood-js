@@ -93,6 +93,7 @@ const Supergood = () => {
       stdTTL: 0
     });
     const interceptorOpts = {
+      allowedDomains: supergoodConfig.allowedDomains,
       ignoredDomains: supergoodConfig.ignoredDomains,
       allowLocalUrls: supergoodConfig.allowLocalUrls,
       allowIpAddresses: supergoodConfig.allowIpAddresses,

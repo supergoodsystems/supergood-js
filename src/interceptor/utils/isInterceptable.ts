@@ -7,12 +7,14 @@ const containsAnyPartial = (array: string[], targetString: string) => {
 export function isInterceptable({
   url,
   ignoredDomains,
+  allowedDomains,
   baseUrl,
   allowLocalUrls,
   allowIpAddresses
 }: {
   url: URL;
   ignoredDomains: string[];
+  allowedDomains: string[];
   baseUrl: string;
   allowLocalUrls: boolean;
   allowIpAddresses: boolean;
@@ -20,6 +22,14 @@ export function isInterceptable({
   const { origin: baseOrigin } = new URL(baseUrl);
   const hostname = url.hostname;
   const [, tld] = hostname.split('.');
+
+  if(allowedDomains && allowedDomains.length > 0) {
+    if (containsAnyPartial(allowedDomains, hostname)) {
+      return true;
+    } else {
+      return false;
+    }
+  }
 
   // Don't intercept internal requests
   if (baseOrigin === url.origin) {
@@ -45,7 +55,7 @@ export function isInterceptable({
   }
 
   // Ignore requests that have been explicitly excluded
-  if (containsAnyPartial(ignoredDomains, url.hostname)) {
+  if (containsAnyPartial(ignoredDomains, hostname)) {
     return false;
   }
 

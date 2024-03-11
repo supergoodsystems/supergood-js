@@ -19,6 +19,7 @@ export type NodeClientOptions = {
   allowLocalUrls: boolean;
   baseUrl?: string;
   ignoredDomains?: string[];
+  allowedDomains?: string[];
   allowIpAddresses: boolean;
 };
 
@@ -49,6 +50,7 @@ export class NodeClientRequest extends ClientRequest {
     this.isInterceptable = isInterceptable({
       url: this.url,
       ignoredDomains: options.ignoredDomains ?? [],
+      allowedDomains: options.allowedDomains ?? [],
       baseUrl: options.baseUrl ?? '',
       allowLocalUrls: options.allowLocalUrls ?? false,
       allowIpAddresses: options.allowIpAddresses ?? false

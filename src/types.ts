@@ -38,6 +38,7 @@ interface ConfigType {
   flushInterval: number;
   remoteConfigFetchInterval: number;
   ignoredDomains: string[];
+  allowedDomains: string[];
   allowLocalUrls: boolean;
   allowIpAddresses: boolean;
   cacheTtl: number;
