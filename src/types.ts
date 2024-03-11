@@ -47,6 +47,7 @@ interface ConfigType {
   eventSinkEndpoint: string; // Defaults to {baseUrl}/events if not provided
   errorSinkEndpoint: string; // Defaults to {baseUrl}/errors if not provided
   telemetryEndpoint: string; // Defaults to {baseUrl}/telemetry if not provided
+  baseTelemetryUrl: string; // Defaults to https://telemetry.supergood.ai if not provided
   waitAfterClose: number;
   remoteConfig: RemoteConfigType;
   useRemoteConfig: boolean;
