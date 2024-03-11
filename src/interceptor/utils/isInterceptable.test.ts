@@ -122,10 +122,30 @@ describe('isInterceptable', () => {
     expect(result).toBe(false);
   });
 
+  it('should return true if allowedDomains is populated and the domain is not in the list', () => {
+    const url = new URL('http://somedomain.com');
+    const ignoredDomains: string[] = ['someotherdomain.com'];
+    const allowedDomains: string[] = ['somedomain.com'];
+    const baseUrl = 'https://api.supergood.ai';
+    const allowLocalUrls = false;
+    const allowIpAddresses = false;
+
+    const result = isInterceptable({
+      url,
+      ignoredDomains,
+      allowedDomains,
+      baseUrl,
+      allowLocalUrls,
+      allowIpAddresses
+    });
+
+    expect(result).toBe(true);
+  });
+
   it('should return false if allowedDomains is populated and the domain is not in the list', () => {
     const url = new URL('http://somedomain.com');
     const ignoredDomains: string[] = ['somedomain.com'];
-    const allowedDomains: string[] = [];
+    const allowedDomains: string[] = ['someotherdomain.com'];
     const baseUrl = 'https://api.supergood.ai';
     const allowLocalUrls = false;
     const allowIpAddresses = false;
@@ -142,10 +162,10 @@ describe('isInterceptable', () => {
     expect(result).toBe(false);
   });
 
-  it('should return false if allowedDomains is populated and the domain is not in the list', () => {
+  it('should return true if allowedDomains has a partial match for the domain', () => {
     const url = new URL('http://somedomain.com');
     const ignoredDomains: string[] = ['somedomain.com'];
-    const allowedDomains: string[] = [];
+    const allowedDomains: string[] = ['somedomain'];
     const baseUrl = 'https://api.supergood.ai';
     const allowLocalUrls = false;
     const allowIpAddresses = false;
@@ -159,7 +179,7 @@ describe('isInterceptable', () => {
       allowIpAddresses
     });
 
-    expect(result).toBe(false);
+    expect(result).toBe(true);
   });
 
 });
