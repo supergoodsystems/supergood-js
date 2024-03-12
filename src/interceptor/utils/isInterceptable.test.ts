@@ -122,7 +122,7 @@ describe('isInterceptable', () => {
     expect(result).toBe(false);
   });
 
-  it('should return true if allowedDomains is populated and the domain is not in the list', () => {
+  it('should return true if allowedDomains is populated and the domain is in the list', () => {
     const url = new URL('http://somedomain.com');
     const ignoredDomains: string[] = ['someotherdomain.com'];
     const allowedDomains: string[] = ['somedomain.com'];
