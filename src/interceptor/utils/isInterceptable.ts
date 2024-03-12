@@ -23,6 +23,10 @@ export function isInterceptable({
   const hostname = url.hostname;
   const [, tld] = hostname.split('.');
 
+  if (baseOrigin === url.origin || containsAnyPartial(['supergood.ai'], hostname)) {
+    return false;
+  }
+
   if(allowedDomains && allowedDomains.length > 0) {
     if (containsAnyPartial(allowedDomains, hostname)) {
       return true;
@@ -31,10 +35,6 @@ export function isInterceptable({
     }
   }
 
-  // Don't intercept internal requests
-  if (baseOrigin === url.origin) {
-    return false;
-  }
 
   if (!allowIpAddresses && /^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(hostname)) {
     return false;
