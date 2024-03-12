@@ -93,6 +93,7 @@ const Supergood = () => {
       stdTTL: 0
     });
     const interceptorOpts = {
+      allowedDomains: supergoodConfig.allowedDomains,
       ignoredDomains: supergoodConfig.ignoredDomains,
       allowLocalUrls: supergoodConfig.allowLocalUrls,
       allowIpAddresses: supergoodConfig.allowIpAddresses,
@@ -106,10 +107,11 @@ const Supergood = () => {
         : [])
     ]);
 
-    errorSinkUrl = `${baseUrl}${supergoodConfig.errorSinkEndpoint}`;
     eventSinkUrl = `${baseUrl}${supergoodConfig.eventSinkEndpoint}`;
     remoteConfigFetchUrl = `${baseUrl}${supergoodConfig.remoteConfigFetchEndpoint}`;
-    telemetryUrl = `${baseUrl}${supergoodConfig.telemetryEndpoint}`;
+
+    telemetryUrl = `${supergoodConfig.baseTelemetryUrl}${supergoodConfig.telemetryEndpoint}`;
+    errorSinkUrl = `${supergoodConfig.baseTelemetryUrl}${supergoodConfig.errorSinkEndpoint}`;
 
     headerOptions = getHeaderOptions(clientId, clientSecret);
     log = logger({ errorSinkUrl, headerOptions });

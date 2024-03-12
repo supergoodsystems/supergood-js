@@ -5,6 +5,7 @@ const defaultConfig = {
   errorSinkEndpoint: '/errors',
   remoteConfigFetchEndpoint: '/config',
   telemetryEndpoint: '/telemetry',
+  baseTelemetryUrl: 'https://telemetry.supergood.ai',
   useRemoteConfig: true,
   allowLocalUrls: false,
   allowIpAddresses: false,
