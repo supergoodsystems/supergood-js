@@ -15,6 +15,7 @@ const postError = async (
     return response;
   } catch (e) {
     console.warn(`Failed to report error to ${errorSinkUrl}`);
+    console.warn(JSON.stringify(e, ['stack', 'message']))
     return null;
   }
 };
