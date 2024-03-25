@@ -71,7 +71,8 @@ const Supergood = () => {
         config: {} as Partial<ConfigType>,
         metadata: {} as Partial<MetadataType>
       },
-    baseUrl = process.env.SUPERGOOD_BASE_URL || 'https://api.supergood.ai'
+    baseUrl = process.env.SUPERGOOD_BASE_URL || 'https://api.supergood.ai',
+    baseTelemetryUrl = process.env.SUPERGOOD_TELEMETRY_BASE_URL || 'https://telemetry.supergood.ai'
   ) => {
     if (!clientId) throw new Error(errors.NO_CLIENT_ID);
     if (!clientSecret) throw new Error(errors.NO_CLIENT_SECRET);
@@ -110,8 +111,8 @@ const Supergood = () => {
     eventSinkUrl = `${baseUrl}${supergoodConfig.eventSinkEndpoint}`;
     remoteConfigFetchUrl = `${baseUrl}${supergoodConfig.remoteConfigFetchEndpoint}`;
 
-    telemetryUrl = `${supergoodConfig.baseTelemetryUrl}${supergoodConfig.telemetryEndpoint}`;
-    errorSinkUrl = `${supergoodConfig.baseTelemetryUrl}${supergoodConfig.errorSinkEndpoint}`;
+    telemetryUrl = `${baseTelemetryUrl}${supergoodConfig.telemetryEndpoint}`;
+    errorSinkUrl = `${baseTelemetryUrl}${supergoodConfig.errorSinkEndpoint}`;
 
     headerOptions = getHeaderOptions(clientId, clientSecret);
     log = logger({ errorSinkUrl, headerOptions });
