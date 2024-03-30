@@ -3,6 +3,7 @@ interface HeaderOptionType {
     'Content-Type': string;
     Authorization: string;
   };
+  timeout: number;
 }
 
 type JSONValue = string | number | boolean | null | JSONArray | JSONObject;
@@ -37,6 +38,7 @@ interface ResponseType {
 interface ConfigType {
   flushInterval: number;
   remoteConfigFetchInterval: number;
+  timeout: number;
   ignoredDomains: string[];
   allowedDomains: string[];
   allowLocalUrls: boolean;
@@ -50,6 +52,7 @@ interface ConfigType {
   waitAfterClose: number;
   remoteConfig: RemoteConfigType;
   useRemoteConfig: boolean;
+  useTelemetry: boolean;
   logRequestHeaders: boolean;
   logRequestBody: boolean;
   logResponseHeaders: boolean;

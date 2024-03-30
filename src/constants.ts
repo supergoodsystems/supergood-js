@@ -1,11 +1,13 @@
 const defaultConfig = {
   flushInterval: 1000,
   remoteConfigFetchInterval: 10000,
+  timeout: 5000,
   eventSinkEndpoint: '/events',
   errorSinkEndpoint: '/errors',
   remoteConfigFetchEndpoint: '/config',
   telemetryEndpoint: '/telemetry',
   useRemoteConfig: true,
+  useTelemetry: true,
   allowLocalUrls: false,
   allowIpAddresses: false,
   logRequestHeaders: true,
