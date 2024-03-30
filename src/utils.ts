@@ -75,7 +75,8 @@ const logger = ({
 
 const getHeaderOptions = (
   clientId: string,
-  clientSecret: string
+  clientSecret: string,
+  timeout: number
 ): HeaderOptionType => {
   return {
     headers: {
@@ -83,7 +84,8 @@ const getHeaderOptions = (
       Authorization: `Basic ${Buffer.from(
         clientId + ':' + clientSecret
       ).toString('base64')}`
-    }
+    },
+    timeout,
   };
 };
 
@@ -261,7 +263,8 @@ const getByteSize = (s: string) => {
 const post = (
   url: string,
   data: Array<EventRequestType> | ErrorPayloadType | TelemetryType,
-  authorization: string
+  authorization: string,
+  timeout: number
 ): Promise<string> => {
   const dataString = JSON.stringify(data);
   const packageVersion = version;
@@ -274,7 +277,7 @@ const post = (
       'supergood-api': 'supergood-js',
       'supergood-api-version': packageVersion
     },
-    timeout: 5000 // in ms
+    timeout // in ms
   };
 
   return new Promise((resolve, reject) => {
@@ -312,7 +315,7 @@ const post = (
   });
 };
 
-const get = (url: string, authorization: string): Promise<string> => {
+const get = (url: string, authorization: string, timeout: number): Promise<string> => {
   const packageVersion = version;
 
   const options = {
@@ -322,7 +325,7 @@ const get = (url: string, authorization: string): Promise<string> => {
       'supergood-api': 'supergood-js',
       'supergood-api-version': packageVersion
     },
-    timeout: 5000 // in ms
+    timeout // in ms
   };
 
   return new Promise((resolve, reject) => {

@@ -114,7 +114,7 @@ const Supergood = () => {
     telemetryUrl = `${baseTelemetryUrl}${supergoodConfig.telemetryEndpoint}`;
     errorSinkUrl = `${baseTelemetryUrl}${supergoodConfig.errorSinkEndpoint}`;
 
-    headerOptions = getHeaderOptions(clientId, clientSecret);
+    headerOptions = getHeaderOptions(clientId, clientSecret, supergoodConfig.timeout);
     log = logger({ errorSinkUrl, headerOptions });
 
     const fetchAndProcessRemoteConfig = async () => {
@@ -303,7 +303,10 @@ const Supergood = () => {
 
     try {
       // Post the telemetry after the events make it, but before we delete the cache
-      await postTelemetry(telemetryUrl, { cacheKeys: keys, cacheSize: vsize, ...supergoodMetadata }, headerOptions);
+      if(supergoodConfig.useTelemetry) {
+        await postTelemetry(telemetryUrl, { cacheKeys: keys, cacheSize: vsize, ...supergoodMetadata }, headerOptions);
+      }
+
     } catch (e) {
       const error = e as Error;
       log.error(
@@ -381,9 +384,17 @@ const Supergood = () => {
     return false;
   };
 
+  const waitAndFlushCache = async ({ force } = { force: false }) => {
+    if (requestCache.keys().length > 0) {
+      await sleep(supergoodConfig.waitAfterClose);
+    }
+
+    await flushCache({ force });
+  }
+
   // Set up cleanup catch for exit signals
   onExit(() => close(), { alwaysLast: true });
-  return { close, flushCache, init };
+  return { close, flushCache, waitAndFlushCache, init };
 };
 
 export = Supergood();
