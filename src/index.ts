@@ -54,7 +54,7 @@ const Supergood = () => {
 
   let interceptor: BatchInterceptor;
 
-  const init = async (
+  const init = <TConfig extends Partial<ConfigType>>(
     {
       clientId,
       clientSecret,
@@ -63,17 +63,17 @@ const Supergood = () => {
     }: {
       clientId?: string;
       clientSecret?: string;
-      config?: Partial<ConfigType>;
+      config?: TConfig;
       metadata?: Partial<MetadataType>;
     } = {
         clientId: process.env.SUPERGOOD_CLIENT_ID as string,
         clientSecret: process.env.SUPERGOOD_CLIENT_SECRET as string,
-        config: {} as Partial<ConfigType>,
+        config: {} as TConfig,
         metadata: {} as Partial<MetadataType>
       },
     baseUrl = process.env.SUPERGOOD_BASE_URL || 'https://api.supergood.ai',
     baseTelemetryUrl = process.env.SUPERGOOD_TELEMETRY_BASE_URL || 'https://telemetry.supergood.ai'
-  ) => {
+  ): TConfig extends { useRemoteConfig: false } ? void : Promise<void> => {
     if (!clientId) throw new Error(errors.NO_CLIENT_ID);
     if (!clientSecret) throw new Error(errors.NO_CLIENT_SECRET);
 
@@ -230,24 +230,28 @@ const Supergood = () => {
     };
 
     // Fetch the initial config and process it
-    if(supergoodConfig.useRemoteConfig) {
-      await fetchAndProcessRemoteConfig();
-    } else {
-      supergoodConfig.remoteConfig = supergoodConfig.remoteConfig ?? {};
+    const continuation = supergoodConfig.useRemoteConfig
+      ? fetchAndProcessRemoteConfig()
+      : void (supergoodConfig.remoteConfig = supergoodConfig.remoteConfig ?? {})
+
+    const remainingWork = () => {
+      initializeInterceptors();
+
+      if(supergoodConfig.useRemoteConfig) {
+        // Fetch the config ongoing every <remoteConfigFetchInterval> milliseconds
+        remoteConfigFetchInterval = setInterval(fetchAndProcessRemoteConfig, supergoodConfig.remoteConfigFetchInterval);
+        remoteConfigFetchInterval.unref();
+      }
+
+      // Flushes the cache every <flushInterval> milliseconds
+      flushInterval = setInterval(flushCache, supergoodConfig.flushInterval);
+      // https://httptoolkit.com/blog/unblocking-node-with-unref/
+      flushInterval.unref();
     }
 
-    initializeInterceptors();
-
-    if(supergoodConfig.useRemoteConfig) {
-      // Fetch the config ongoing every <remoteConfigFetchInterval> milliseconds
-      remoteConfigFetchInterval = setInterval(fetchAndProcessRemoteConfig, supergoodConfig.remoteConfigFetchInterval);
-      remoteConfigFetchInterval.unref();
-    }
-
-    // Flushes the cache every <flushInterval> milliseconds
-    flushInterval = setInterval(flushCache, supergoodConfig.flushInterval);
-    // https://httptoolkit.com/blog/unblocking-node-with-unref/
-    flushInterval.unref();
+    return (
+      continuation?.then(remainingWork) ?? remainingWork()
+    ) as TConfig extends { useRemoteConfig: false } ? void : Promise<void>;
   };
 
   const cacheRequest = async (request: RequestType, baseUrl: string) => {
