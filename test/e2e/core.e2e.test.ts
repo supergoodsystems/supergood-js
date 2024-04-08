@@ -201,6 +201,37 @@ describe('core functionality', () => {
         })
       });
     }, 10000);
+
+    it('should return a promise when run without useRemoteConfig: false', async () => {
+      const ret = Supergood.init(
+        {
+          config: { ...SUPERGOOD_CONFIG, allowLocalUrls: true },
+          clientId: SUPERGOOD_CLIENT_ID,
+          clientSecret: SUPERGOOD_CLIENT_SECRET
+        },
+        SUPERGOOD_SERVER
+      );
+      expect(ret).toHaveProperty('then');
+      await Supergood.close();
+    });
+
+    it('should return void when run with useRemoteConfig: false', async () => {
+      const ret = Supergood.init(
+        {
+          config: {
+            ...SUPERGOOD_CONFIG,
+            allowLocalUrls: true,
+            useRemoteConfig: false
+          },
+          clientId: SUPERGOOD_CLIENT_ID,
+          clientSecret: SUPERGOOD_CLIENT_SECRET
+        },
+        SUPERGOOD_SERVER
+      );
+      
+      expect(ret).toBe(undefined);
+      await Supergood.close();
+    });
   });
 
   describe('encoding', () => {
