@@ -85,11 +85,13 @@ interface MetadataType {
   serviceName?: string;
 }
 
+
 interface EventRequestType {
   request: RequestType;
   response: ResponseType;
   metadata?: {
     sensitiveKeys: Array<SensitiveKeyMetadata>;
+    tags: Record<string, string | number | string[]>;
   };
 }
 

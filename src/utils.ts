@@ -242,7 +242,8 @@ const redactValue = (
 
 const prepareData = (
   events: Array<EventRequestType>,
-  remoteConfig: RemoteConfigType
+  remoteConfig: RemoteConfigType,
+  tags: Record<string, string | number | string[]>
 ) => {
   return events.map((e) => {
     const { event, sensitiveKeyMetadata } = redactValuesFromKeys(
@@ -251,7 +252,7 @@ const prepareData = (
     );
     return {
       ...event,
-      metadata: { sensitiveKeys: sensitiveKeyMetadata }
+      metadata: { sensitiveKeys: sensitiveKeyMetadata, tags }
     };
   });
 };

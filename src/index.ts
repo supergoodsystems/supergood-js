@@ -42,6 +42,7 @@ const Supergood = () => {
   let headerOptions: HeaderOptionType;
   let supergoodConfig: ConfigType;
   let supergoodMetadata: MetadataType;
+  let supergoodTags: Record<string, string | number | string[]>;
 
   let requestCache: NodeCache;
   let responseCache: NodeCache;
@@ -59,17 +60,20 @@ const Supergood = () => {
       clientId,
       clientSecret,
       config,
-      metadata
+      metadata,
+      tags
     }: {
       clientId?: string;
       clientSecret?: string;
       config?: TConfig;
       metadata?: Partial<MetadataType>;
+      tags?: Record<string, string | number | string[]>;
     } = {
         clientId: process.env.SUPERGOOD_CLIENT_ID as string,
         clientSecret: process.env.SUPERGOOD_CLIENT_SECRET as string,
         config: {} as TConfig,
-        metadata: {} as Partial<MetadataType>
+        metadata: {} as Partial<MetadataType>,
+        tags: {} as Record<string, string | number | string[]>
       },
     baseUrl = process.env.SUPERGOOD_BASE_URL || 'https://api.supergood.ai',
     baseTelemetryUrl = process.env.SUPERGOOD_TELEMETRY_BASE_URL || 'https://telemetry.supergood.ai'
@@ -86,13 +90,14 @@ const Supergood = () => {
       ...config
     } as ConfigType;
     supergoodMetadata = metadata as MetadataType;
-
     requestCache = new NodeCache({
       stdTTL: 0
     });
     responseCache = new NodeCache({
       stdTTL: 0
     });
+    supergoodTags = tags ?? {};
+
     const interceptorOpts = {
       allowedDomains: supergoodConfig.allowedDomains,
       ignoredDomains: supergoodConfig.ignoredDomains,
@@ -287,7 +292,8 @@ const Supergood = () => {
 
     const responseArray = prepareData(
       responseCacheValues as EventRequestType[],
-      supergoodConfig.remoteConfig
+      supergoodConfig.remoteConfig,
+      supergoodTags,
     ) as Array<EventRequestType>;
 
     let data = [...responseArray];
@@ -296,7 +302,8 @@ const Supergood = () => {
     if (force) {
       const requestArray = prepareData(
         requestCacheValues as EventRequestType[],
-        supergoodConfig.remoteConfig
+        supergoodConfig.remoteConfig,
+        supergoodTags
       ) as Array<EventRequestType>;
       data = [...requestArray, ...responseArray];
     }
