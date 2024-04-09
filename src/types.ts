@@ -95,6 +95,10 @@ interface EventRequestType {
   };
 }
 
+type SupergoodContext = {
+  tags: Record<string, string | number | string[]>;
+};
+
 // interface EventResponseType {}
 
 type ErrorPayloadType = {
@@ -168,5 +172,6 @@ export type {
   EndpointConfigType,
   RemoteConfigPayloadType,
   MetadataType,
-  TelemetryType
+  TelemetryType,
+  SupergoodContext
 };

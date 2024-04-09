@@ -10,14 +10,14 @@ import {
   getEndpointConfigForRequest
 } from './utils';
 import { postEvents, fetchRemoteConfig, postTelemetry } from './api';
-import v8 from 'v8';
 import {
   HeaderOptionType,
   EventRequestType,
   ConfigType,
   LoggerType,
   RequestType,
-  MetadataType
+  MetadataType,
+  SupergoodContext
 } from './types';
 import {
   defaultConfig,
@@ -32,6 +32,9 @@ import { IsomorphicRequest } from './interceptor/utils/IsomorphicRequest';
 import { IsomorphicResponse } from './interceptor/utils/IsomorphicResponse';
 import { BatchInterceptor } from './interceptor/BatchInterceptor';
 import { FetchInterceptor } from './interceptor/FetchInterceptor';
+import { AsyncLocalStorage } from "async_hooks";
+
+const supergoodAsyncLocalStorage = new AsyncLocalStorage<SupergoodContext>();
 
 const Supergood = () => {
   let eventSinkUrl: string;
@@ -293,7 +296,7 @@ const Supergood = () => {
     const responseArray = prepareData(
       responseCacheValues as EventRequestType[],
       supergoodConfig.remoteConfig,
-      supergoodTags,
+      { ...supergoodTags, ...(supergoodAsyncLocalStorage.getStore()?.tags || {}) }
     ) as Array<EventRequestType>;
 
     let data = [...responseArray];
@@ -303,7 +306,7 @@ const Supergood = () => {
       const requestArray = prepareData(
         requestCacheValues as EventRequestType[],
         supergoodConfig.remoteConfig,
-        supergoodTags
+        { ...supergoodTags, ...(supergoodAsyncLocalStorage.getStore()?.tags || {}) }
       ) as Array<EventRequestType>;
       data = [...requestArray, ...responseArray];
     }
@@ -396,6 +399,9 @@ const Supergood = () => {
   };
 
   const waitAndFlushCache = async ({ force } = { force: false }) => {
+    // If the request cache isn't empty, this means that
+    // there are responses that are still being processed.
+    // Wait for them to finish before flushing the cache.
     if (requestCache.keys().length > 0) {
       await sleep(supergoodConfig.waitAfterClose);
     }
@@ -403,9 +409,16 @@ const Supergood = () => {
     await flushCache({ force });
   }
 
+  const withContext = async <TRet>(
+    tags: Record<string, string | number | string[]>,
+    fn: () => Promise<TRet>,
+  ): Promise<TRet> => {
+    return supergoodAsyncLocalStorage.run({ tags }, fn);
+  }
+
   // Set up cleanup catch for exit signals
   onExit(() => close(), { alwaysLast: true });
-  return { close, flushCache, waitAndFlushCache, init };
+  return { close, flushCache, waitAndFlushCache, withContext, init };
 };
 
 export = Supergood();

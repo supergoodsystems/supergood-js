@@ -14,7 +14,7 @@ import { getEvents } from '../utils/function-call-args';
 import { mockApi } from '../utils/mock-api';
 
 describe('Custom tags', () => {
-  it('should add custom tags to events', async () => {
+  it('should add custom tags to events via init', async () => {
     // Add your test code here
     const { postEventsMock } = mockApi();
     await Supergood.init(
@@ -30,6 +30,27 @@ describe('Custom tags', () => {
     );
     await fetch(`${MOCK_DATA_SERVER}/profile`);
     await Supergood.close();
+    const eventsPosted = getEvents(postEventsMock);
+    expect(eventsPosted.length).toEqual(1);
+    expect(get(eventsPosted[0], 'metadata.tags.customTag')).toEqual('customValue');
+  });
+
+  it('should add custom tags to events via asyncLocalStorage', async () => {
+    const { postEventsMock } = mockApi();
+    await Supergood.init(
+      {
+        config: { ...SUPERGOOD_CONFIG, allowLocalUrls: true },
+        clientId: SUPERGOOD_CLIENT_ID,
+        clientSecret: SUPERGOOD_CLIENT_SECRET,
+      },
+      SUPERGOOD_SERVER
+    );
+
+    await Supergood.withContext({ customTag: 'customValue' }, async () => {
+      await fetch(`${MOCK_DATA_SERVER}/profile`);
+      await Supergood.waitAndFlushCache();
+    });
+
     const eventsPosted = getEvents(postEventsMock);
     expect(eventsPosted.length).toEqual(1);
     expect(get(eventsPosted[0], 'metadata.tags.customTag')).toEqual('customValue');
