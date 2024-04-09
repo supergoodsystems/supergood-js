@@ -73,15 +73,22 @@ describe('Custom tags', () => {
       await fetch(`${MOCK_DATA_SERVER}/profile`);
       await Supergood.withContext({ company: 'B' }, async () => {
         await fetch(`${MOCK_DATA_SERVER}/profile`);
+        await Supergood.withContext({ office: 'C' }, async () => {
+          await fetch(`${MOCK_DATA_SERVER}/profile`);
+        })
       });
     });
 
     await Supergood.close();
 
     const eventsPosted = getEvents(postEventsMock);
-    expect(eventsPosted.length).toEqual(2);
+    expect(eventsPosted.length).toEqual(3);
     expect(get(eventsPosted[0], 'metadata.tags.person')).toEqual('A');
     expect(get(eventsPosted[1], 'metadata.tags.person')).toEqual('A');
     expect(get(eventsPosted[1], 'metadata.tags.company')).toEqual('B');
+    expect(get(eventsPosted[2], 'metadata.tags.person')).toEqual('A');
+    expect(get(eventsPosted[2], 'metadata.tags.company')).toEqual('B');
+    expect(get(eventsPosted[2], 'metadata.tags.office')).toEqual('C');
+
   });
 })
