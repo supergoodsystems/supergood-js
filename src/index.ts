@@ -413,7 +413,7 @@ const Supergood = () => {
     await flushCache({ force });
   }
 
-  const withContext = async <TRet>(
+  const withTags = async <TRet>(
     tags: Record<string, string | number | string[]>,
     fn: () => Promise<TRet>,
   ): Promise<TRet> => {
@@ -423,7 +423,7 @@ const Supergood = () => {
 
   // Set up cleanup catch for exit signals
   onExit(() => close(), { alwaysLast: true });
-  return { close, flushCache, waitAndFlushCache, withContext, init };
+  return { close, flushCache, waitAndFlushCache, withTags, init };
 };
 
 export = Supergood();

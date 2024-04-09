@@ -2,7 +2,6 @@ import fetch from 'node-fetch';
 import { get } from 'lodash';
 
 import Supergood from '../../src';
-import { sleep } from '../../src/utils';
 import {
   MOCK_DATA_SERVER,
   SUPERGOOD_CLIENT_ID,
@@ -10,7 +9,6 @@ import {
   SUPERGOOD_CONFIG,
   SUPERGOOD_SERVER
 } from '../consts';
-import { RemoteConfigPayloadType } from '../../src/types';
 import { getEvents } from '../utils/function-call-args';
 import { mockApi } from '../utils/mock-api';
 
@@ -47,7 +45,7 @@ describe('Custom tags', () => {
       SUPERGOOD_SERVER
     );
 
-    await Supergood.withContext({ call: 'A' }, async () => {
+    await Supergood.withTags({ call: 'A' }, async () => {
       await fetch(`${MOCK_DATA_SERVER}/profile`);
     });
 
@@ -69,11 +67,11 @@ describe('Custom tags', () => {
       SUPERGOOD_SERVER
     );
 
-    await Supergood.withContext({ person: 'A' }, async () => {
+    await Supergood.withTags({ person: 'A' }, async () => {
       await fetch(`${MOCK_DATA_SERVER}/profile`);
-      await Supergood.withContext({ company: 'B' }, async () => {
+      await Supergood.withTags({ company: 'B' }, async () => {
         await fetch(`${MOCK_DATA_SERVER}/profile`);
-        await Supergood.withContext({ office: 'C' }, async () => {
+        await Supergood.withTags({ office: 'C' }, async () => {
           await fetch(`${MOCK_DATA_SERVER}/profile`);
         })
       });
