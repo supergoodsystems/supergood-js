@@ -10,14 +10,14 @@ import {
   getEndpointConfigForRequest
 } from './utils';
 import { postEvents, fetchRemoteConfig, postTelemetry } from './api';
-import v8 from 'v8';
 import {
   HeaderOptionType,
   EventRequestType,
   ConfigType,
   LoggerType,
   RequestType,
-  MetadataType
+  MetadataType,
+  SupergoodContext
 } from './types';
 import {
   defaultConfig,
@@ -32,6 +32,9 @@ import { IsomorphicRequest } from './interceptor/utils/IsomorphicRequest';
 import { IsomorphicResponse } from './interceptor/utils/IsomorphicResponse';
 import { BatchInterceptor } from './interceptor/BatchInterceptor';
 import { FetchInterceptor } from './interceptor/FetchInterceptor';
+import { AsyncLocalStorage } from "async_hooks";
+
+const supergoodAsyncLocalStorage = new AsyncLocalStorage<SupergoodContext>();
 
 const Supergood = () => {
   let eventSinkUrl: string;
@@ -42,6 +45,7 @@ const Supergood = () => {
   let headerOptions: HeaderOptionType;
   let supergoodConfig: ConfigType;
   let supergoodMetadata: MetadataType;
+  let supergoodTags: Record<string, string | number | string[]>;
 
   let requestCache: NodeCache;
   let responseCache: NodeCache;
@@ -59,17 +63,20 @@ const Supergood = () => {
       clientId,
       clientSecret,
       config,
-      metadata
+      metadata,
+      tags
     }: {
       clientId?: string;
       clientSecret?: string;
       config?: TConfig;
       metadata?: Partial<MetadataType>;
+      tags?: Record<string, string | number | string[]>;
     } = {
         clientId: process.env.SUPERGOOD_CLIENT_ID as string,
         clientSecret: process.env.SUPERGOOD_CLIENT_SECRET as string,
         config: {} as TConfig,
-        metadata: {} as Partial<MetadataType>
+        metadata: {} as Partial<MetadataType>,
+        tags: {} as Record<string, string | number | string[]>
       },
     baseUrl = process.env.SUPERGOOD_BASE_URL || 'https://api.supergood.ai',
     baseTelemetryUrl = process.env.SUPERGOOD_TELEMETRY_BASE_URL || 'https://telemetry.supergood.ai'
@@ -86,13 +93,14 @@ const Supergood = () => {
       ...config
     } as ConfigType;
     supergoodMetadata = metadata as MetadataType;
-
     requestCache = new NodeCache({
       stdTTL: 0
     });
     responseCache = new NodeCache({
       stdTTL: 0
     });
+    supergoodTags = tags ?? {};
+
     const interceptorOpts = {
       allowedDomains: supergoodConfig.allowedDomains,
       ignoredDomains: supergoodConfig.ignoredDomains,
@@ -192,6 +200,7 @@ const Supergood = () => {
           try {
             const requestData = requestCache.get(requestId) as {
               request: RequestType;
+              tags: Record<string, string | number | string[]>;
             };
 
             if (requestData) {
@@ -255,9 +264,10 @@ const Supergood = () => {
   };
 
   const cacheRequest = async (request: RequestType, baseUrl: string) => {
-    requestCache.set(request.id, { request });
+    requestCache.set(request.id, { request, tags: getTags() });
     log.debug('Setting Request Cache', {
-      request
+      request,
+      tags: getTags()
     });
   };
 
@@ -270,6 +280,10 @@ const Supergood = () => {
     requestCache.del(event.request.id);
     log.debug('Deleting Request Cache', { id: event.request.id });
   };
+
+  const getTags = () => {
+    return { ...supergoodTags, ...(supergoodAsyncLocalStorage.getStore()?.tags || {}) };
+  }
 
   // Force flush cache means don't wait for responses
   const flushCache = async ({ force } = { force: false }) => {
@@ -287,7 +301,7 @@ const Supergood = () => {
 
     const responseArray = prepareData(
       responseCacheValues as EventRequestType[],
-      supergoodConfig.remoteConfig
+      supergoodConfig.remoteConfig,
     ) as Array<EventRequestType>;
 
     let data = [...responseArray];
@@ -389,6 +403,9 @@ const Supergood = () => {
   };
 
   const waitAndFlushCache = async ({ force } = { force: false }) => {
+    // If the request cache isn't empty, this means that
+    // there are responses that are still being processed.
+    // Wait for them to finish before flushing the cache.
     if (requestCache.keys().length > 0) {
       await sleep(supergoodConfig.waitAfterClose);
     }
@@ -396,9 +413,17 @@ const Supergood = () => {
     await flushCache({ force });
   }
 
+  const withTags = async <TRet>(
+    tags: Record<string, string | number | string[]>,
+    fn: () => Promise<TRet>,
+  ): Promise<TRet> => {
+    const existingTags = supergoodAsyncLocalStorage.getStore()?.tags || {};
+    return supergoodAsyncLocalStorage.run({ tags: { ...tags, ...existingTags }}, fn);
+  }
+
   // Set up cleanup catch for exit signals
   onExit(() => close(), { alwaysLast: true });
-  return { close, flushCache, waitAndFlushCache, init };
+  return { close, flushCache, waitAndFlushCache, withTags, init };
 };
 
 export = Supergood();

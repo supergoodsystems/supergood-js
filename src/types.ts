@@ -85,13 +85,20 @@ interface MetadataType {
   serviceName?: string;
 }
 
+
 interface EventRequestType {
   request: RequestType;
   response: ResponseType;
+  tags?: Record<string, string | number | string[]>;
   metadata?: {
     sensitiveKeys: Array<SensitiveKeyMetadata>;
+    tags?: Record<string, string | number | string[]>;
   };
 }
+
+type SupergoodContext = {
+  tags: Record<string, string | number | string[]>;
+};
 
 // interface EventResponseType {}
 
@@ -166,5 +173,6 @@ export type {
   EndpointConfigType,
   RemoteConfigPayloadType,
   MetadataType,
-  TelemetryType
+  TelemetryType,
+  SupergoodContext
 };
