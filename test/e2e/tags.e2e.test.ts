@@ -57,4 +57,31 @@ describe('Custom tags', () => {
     expect(eventsPosted.length).toEqual(1);
     expect(get(eventsPosted[0], 'metadata.tags.call')).toEqual('A');
   });
+
+  it('should support nested contexts', async () => {
+    const { postEventsMock } = mockApi();
+    await Supergood.init(
+      {
+        config: { ...SUPERGOOD_CONFIG, allowLocalUrls: true },
+        clientId: SUPERGOOD_CLIENT_ID,
+        clientSecret: SUPERGOOD_CLIENT_SECRET,
+      },
+      SUPERGOOD_SERVER
+    );
+
+    await Supergood.withContext({ person: 'A' }, async () => {
+      await fetch(`${MOCK_DATA_SERVER}/profile`);
+      await Supergood.withContext({ company: 'B' }, async () => {
+        await fetch(`${MOCK_DATA_SERVER}/profile`);
+      });
+    });
+
+    await Supergood.close();
+
+    const eventsPosted = getEvents(postEventsMock);
+    expect(eventsPosted.length).toEqual(2);
+    expect(get(eventsPosted[0], 'metadata.tags.person')).toEqual('A');
+    expect(get(eventsPosted[1], 'metadata.tags.person')).toEqual('A');
+    expect(get(eventsPosted[1], 'metadata.tags.company')).toEqual('B');
+  });
 })

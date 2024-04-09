@@ -417,7 +417,8 @@ const Supergood = () => {
     tags: Record<string, string | number | string[]>,
     fn: () => Promise<TRet>,
   ): Promise<TRet> => {
-    return supergoodAsyncLocalStorage.run({ tags }, fn);
+    const existingTags = supergoodAsyncLocalStorage.getStore()?.tags || {};
+    return supergoodAsyncLocalStorage.run({ tags: { ...tags, ...existingTags }}, fn);
   }
 
   // Set up cleanup catch for exit signals

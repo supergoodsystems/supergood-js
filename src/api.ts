@@ -26,6 +26,7 @@ const postEvents = async (
   data: Array<EventRequestType>,
   options: HeaderOptionType
 ) => {
+  console.log(JSON.stringify(data, null, 2))
   const response = await post(
     eventSinkUrl,
     data,
