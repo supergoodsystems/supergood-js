@@ -200,6 +200,7 @@ const Supergood = () => {
           try {
             const requestData = requestCache.get(requestId) as {
               request: RequestType;
+              tags: Record<string, string | number | string[]>;
             };
 
             if (requestData) {
@@ -263,9 +264,10 @@ const Supergood = () => {
   };
 
   const cacheRequest = async (request: RequestType, baseUrl: string) => {
-    requestCache.set(request.id, { request });
+    requestCache.set(request.id, { request, tags: getTags() });
     log.debug('Setting Request Cache', {
-      request
+      request,
+      tags: getTags()
     });
   };
 
@@ -278,6 +280,10 @@ const Supergood = () => {
     requestCache.del(event.request.id);
     log.debug('Deleting Request Cache', { id: event.request.id });
   };
+
+  const getTags = () => {
+    return { ...supergoodTags, ...(supergoodAsyncLocalStorage.getStore()?.tags || {}) };
+  }
 
   // Force flush cache means don't wait for responses
   const flushCache = async ({ force } = { force: false }) => {
@@ -296,7 +302,6 @@ const Supergood = () => {
     const responseArray = prepareData(
       responseCacheValues as EventRequestType[],
       supergoodConfig.remoteConfig,
-      { ...supergoodTags, ...(supergoodAsyncLocalStorage.getStore()?.tags || {}) }
     ) as Array<EventRequestType>;
 
     let data = [...responseArray];
@@ -305,8 +310,7 @@ const Supergood = () => {
     if (force) {
       const requestArray = prepareData(
         requestCacheValues as EventRequestType[],
-        supergoodConfig.remoteConfig,
-        { ...supergoodTags, ...(supergoodAsyncLocalStorage.getStore()?.tags || {}) }
+        supergoodConfig.remoteConfig
       ) as Array<EventRequestType>;
       data = [...requestArray, ...responseArray];
     }

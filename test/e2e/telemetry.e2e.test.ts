@@ -36,7 +36,7 @@ describe('telemetry posting', () => {
       getTelemetry(postTelemetryMock);
 
     expect(cacheKeys).toEqual(1);
-    expect(cacheSize).toEqual(160);
+    expect(cacheSize).toEqual(240);
     expect(serviceName).toEqual('test-service-name');
   });
 });

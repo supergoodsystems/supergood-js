@@ -2,6 +2,7 @@ import fetch from 'node-fetch';
 import { get } from 'lodash';
 
 import Supergood from '../../src';
+import { sleep } from '../../src/utils';
 import {
   MOCK_DATA_SERVER,
   SUPERGOOD_CLIENT_ID,
@@ -46,13 +47,14 @@ describe('Custom tags', () => {
       SUPERGOOD_SERVER
     );
 
-    await Supergood.withContext({ customTag: 'customValue' }, async () => {
+    await Supergood.withContext({ call: 'A' }, async () => {
       await fetch(`${MOCK_DATA_SERVER}/profile`);
-      await Supergood.waitAndFlushCache();
     });
+
+    await Supergood.close();
 
     const eventsPosted = getEvents(postEventsMock);
     expect(eventsPosted.length).toEqual(1);
-    expect(get(eventsPosted[0], 'metadata.tags.customTag')).toEqual('customValue');
+    expect(get(eventsPosted[0], 'metadata.tags.call')).toEqual('A');
   });
 })

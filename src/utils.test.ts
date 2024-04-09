@@ -400,7 +400,7 @@ it('will prepare the data appropriately for posting to the server', () => {
     }
   };
 
-  const events = prepareData([obj], remoteConfig, {});
+  const events = prepareData([obj], remoteConfig);
   expect(_get(events[0], 'response.body.user.email')).toBeFalsy();
   expect(_get(events[0], 'request.body.blogType.name')).toBeFalsy();
   expect(events[0].metadata.sensitiveKeys.length).toEqual(2);

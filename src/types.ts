@@ -89,9 +89,10 @@ interface MetadataType {
 interface EventRequestType {
   request: RequestType;
   response: ResponseType;
+  tags?: Record<string, string | number | string[]>;
   metadata?: {
     sensitiveKeys: Array<SensitiveKeyMetadata>;
-    tags: Record<string, string | number | string[]>;
+    tags?: Record<string, string | number | string[]>;
   };
 }
 

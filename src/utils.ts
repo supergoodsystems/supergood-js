@@ -169,19 +169,27 @@ const expandSensitiveKeySetForArrays = (
 };
 
 const redactValuesFromKeys = (
-  event: { request?: RequestType; response?: ResponseType },
+  event: { request?: RequestType; response?: ResponseType, tags?: Record<string, string | number | string[]> },
   remoteConfig: RemoteConfigType
 ): {
   event: { request?: RequestType; response?: ResponseType };
   sensitiveKeyMetadata: Array<SensitiveKeyMetadata>;
+  tags: Record<string, string | number | string[]>;
 } => {
+  // Move the tags off the event object and into the metadata object
+  let tags = {};
+  if(event.tags) {
+    tags = event.tags;
+    delete event.tags;
+  }
+
   let sensitiveKeyMetadata: Array<SensitiveKeyMetadata> = [];
   const endpointConfig = getEndpointConfigForRequest(
     event.request as RequestType,
     remoteConfig
   );
   if (!endpointConfig || !endpointConfig?.sensitiveKeys?.length)
-    return { event, sensitiveKeyMetadata };
+    return { event, sensitiveKeyMetadata, tags };
   else {
     const sensitiveKeys = expandSensitiveKeySetForArrays(
       event,
@@ -200,7 +208,7 @@ const redactValuesFromKeys = (
         });
       }
     }
-    return { event, sensitiveKeyMetadata };
+    return { event, sensitiveKeyMetadata, tags };
   }
 };
 
@@ -243,10 +251,9 @@ const redactValue = (
 const prepareData = (
   events: Array<EventRequestType>,
   remoteConfig: RemoteConfigType,
-  tags: Record<string, string | number | string[]>
 ) => {
   return events.map((e) => {
-    const { event, sensitiveKeyMetadata } = redactValuesFromKeys(
+    const { event, sensitiveKeyMetadata, tags } = redactValuesFromKeys(
       e,
       remoteConfig
     );
