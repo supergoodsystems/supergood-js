@@ -563,7 +563,11 @@ it('will redact by default for an array of strings', () => {
         location: 'path',
         regex: '/posts',
         ignored: false,
-        sensitiveKeys: []
+        sensitiveKeys: [
+          { keyPath: 'responseBody.user.email', action: SensitiveKeyActions.ALLOW },
+          { keyPath: 'requestBody.blogType.name', action: SensitiveKeyActions.REDACT },
+          { keyPath: 'responseBody.comments[].id', action: SensitiveKeyActions.ALLOW }
+        ]
       }
     }
   };
@@ -577,4 +581,61 @@ it('will redact by default for an array of strings', () => {
   expect(_get(events[0], 'response.body.tags[0]')).toBeFalsy();
   expect(_get(events[0], 'response.body.tags[1]')).toBeFalsy();
   expect(events[0].metadata.sensitiveKeys.length).toEqual(6);
+});
+
+it('will redact ONLY sensitive keys marked as redact, without either option enabled', () => {
+  const MOCK_DATA_SERVER = 'http://localhost:3001';
+  const obj = {
+    request: {
+      id: '',
+      headers: {},
+      method: 'GET',
+      url: `${MOCK_DATA_SERVER}/posts`,
+      path: '/posts',
+      search: '',
+      requestedAt: new Date(),
+      body: {
+        blogType: {
+          name: 'My Blog'
+        }
+      }
+    },
+    response: {
+      headers: {},
+      status: 200,
+      statusText: 'OK',
+      respondedAt: new Date(),
+      body: {
+        name: 'My Blog',
+        user: {
+          name: 'John Doe',
+          email: 'john@doe.com'
+        },
+        comments: [{ id: 7, comment: 'good blog'}, { id: 8, comment: 'bad blog'}]
+      }
+    }
+  };
+  const remoteConfig = {
+    [new URL(MOCK_DATA_SERVER).hostname]: {
+      '/posts': {
+        location: 'path',
+        regex: '/posts',
+        ignored: false,
+        sensitiveKeys: [
+          { keyPath: 'responseBody.user.email', action: SensitiveKeyActions.ALLOW },
+          { keyPath: 'requestBody.blogType.name', action: SensitiveKeyActions.REDACT },
+          { keyPath: 'responseBody.comments[].id', action: SensitiveKeyActions.ALLOW }
+        ]
+      }
+    }
+  };
+  const config = { remoteConfig, ...defaultConfig } as ConfigType;
+  const events = prepareData([obj], config);
+  expect(_get(events[0], 'request.body.blogType.name')).toBeFalsy();
+  expect(_get(events[0], 'response.body.name')).toBeTruthy();
+  expect(_get(events[0], 'response.body.user.name')).toBeTruthy();
+  expect(_get(events[0], 'response.body.user.email')).toBeTruthy();
+  expect(_get(events[0], 'response.body.comments')).toBeTruthy();
+  expect(_get(events[0], 'response.body.comments[0].id')).toBeTruthy();
+  expect(events[0].metadata.sensitiveKeys.length).toEqual(1);
 });

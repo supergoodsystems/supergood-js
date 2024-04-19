@@ -179,7 +179,7 @@ function getKeyPaths(obj: any, path: string = ''): string[] {
   let paths: string[] = [];
 
   if (typeof obj === 'object' && obj !== null) {
-    // Object.keys returns indeces for arrays
+    // Object.keys returns indices for arrays
     Object.keys(obj).forEach(key => {
       const value = obj[key];
       const newPath = Array.isArray(obj) ? `${path}[${key}]` : `${path}${path ? '.' : ''}${key}`;
@@ -236,11 +236,15 @@ const redactValuesFromKeys = (
     );
 
     if (forceRedactAll) {
+      // Sensitive keys = every leaf on the event
       sensitiveKeys = keyPathsForLeavesOnEvent
     } else if (redactByDefault) {
+      // Sensitive keys = All of the leaves on the event EXCEPT the ones marked allwoed from the remote config
       sensitiveKeys = keyPathsForLeavesOnEvent.filter(
         (key) => !sensitiveKeys.some(sk => sk.keyPath === key.keyPath && sk.action === SensitiveKeyActions.ALLOW)
       );
+    } else {
+      sensitiveKeys = sensitiveKeys.filter((sk) => sk.action !== SensitiveKeyActions.ALLOW);
     }
 
     for (let i = 0; i < sensitiveKeys.length; i++) {
