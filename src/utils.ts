@@ -9,7 +9,9 @@ import {
   RemoteConfigType,
   EndpointConfigType,
   SensitiveKeyMetadata,
-  TelemetryType
+  TelemetryType,
+  ConfigType,
+  TagType
 } from './types';
 import { postError } from './api';
 import { name, version } from '../package.json';
@@ -17,6 +19,7 @@ import https from 'https';
 import http from 'http';
 import { errors } from './constants';
 import { get as _get, set as _set } from 'lodash';
+import { SensitiveKeyActions, EndpointActions } from './constants';
 
 const logger = ({
   errorSinkUrl,
@@ -115,25 +118,27 @@ const unmarshalKeyPath = (keypath: string) => {
 
 const expandSensitiveKeySetForArrays = (
   obj: any,
-  sensitiveKeys: Array<string>
-): Array<string> => {
-  const expandKey = (key: string, obj: any): Array<string> => {
-    // Split the key by dots, considering the array brackets as part of the key
-    const parts = key.match(/[^.\[\]]+|\[\d*\]|\[\*\]/g) || [];
+  sensitiveKeys: Array<{ keyPath: string; action: string }>
+): Array<{ keyPath: string, action: string }> => {
 
+  const expandKey = (key: { keyPath: string; action: string }, obj: any): Array<{ keyPath: string; action: string }> => {
+    // Split the key by dots, considering the array brackets as part of the key
+    const parts = key?.keyPath.match(/[^.\[\]]+|\[\d*\]|\[\*\]/g) || [];
     // Recursively expand the key
-    return expand(parts, obj, '');
+    return expand(parts, obj, { action: key.action, keyPath: '' });
   };
 
   const expand = (
     parts: string[],
     obj: any,
-    keyPath: string
-  ): Array<string> => {
-    const path = keyPath;
+    key: { keyPath: string; action: string }
+  ): Array<{ keyPath: string; action: string }> => {
+
+    const path = key.keyPath;
     if (parts.length === 0) {
-      return [path]; // Remove trailing dot
+      return [{ keyPath: path, action: key.action }]; // Remove trailing dot
     }
+
     const part = parts[0];
     const isProperty = !part.startsWith('[');
     const separator = path && isProperty ? '.' : '';
@@ -145,20 +150,22 @@ const expandSensitiveKeySetForArrays = (
       }
       // Expand for each element in the array
       return obj.flatMap((_, index) =>
-        expand(parts.slice(1), obj[index], `${path}${separator}[${index}]`)
+        expand(parts.slice(1), obj[index], { keyPath: `${path}${separator}[${index}]`, action: key.action })
       );
+
     } else if (part.startsWith('[') && part.endsWith(']')) {
       // Specific index in the array
       const index = parseInt(part.slice(1, -1), 10);
       if (!isNaN(index) && index < obj.length) {
-        return expand(parts.slice(1), obj[index], `${path}${separator}${part}`);
+        return expand(parts.slice(1), obj[index], { keyPath: `${path}${separator}${part}`, action: key.action });
       } else {
         return [];
       }
+
     } else {
       // Regular object property
       if (obj && typeof obj === 'object' && part in obj) {
-        return expand(parts.slice(1), obj[part], `${path}${separator}${part}`);
+        return expand(parts.slice(1), obj[part], { keyPath: `${path}${separator}${part}`, action: key.action });
       } else {
         return [];
       }
@@ -168,14 +175,37 @@ const expandSensitiveKeySetForArrays = (
   return sensitiveKeys.flatMap((key) => expandKey(key, obj));
 };
 
+function getKeyPaths(obj: any, path: string = ''): string[] {
+  let paths: string[] = [];
+
+  if (typeof obj === 'object' && obj !== null) {
+    // Object.keys returns indeces for arrays
+    Object.keys(obj).forEach(key => {
+      const value = obj[key];
+      const newPath = Array.isArray(obj) ? `${path}[${key}]` : `${path}${path ? '.' : ''}${key}`;
+      if (typeof value === 'object' && value !== null) {
+        paths = paths.concat(getKeyPaths(value, newPath));
+      } else {
+        paths.push(newPath);
+      }
+    });
+  } else {
+    paths.push(path);
+  }
+
+  return paths;
+}
+
 const redactValuesFromKeys = (
-  event: { request?: RequestType; response?: ResponseType, tags?: Record<string, string | number | string[]> },
-  remoteConfig: RemoteConfigType
+  event: { request?: RequestType; response?: ResponseType, tags?: TagType },
+  config: ConfigType
 ): {
   event: { request?: RequestType; response?: ResponseType };
   sensitiveKeyMetadata: Array<SensitiveKeyMetadata>;
-  tags: Record<string, string | number | string[]>;
+  tags: TagType;
 } => {
+  const { redactByDefault, forceRedactAll } = config;
+  const remoteConfig = config?.remoteConfig || {} as RemoteConfigType;
   // Move the tags off the event object and into the metadata object
   let tags = {};
   if(event.tags) {
@@ -188,22 +218,40 @@ const redactValuesFromKeys = (
     event.request as RequestType,
     remoteConfig
   );
-  if (!endpointConfig || !endpointConfig?.sensitiveKeys?.length)
+
+  if ((!endpointConfig || !endpointConfig?.sensitiveKeys?.length) && (!redactByDefault && !forceRedactAll)) {
     return { event, sensitiveKeyMetadata, tags };
-  else {
-    const sensitiveKeys = expandSensitiveKeySetForArrays(
+  } else {
+
+    const keyPathsForLeavesOnEvent = [
+      ...getKeyPaths(event.request?.headers, 'request.headers'),
+      ...getKeyPaths(event.request?.body, 'request.body'),
+      ...getKeyPaths(event.response?.headers, 'response.headers'),
+      ...getKeyPaths(event.response?.body, 'response.body')
+    ].map((key) => ({ keyPath: key, action: SensitiveKeyActions.REDACT }))
+
+    let sensitiveKeys = expandSensitiveKeySetForArrays(
       event,
-      endpointConfig.sensitiveKeys.map((key) => marshalKeyPath(key))
+      (endpointConfig?.sensitiveKeys || []).map((key) => ({ keyPath: marshalKeyPath(key.keyPath), action: key.action }))
     );
+
+    if (forceRedactAll) {
+      sensitiveKeys = keyPathsForLeavesOnEvent
+    } else if (redactByDefault) {
+      sensitiveKeys = keyPathsForLeavesOnEvent.filter(
+        (key) => !sensitiveKeys.some(sk => sk.keyPath === key.keyPath && sk.action === SensitiveKeyActions.ALLOW)
+      );
+    }
+
     for (let i = 0; i < sensitiveKeys.length; i++) {
-      const keyPath = sensitiveKeys[i];
+      const key = sensitiveKeys[i];
       // Add sensitive key for array expansion
-      const value = _get(event, keyPath);
+      const value = _get(event, key.keyPath);
       if (value) {
-        _set(event, keyPath, null);
+        _set(event, key.keyPath, null);
         // Don't return <string-length>:<string-type> for null values
         sensitiveKeyMetadata.push({
-          keyPath: unmarshalKeyPath(keyPath),
+          keyPath: unmarshalKeyPath(key.keyPath),
           ...redactValue(value)
         });
       }
@@ -250,12 +298,12 @@ const redactValue = (
 
 const prepareData = (
   events: Array<EventRequestType>,
-  remoteConfig: RemoteConfigType,
+  supergoodConfig: ConfigType,
 ) => {
   return events.map((e) => {
     const { event, sensitiveKeyMetadata, tags } = redactValuesFromKeys(
       e,
-      remoteConfig
+      supergoodConfig
     );
     return {
       ...event,
@@ -380,8 +428,8 @@ const processRemoteConfig = (remoteConfigPayload: RemoteConfigPayloadType) => {
       endpointConfig[regex] = {
         location,
         regex,
-        ignored: action === 'Ignore',
-        sensitiveKeys: (sensitiveKeys || []).map((key) => key.keyPath)
+        ignored: action === EndpointActions.IGNORE,
+        sensitiveKeys: (sensitiveKeys || []).map((key) => ({ keyPath: key.keyPath, action: key.action }))
       };
       return endpointConfig;
     }, {} as { [endpointName: string]: EndpointConfigType });
