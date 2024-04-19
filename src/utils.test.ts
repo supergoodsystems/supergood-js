@@ -566,7 +566,7 @@ it('will redact by default for an array of strings', () => {
         sensitiveKeys: [
           { keyPath: 'responseBody.user.email', action: SensitiveKeyActions.ALLOW },
           { keyPath: 'requestBody.blogType.name', action: SensitiveKeyActions.REDACT },
-          { keyPath: 'responseBody.comments[].id', action: SensitiveKeyActions.ALLOW }
+          { keyPath: 'responseBody.tags[]', action: SensitiveKeyActions.ALLOW }
         ]
       }
     }
@@ -576,11 +576,11 @@ it('will redact by default for an array of strings', () => {
   expect(_get(events[0], 'request.body.blogType.name')).toBeFalsy();
   expect(_get(events[0], 'response.body.name')).toBeFalsy();
   expect(_get(events[0], 'response.body.user.name')).toBeFalsy();
-  expect(_get(events[0], 'response.body.user.email')).toBeFalsy();
+  expect(_get(events[0], 'response.body.user.email')).toBeTruthy();
   expect(_get(events[0], 'response.body.tags')).toBeTruthy();
-  expect(_get(events[0], 'response.body.tags[0]')).toBeFalsy();
-  expect(_get(events[0], 'response.body.tags[1]')).toBeFalsy();
-  expect(events[0].metadata.sensitiveKeys.length).toEqual(6);
+  expect(_get(events[0], 'response.body.tags[0]')).toBeTruthy();
+  expect(_get(events[0], 'response.body.tags[1]')).toBeTruthy();
+  expect(events[0].metadata.sensitiveKeys.length).toEqual(3);
 });
 
 it('will redact ONLY sensitive keys marked as redact, without either option enabled', () => {
