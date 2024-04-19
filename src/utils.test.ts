@@ -524,3 +524,57 @@ it('will redact by default if the config is set to do so', () => {
   expect(_get(events[0], 'response.body.comments[1].comment')).toBeFalsy();
   expect(events[0].metadata.sensitiveKeys.length).toEqual(5);
 });
+
+it('will redact by default for an array of strings', () => {
+  const MOCK_DATA_SERVER = 'http://localhost:3001';
+  const obj = {
+    request: {
+      id: '',
+      headers: {},
+      method: 'GET',
+      url: `${MOCK_DATA_SERVER}/posts`,
+      path: '/posts',
+      search: '',
+      requestedAt: new Date(),
+      body: {
+        blogType: {
+          name: 'My Blog'
+        }
+      }
+    },
+    response: {
+      headers: {},
+      status: 200,
+      statusText: 'OK',
+      respondedAt: new Date(),
+      body: {
+        name: 'My Blog',
+        user: {
+          name: 'John Doe',
+          email: 'john@doe.com'
+        },
+        tags: ['good blog', 'bad blog']
+      }
+    }
+  };
+  const remoteConfig = {
+    [new URL(MOCK_DATA_SERVER).hostname]: {
+      '/posts': {
+        location: 'path',
+        regex: '/posts',
+        ignored: false,
+        sensitiveKeys: []
+      }
+    }
+  };
+  const config = { remoteConfig, ...defaultConfig, redactByDefault: true } as ConfigType;
+  const events = prepareData([obj], config);
+  expect(_get(events[0], 'request.body.blogType.name')).toBeFalsy();
+  expect(_get(events[0], 'response.body.name')).toBeFalsy();
+  expect(_get(events[0], 'response.body.user.name')).toBeFalsy();
+  expect(_get(events[0], 'response.body.user.email')).toBeFalsy();
+  expect(_get(events[0], 'response.body.tags')).toBeTruthy();
+  expect(_get(events[0], 'response.body.tags[0]')).toBeFalsy();
+  expect(_get(events[0], 'response.body.tags[1]')).toBeFalsy();
+  expect(events[0].metadata.sensitiveKeys.length).toEqual(6);
+});
