@@ -43,8 +43,6 @@ interface ConfigType {
   allowedDomains: string[];
   allowLocalUrls: boolean;
   allowIpAddresses: boolean;
-  cacheTtl: number;
-  keysToHash: string[];
   remoteConfigFetchEndpoint: string; // Defaults to {baseUrl}/config if not provided
   eventSinkEndpoint: string; // Defaults to {baseUrl}/events if not provided
   errorSinkEndpoint: string; // Defaults to {baseUrl}/errors if not provided
@@ -57,6 +55,8 @@ interface ConfigType {
   logRequestBody: boolean;
   logResponseHeaders: boolean;
   logResponseBody: boolean;
+  forceRedactAll: boolean;
+  redactByDefault: boolean;
 }
 
 interface TelemetryType {
@@ -69,7 +69,7 @@ interface EndpointConfigType {
   location: string;
   regex: string;
   ignored: boolean;
-  sensitiveKeys: Array<string>;
+  sensitiveKeys: Array<{ keyPath: string, action: string }>;
 }
 
 interface RemoteConfigType {
@@ -85,19 +85,20 @@ interface MetadataType {
   serviceName?: string;
 }
 
+type TagType = Record<string, string | number | string[]>;
 
 interface EventRequestType {
   request: RequestType;
   response: ResponseType;
-  tags?: Record<string, string | number | string[]>;
+  tags?: TagType;
   metadata?: {
     sensitiveKeys: Array<SensitiveKeyMetadata>;
-    tags?: Record<string, string | number | string[]>;
+    tags?: TagType;
   };
 }
 
 type SupergoodContext = {
-  tags: Record<string, string | number | string[]>;
+  tags: TagType;
 };
 
 // interface EventResponseType {}
@@ -147,6 +148,7 @@ type RemoteConfigPayloadType = Array<{
       sensitiveKeys: Array<
         {
           keyPath: string;
+          action: string;
         }>;
     }
   }>;
@@ -174,5 +176,6 @@ export type {
   RemoteConfigPayloadType,
   MetadataType,
   TelemetryType,
-  SupergoodContext
+  SupergoodContext,
+  TagType
 };

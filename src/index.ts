@@ -301,7 +301,7 @@ const Supergood = () => {
 
     const responseArray = prepareData(
       responseCacheValues as EventRequestType[],
-      supergoodConfig.remoteConfig,
+      supergoodConfig,
     ) as Array<EventRequestType>;
 
     let data = [...responseArray];
@@ -310,7 +310,7 @@ const Supergood = () => {
     if (force) {
       const requestArray = prepareData(
         requestCacheValues as EventRequestType[],
-        supergoodConfig.remoteConfig
+        supergoodConfig
       ) as Array<EventRequestType>;
       data = [...requestArray, ...responseArray];
     }

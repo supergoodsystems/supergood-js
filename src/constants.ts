@@ -15,6 +15,10 @@ const defaultConfig = {
   logResponseHeaders: true,
   logResponseBody: true,
   ignoredDomains: [],
+  forceRedactAll: false,
+  redactByDefault: false,
+  allowedDomains: [],
+  cacheTtl: 0,
 
   // After the close command is sent, wait for this many milliseconds before
   // exiting. This gives any hanging responses a chance to return.
@@ -38,6 +42,16 @@ const errors = {
     'No Client Secret Provided, set SUPERGOOD_CLIENT_SECRET or pass it as an argument'
 };
 
+const SensitiveKeyActions = {
+  REDACT: 'REDACT',
+  ALLOW: 'ALLOW'
+};
+
+const EndpointActions = {
+  ALLOW: 'Allow',
+  IGNORE: 'Ignore'
+}
+
 const TestErrorPath = '/api/supergood-test-error';
 const LocalClientId = 'local-client-id';
 const LocalClientSecret = 'local-client-secret';
@@ -47,5 +61,7 @@ export {
   errors,
   TestErrorPath,
   LocalClientId,
-  LocalClientSecret
+  LocalClientSecret,
+  SensitiveKeyActions,
+  EndpointActions
 };
