@@ -57,6 +57,7 @@ interface ConfigType {
   logRequestBody: boolean;
   logResponseHeaders: boolean;
   logResponseBody: boolean;
+  isWithinContext?: () => boolean;
 }
 
 interface TelemetryType {
@@ -97,7 +98,8 @@ interface EventRequestType {
 }
 
 type SupergoodContext = {
-  tags: Record<string, string | number | string[]>;
+  tags?: Record<string, string | number | string[]>;
+  instanceId?: string;
 };
 
 // interface EventResponseType {}

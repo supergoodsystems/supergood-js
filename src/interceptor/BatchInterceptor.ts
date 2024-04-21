@@ -12,9 +12,9 @@ export class BatchInterceptor {
     this.interceptors = interceptors;
   }
 
-  public setup() {
+  public setup({ isWithinContext }: { isWithinContext: () => boolean }) {
     for (const interceptor of this.interceptors) {
-      interceptor.setup();
+      interceptor.setup({ isWithinContext });
 
       this.subscriptions.push(() => interceptor.teardown());
     }

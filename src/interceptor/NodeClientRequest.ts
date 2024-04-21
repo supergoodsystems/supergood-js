@@ -16,11 +16,12 @@ import { cloneIncomingMessage } from './utils/cloneIncomingMessage';
 
 export type NodeClientOptions = {
   emitter: EventEmitter;
-  allowLocalUrls: boolean;
+  allowLocalUrls?: boolean;
   baseUrl?: string;
   ignoredDomains?: string[];
   allowedDomains?: string[];
-  allowIpAddresses: boolean;
+  allowIpAddresses?: boolean;
+  isWithinContext?: () => boolean;
 };
 
 export type Protocol = 'http' | 'https';
@@ -53,7 +54,8 @@ export class NodeClientRequest extends ClientRequest {
       allowedDomains: options.allowedDomains ?? [],
       baseUrl: options.baseUrl ?? '',
       allowLocalUrls: options.allowLocalUrls ?? false,
-      allowIpAddresses: options.allowIpAddresses ?? false
+      allowIpAddresses: options.allowIpAddresses ?? false,
+      isWithinContext: options.isWithinContext ?? (() => true)
     });
   }
 
