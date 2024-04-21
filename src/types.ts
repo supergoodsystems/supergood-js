@@ -100,7 +100,7 @@ interface EventRequestType {
 
 type SupergoodContext = {
   instanceId?: string;
-  tags: TagType;
+  tags?: TagType;
 };
 
 // interface EventResponseType {}
