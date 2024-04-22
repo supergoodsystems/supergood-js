@@ -443,7 +443,7 @@ const Supergood = () => {
     baseTelemetryUrl?: string;
   }, fn: () => Promise<TRet>): Promise<TRet> => {
     const instanceId = crypto.randomUUID();
-    return supergoodAsyncLocalStorage.run({ instanceId }, async () => {
+    return supergoodAsyncLocalStorage.run({ tags, instanceId }, async () => {
       await init({
         clientId,
         clientSecret,
@@ -473,7 +473,7 @@ const Supergood = () => {
     baseTelemetryUrl?: string;
   }) => {
     const instanceId = crypto.randomUUID();
-    supergoodAsyncLocalStorage.enterWith({ instanceId });
+    supergoodAsyncLocalStorage.enterWith({ instanceId, tags });
     await init({
       clientId,
       clientSecret,
@@ -484,8 +484,8 @@ const Supergood = () => {
   }
 
   const stopCapture = async () => {
-    supergoodAsyncLocalStorage.disable();
     await close();
+    supergoodAsyncLocalStorage.disable();
   }
 
   // Set up cleanup catch for exit signals
