@@ -455,9 +455,7 @@ const Supergood = () => {
         tags,
         isWithinContext: () => supergoodAsyncLocalStorage.getStore()?.instanceId === instanceId
       }, baseUrl, baseTelemetryUrl);
-      const result = await fn();
-      await close();
-      return result;
+      return fn();
     });
   }
 

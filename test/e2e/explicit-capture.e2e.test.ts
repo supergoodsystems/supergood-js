@@ -30,6 +30,7 @@ describe('capture functionality', () => {
           await axios.get(`${MOCK_DATA_SERVER}/posts`);
         }
       })
+      await Supergood.close();
       await axios.get(`${MOCK_DATA_SERVER}/posts`);
       checkPostedEvents(postEventsMock, numberOfHttpCalls, {
         request: expect.objectContaining({
@@ -61,6 +62,7 @@ describe('capture functionality', () => {
           await axios.get(`${MOCK_DATA_SERVER}/posts`);
         }
       })
+      await Supergood.close();
 
       clearInterval(getInterval);
 
@@ -113,6 +115,7 @@ describe('capture functionality', () => {
       const getInterval = setInterval(async () => {
         await axios.get(`${MOCK_DATA_SERVER}/posts`), 250
       });
+
       getInterval.unref();
       await Supergood.startCapture(
         {
