@@ -1,12 +1,7 @@
 import axios from 'axios';
-import fetch from 'node-fetch';
 
 import Supergood from '../../src';
-import { LocalClientId, LocalClientSecret, errors } from '../../src/constants';
-
-import { sleep } from '../../src/utils';
 import {
-  BASE64_REGEX,
   MOCK_DATA_SERVER,
   SUPERGOOD_CLIENT_ID,
   SUPERGOOD_CLIENT_SECRET,
@@ -97,9 +92,10 @@ describe('capture functionality', () => {
         await axios.get(`${MOCK_DATA_SERVER}/posts`);
       }
 
-      await Supergood.stopCapture();
+      Supergood.stopCapture();
 
       await axios.get(`${MOCK_DATA_SERVER}/posts`);
+      await Supergood.close();
 
       checkPostedEvents(postEventsMock, numberOfHttpCalls, {
         request: expect.objectContaining({
@@ -131,8 +127,10 @@ describe('capture functionality', () => {
         await axios.get(`${MOCK_DATA_SERVER}/posts`);
       }
 
-      await Supergood.stopCapture();
+      Supergood.stopCapture();
+
       await axios.get(`${MOCK_DATA_SERVER}/posts`);
+      await Supergood.close();
 
       clearInterval(getInterval);
 
@@ -167,9 +165,10 @@ describe('capture functionality', () => {
       await axios.get(`${MOCK_DATA_SERVER}/posts`);
     }
 
-    await Supergood.stopCapture();
+    Supergood.stopCapture();
     await axios.get(`${MOCK_DATA_SERVER}/posts`);
 
+    await Supergood.close();
     clearInterval(getInterval);
 
     checkPostedEvents(postEventsMock, numberOfHttpCalls, {
@@ -181,5 +180,42 @@ describe('capture functionality', () => {
       })
     });
   });
-});
 
+  it('should support multiple start and stop captures', async () => {
+    const numberOfHttpCalls = 5;
+    const supergoodArgs = {
+      config: { ...SUPERGOOD_CONFIG, allowLocalUrls: true, useRemoteConfig: false },
+      clientId: SUPERGOOD_CLIENT_ID,
+      clientSecret: SUPERGOOD_CLIENT_SECRET,
+      baseUrl: SUPERGOOD_SERVER
+    };
+
+    const getInterval = setInterval(async () => {
+      await axios.get(`${MOCK_DATA_SERVER}/posts`), 250
+    });
+    getInterval.unref();
+
+    Supergood.startCapture(supergoodArgs);
+    await axios.get('https://supergood-testbed.herokuapp.com/200?say=capture1')
+    Supergood.stopCapture();
+
+    await axios.get('https://supergood-testbed.herokuapp.com/200?say=dontcapture')
+
+    Supergood.startCapture(supergoodArgs);
+    await axios.get('https://supergood-testbed.herokuapp.com/200?say=capture2')
+    Supergood.stopCapture();
+
+    await Supergood.close();
+
+    clearInterval(getInterval);
+
+    checkPostedEvents(postEventsMock, 2, {
+      request: expect.objectContaining({
+        requestedAt: expect.any(Date)
+      }),
+      response: expect.objectContaining({
+        respondedAt: expect.any(Date)
+      })
+    });
+  });
+});
