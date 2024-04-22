@@ -1,4 +1,7 @@
 import { ClientRequest } from 'node:http'
+import http from 'http';
+import https from 'https';
+
 import {
   NodeClientOptions,
   NodeClientRequest,

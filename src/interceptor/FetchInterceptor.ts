@@ -17,7 +17,7 @@ export class FetchInterceptor extends Interceptor {
     );
   }
 
-  public setup() {
+  public setup({ isWithinContext }: { isWithinContext: () => boolean }){
     const pureFetch = globalThis.fetch;
 
     globalThis.fetch = async (input, init) => {
@@ -30,6 +30,7 @@ export class FetchInterceptor extends Interceptor {
         baseUrl: this.options.baseUrl ?? '',
         allowLocalUrls: this.options.allowLocalUrls ?? false,
         allowIpAddresses: this.options.allowIpAddresses ?? false,
+        isWithinContext: isWithinContext ?? (() => true),
       });
 
       if (_isInterceptable) {

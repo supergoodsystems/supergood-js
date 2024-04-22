@@ -18,7 +18,7 @@ export class Interceptor {
     this.options = options ?? {};
   }
 
-  public setup(): void {
+  public setup({ isWithinContext }: { isWithinContext: () => boolean }): void {
     throw new Error('Not implemented');
   }
 

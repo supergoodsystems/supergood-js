@@ -10,7 +10,8 @@ export function isInterceptable({
   allowedDomains,
   baseUrl,
   allowLocalUrls,
-  allowIpAddresses
+  allowIpAddresses,
+  isWithinContext: isWithinContext = () => true,
 }: {
   url: URL;
   ignoredDomains: string[];
@@ -18,7 +19,13 @@ export function isInterceptable({
   baseUrl: string;
   allowLocalUrls: boolean;
   allowIpAddresses: boolean;
+  isWithinContext: () => boolean;
 }): boolean {
+
+  if (!isWithinContext()) {
+    return false;
+  }
+
   const { origin: baseOrigin } = new URL(baseUrl);
   const hostname = url.hostname;
   const [, tld] = hostname.split('.');

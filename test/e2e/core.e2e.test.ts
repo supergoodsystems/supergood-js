@@ -228,7 +228,7 @@ describe('core functionality', () => {
         },
         SUPERGOOD_SERVER
       );
-      
+
       expect(ret).toBe(undefined);
       await Supergood.close();
     });

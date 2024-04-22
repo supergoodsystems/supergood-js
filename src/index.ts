@@ -33,6 +33,7 @@ import { IsomorphicResponse } from './interceptor/utils/IsomorphicResponse';
 import { BatchInterceptor } from './interceptor/BatchInterceptor';
 import { FetchInterceptor } from './interceptor/FetchInterceptor';
 import { AsyncLocalStorage } from "async_hooks";
+import crypto from 'crypto';
 
 const supergoodAsyncLocalStorage = new AsyncLocalStorage<SupergoodContext>();
 
@@ -57,30 +58,33 @@ const Supergood = () => {
   let localOnly = false;
 
   let interceptor: BatchInterceptor;
-
   const init = <TConfig extends Partial<ConfigType>>(
     {
       clientId,
       clientSecret,
       config,
       metadata,
-      tags
+      tags,
+      isWithinContext,
     }: {
       clientId?: string;
       clientSecret?: string;
       config?: TConfig;
       metadata?: Partial<MetadataType>;
       tags?: Record<string, string | number | string[]>;
+      isWithinContext?: () => boolean;
     } = {
         clientId: process.env.SUPERGOOD_CLIENT_ID as string,
         clientSecret: process.env.SUPERGOOD_CLIENT_SECRET as string,
         config: {} as TConfig,
         metadata: {} as Partial<MetadataType>,
-        tags: {} as Record<string, string | number | string[]>
+        tags: {} as Record<string, string | number | string[]>,
+        isWithinContext: () => true,
       },
     baseUrl = process.env.SUPERGOOD_BASE_URL || 'https://api.supergood.ai',
     baseTelemetryUrl = process.env.SUPERGOOD_TELEMETRY_BASE_URL || 'https://telemetry.supergood.ai'
   ): TConfig extends { useRemoteConfig: false } ? void : Promise<void> => {
+
     if (!clientId) throw new Error(errors.NO_CLIENT_ID);
     if (!clientSecret) throw new Error(errors.NO_CLIENT_SECRET);
 
@@ -93,12 +97,14 @@ const Supergood = () => {
       ...config
     } as ConfigType;
     supergoodMetadata = metadata as MetadataType;
-    requestCache = new NodeCache({
+
+    requestCache = requestCache ?? new NodeCache({
       stdTTL: 0
     });
-    responseCache = new NodeCache({
+    responseCache = responseCache ?? new NodeCache({
       stdTTL: 0
     });
+
     supergoodTags = tags ?? {};
 
     const interceptorOpts = {
@@ -138,7 +144,8 @@ const Supergood = () => {
     };
 
     const initializeInterceptors = () => {
-      interceptor.setup();
+      isWithinContext = isWithinContext ?? (() => true);
+      interceptor.setup({ isWithinContext });
       interceptor.on(
         'request',
         async (request: IsomorphicRequest, requestId: string) => {
@@ -244,18 +251,21 @@ const Supergood = () => {
       : void (supergoodConfig.remoteConfig = supergoodConfig.remoteConfig ?? {})
 
     const remainingWork = () => {
+
       initializeInterceptors();
 
-      if(supergoodConfig.useRemoteConfig) {
+      if(supergoodConfig.useRemoteConfig && !remoteConfigFetchInterval) {
         // Fetch the config ongoing every <remoteConfigFetchInterval> milliseconds
         remoteConfigFetchInterval = setInterval(fetchAndProcessRemoteConfig, supergoodConfig.remoteConfigFetchInterval);
         remoteConfigFetchInterval.unref();
       }
 
       // Flushes the cache every <flushInterval> milliseconds
-      flushInterval = setInterval(flushCache, supergoodConfig.flushInterval);
-      // https://httptoolkit.com/blog/unblocking-node-with-unref/
-      flushInterval.unref();
+      if(!flushInterval) {
+        flushInterval = setInterval(flushCache, supergoodConfig.flushInterval);
+        // https://httptoolkit.com/blog/unblocking-node-with-unref/
+        flushInterval.unref();
+      }
     }
 
     return (
@@ -421,9 +431,80 @@ const Supergood = () => {
     return supergoodAsyncLocalStorage.run({ tags: { ...tags, ...existingTags }}, fn);
   }
 
+  const withCapture = async <TRet>({
+    clientId,
+    clientSecret,
+    config,
+    tags,
+    baseUrl,
+    baseTelemetryUrl
+  }: {
+    clientId?: string;
+    clientSecret?: string;
+    config?: Partial<ConfigType>;
+    tags?: Record<string, string | number | string[]>;
+    baseUrl?: string;
+    baseTelemetryUrl?: string;
+  }, fn: () => Promise<TRet>): Promise<TRet> => {
+    const instanceId = crypto.randomUUID();
+    return supergoodAsyncLocalStorage.run({ tags, instanceId }, async () => {
+      await init({
+        clientId,
+        clientSecret,
+        config,
+        tags,
+        isWithinContext: () => supergoodAsyncLocalStorage.getStore()?.instanceId === instanceId
+      }, baseUrl, baseTelemetryUrl);
+      return fn();
+    });
+  }
+
+  const startCapture = ({
+    clientId,
+    clientSecret,
+    config,
+    tags,
+    baseUrl,
+    baseTelemetryUrl
+  }: {
+    clientId?: string;
+    clientSecret?: string;
+    config?: Partial<ConfigType>;
+    tags?: Record<string, string | number | string[]>;
+    baseUrl?: string;
+    baseTelemetryUrl?: string;
+  }) => {
+    const instanceId = crypto.randomUUID();
+    supergoodAsyncLocalStorage.enterWith({ instanceId, tags });
+    return init({
+      clientId,
+      clientSecret,
+      config,
+      tags,
+      isWithinContext: () => supergoodAsyncLocalStorage.getStore()?.instanceId === instanceId,
+    }, baseUrl, baseTelemetryUrl);
+  }
+
+  const stopCapture = () => {
+    supergoodAsyncLocalStorage.disable();
+  }
+
+  const getAsyncLocalStorage = () => supergoodAsyncLocalStorage.getStore();
+
   // Set up cleanup catch for exit signals
   onExit(() => close(), { alwaysLast: true });
-  return { close, flushCache, waitAndFlushCache, withTags, init };
+
+  return {
+    close,
+    flushCache,
+    waitAndFlushCache,
+    withTags,
+    init,
+    withCapture,
+    startCapture,
+    stopCapture,
+    getAsyncLocalStorage
+  };
 };
 
 export = Supergood();

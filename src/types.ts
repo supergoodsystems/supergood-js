@@ -55,6 +55,7 @@ interface ConfigType {
   logRequestBody: boolean;
   logResponseHeaders: boolean;
   logResponseBody: boolean;
+  isWithinContext?: () => boolean;
   forceRedactAll: boolean;
   redactByDefault: boolean;
 }
@@ -98,7 +99,8 @@ interface EventRequestType {
 }
 
 type SupergoodContext = {
-  tags: TagType;
+  instanceId?: string;
+  tags?: TagType;
 };
 
 // interface EventResponseType {}

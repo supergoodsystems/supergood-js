@@ -1,5 +1,7 @@
 import { isInterceptable } from './isInterceptable';
 
+const isWithinContext = () => true;
+
 describe('isInterceptable', () => {
   it('should return false if the request is same-origin', () => {
     const url = new URL('https://api.supergood.ai');
@@ -16,6 +18,7 @@ describe('isInterceptable', () => {
       baseUrl,
       allowLocalUrls,
       allowIpAddresses,
+      isWithinContext
     });
 
     expect(result).toBe(false);
@@ -37,6 +40,7 @@ describe('isInterceptable', () => {
       baseUrl,
       allowLocalUrls,
       allowIpAddresses,
+      isWithinContext
     });
 
     expect(result).toBe(false);
@@ -56,7 +60,8 @@ describe('isInterceptable', () => {
       allowedDomains,
       baseUrl,
       allowLocalUrls,
-      allowIpAddresses
+      allowIpAddresses,
+      isWithinContext
     });
 
     expect(result).toBe(true);
@@ -76,7 +81,8 @@ describe('isInterceptable', () => {
       allowedDomains,
       baseUrl,
       allowLocalUrls,
-      allowIpAddresses
+      allowIpAddresses,
+      isWithinContext
     });
 
     expect(result).toBe(false);
@@ -96,7 +102,8 @@ describe('isInterceptable', () => {
       allowedDomains,
       baseUrl,
       allowLocalUrls,
-      allowIpAddresses
+      allowIpAddresses,
+      isWithinContext
     });
 
     expect(result).toBe(true);
@@ -116,7 +123,8 @@ describe('isInterceptable', () => {
       allowedDomains,
       baseUrl,
       allowLocalUrls,
-      allowIpAddresses
+      allowIpAddresses,
+      isWithinContext
     });
 
     expect(result).toBe(false);
@@ -136,7 +144,8 @@ describe('isInterceptable', () => {
       allowedDomains,
       baseUrl,
       allowLocalUrls,
-      allowIpAddresses
+      allowIpAddresses,
+      isWithinContext
     });
 
     expect(result).toBe(true);
@@ -156,7 +165,8 @@ describe('isInterceptable', () => {
       allowedDomains,
       baseUrl,
       allowLocalUrls,
-      allowIpAddresses
+      allowIpAddresses,
+      isWithinContext
     });
 
     expect(result).toBe(false);
@@ -176,7 +186,8 @@ describe('isInterceptable', () => {
       allowedDomains,
       baseUrl,
       allowLocalUrls,
-      allowIpAddresses
+      allowIpAddresses,
+      isWithinContext
     });
 
     expect(result).toBe(true);
