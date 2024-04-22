@@ -488,9 +488,22 @@ const Supergood = () => {
     supergoodAsyncLocalStorage.disable();
   }
 
+  const getAsyncLocalStorage = () => supergoodAsyncLocalStorage.getStore();
+
   // Set up cleanup catch for exit signals
   onExit(() => close(), { alwaysLast: true });
-  return { close, flushCache, waitAndFlushCache, withTags, init, withCapture, startCapture, stopCapture };
+
+  return {
+    close,
+    flushCache,
+    waitAndFlushCache,
+    withTags,
+    init,
+    withCapture,
+    startCapture,
+    stopCapture,
+    getAsyncLocalStorage
+  };
 };
 
 export = Supergood();
