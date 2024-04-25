@@ -39,7 +39,7 @@ const errors = {
   NO_CLIENT_ID:
     'No Client ID Provided, set SUPERGOOD_CLIENT_ID or pass it as an argument',
   NO_CLIENT_SECRET:
-    'No Client Secret Provided, set SUPERGOOD_CLIENT_SECRET or pass it as an argument'
+    'No Client Secret Provided, set SUPERGOOD_CLIENT_SECRET or pass it as an argument',
 };
 
 const SensitiveKeyActions = {

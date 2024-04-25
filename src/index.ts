@@ -297,6 +297,11 @@ const Supergood = () => {
 
   // Force flush cache means don't wait for responses
   const flushCache = async ({ force } = { force: false }) => {
+
+    if(!responseCache || !requestCache) {
+      return;
+    }
+
     const responseCacheKeys = responseCache.keys();
     const requestCacheKeys = requestCache.keys();
     const responseCacheValues = Object.values(responseCache.mget(responseCacheKeys));
@@ -403,11 +408,11 @@ const Supergood = () => {
     clearInterval(remoteConfigFetchInterval);
 
     // If there are hanging requests, wait a second
-    if (requestCache.keys().length > 0) {
+    if (requestCache?.keys().length > 0) {
       await sleep(supergoodConfig.waitAfterClose);
     }
 
-    interceptor.teardown();
+    interceptor?.teardown();
     await flushCache({ force });
     return false;
   };
@@ -416,7 +421,7 @@ const Supergood = () => {
     // If the request cache isn't empty, this means that
     // there are responses that are still being processed.
     // Wait for them to finish before flushing the cache.
-    if (requestCache.keys().length > 0) {
+    if (requestCache?.keys().length > 0) {
       await sleep(supergoodConfig.waitAfterClose);
     }
 
