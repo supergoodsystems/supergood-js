@@ -401,4 +401,12 @@ describe('core functionality', () => {
       expect(postEventsMock).not.toHaveBeenCalled();
     });
   });
+
+  describe('clean error handling', () => {
+    it('should not crash if a flush is called before an init', async () => {
+      await Supergood.close();
+      await Supergood.waitAndFlushCache();
+      expect(postEventsMock).not.toHaveBeenCalled();
+    });
+  });
 });
