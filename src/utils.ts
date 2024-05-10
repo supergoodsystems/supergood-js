@@ -196,6 +196,13 @@ function getKeyPaths(obj: any, path: string = ''): string[] {
   return paths;
 }
 
+const getAllKeyPathsForLeavesOnEvent = (event: { request?: RequestType; response?: ResponseType }) => [
+  ...getKeyPaths(event.request?.headers, 'request.headers'),
+  ...getKeyPaths(event.request?.body, 'request.body'),
+  ...getKeyPaths(event.response?.headers, 'response.headers'),
+  ...getKeyPaths(event.response?.body, 'response.body')
+].map((key) => ({ keyPath: key, action: SensitiveKeyActions.REDACT }));
+
 const redactValuesFromKeys = (
   event: { request?: RequestType; response?: ResponseType, tags?: TagType },
   config: ConfigType
@@ -223,12 +230,6 @@ const redactValuesFromKeys = (
     return { event, sensitiveKeyMetadata, tags };
   } else {
 
-    const keyPathsForLeavesOnEvent = [
-      ...getKeyPaths(event.request?.headers, 'request.headers'),
-      ...getKeyPaths(event.request?.body, 'request.body'),
-      ...getKeyPaths(event.response?.headers, 'response.headers'),
-      ...getKeyPaths(event.response?.body, 'response.body')
-    ].map((key) => ({ keyPath: key, action: SensitiveKeyActions.REDACT }))
 
     let sensitiveKeys = expandSensitiveKeySetForArrays(
       event,
@@ -237,10 +238,10 @@ const redactValuesFromKeys = (
 
     if (forceRedactAll) {
       // Sensitive keys = every leaf on the event
-      sensitiveKeys = keyPathsForLeavesOnEvent
+      sensitiveKeys = getAllKeyPathsForLeavesOnEvent(event) || [];
     } else if (redactByDefault) {
       // Sensitive keys = All of the leaves on the event EXCEPT the ones marked allwoed from the remote config
-      sensitiveKeys = keyPathsForLeavesOnEvent.filter(
+      sensitiveKeys = (getAllKeyPathsForLeavesOnEvent(event) || []).filter(
         (key) => !sensitiveKeys.some(sk => sk.keyPath === key.keyPath && sk.action === SensitiveKeyActions.ALLOW)
       );
     } else {
