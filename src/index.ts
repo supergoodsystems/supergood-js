@@ -99,10 +99,12 @@ const Supergood = () => {
     supergoodMetadata = metadata as MetadataType;
 
     requestCache = requestCache ?? new NodeCache({
-      stdTTL: 0
+      stdTTL: 0,
+      useClones: false
     });
     responseCache = responseCache ?? new NodeCache({
-      stdTTL: 0
+      stdTTL: 0,
+      useClones: false
     });
 
     supergoodTags = tags ?? {};
