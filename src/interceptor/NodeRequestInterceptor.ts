@@ -38,6 +38,7 @@ export class NodeRequestInterceptor extends Interceptor {
         allowLocalUrls: this.options.allowLocalUrls,
         allowIpAddresses: this.options.allowIpAddresses,
         baseUrl: this.options.baseUrl,
+        baseTelemetryUrl: this.options.baseTelemetryUrl,
         isWithinContext,
       };
 

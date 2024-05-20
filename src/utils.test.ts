@@ -1,4 +1,4 @@
-import { RequestType, ResponseType, ConfigType } from './types';
+import { RequestType, ResponseType, ConfigType, BodyType } from './types';
 import {
   prepareData,
   expandSensitiveKeySetForArrays,
@@ -638,4 +638,56 @@ it('will redact ONLY sensitive keys marked as redact, without either option enab
   expect(_get(events[0], 'response.body.comments')).toBeTruthy();
   expect(_get(events[0], 'response.body.comments[0].id')).toBeTruthy();
   expect(events[0].metadata.sensitiveKeys.length).toEqual(1);
+});
+
+it.only('will redact a response body that is an array', () => {
+  const MOCK_DATA_SERVER = 'http://localhost:3001';
+  const obj = {
+    request: {
+      id: '',
+      headers: {},
+      method: 'GET',
+      url: `${MOCK_DATA_SERVER}/posts`,
+      path: '/posts',
+      search: '',
+      requestedAt: new Date(),
+      body: {
+        blogType: {
+          name: 'My Blog'
+        }
+      }
+    },
+    response: {
+      headers: {},
+      status: 200,
+      statusText: 'OK',
+      respondedAt: new Date(),
+      body: [
+        {
+          name: 'My Blog',
+          user: {
+            name: 'John Doe',
+            email: 'john@doe.com'
+          },
+          tags: ['good blog', 'bad blog']
+        }
+      ] as [BodyType]
+    }
+  };
+  const remoteConfig = {
+    [new URL(MOCK_DATA_SERVER).hostname]: {
+      '/posts': {
+        location: 'path',
+        regex: '/posts',
+        ignored: false,
+        sensitiveKeys: [
+          { keyPath: 'responseBody', action: SensitiveKeyActions.REDACT },
+        ]
+      }
+    }
+  };
+  const config = { remoteConfig, ...defaultConfig } as ConfigType;
+  const events = prepareData([obj], config);
+  expect(_get(events[0], 'response.body')).toBeFalsy();
+  expect(events[0].metadata.sensitiveKeys.length).toEqual(3);
 });

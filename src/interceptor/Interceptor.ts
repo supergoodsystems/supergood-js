@@ -6,6 +6,7 @@ export interface NodeRequestInterceptorOptions {
   allowLocalUrls?: boolean;
   allowIpAddresses?: boolean;
   baseUrl?: string;
+  baseTelemetryUrl?: string;
 }
 
 export class Interceptor {

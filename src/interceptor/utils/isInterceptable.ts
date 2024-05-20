@@ -9,6 +9,7 @@ export function isInterceptable({
   ignoredDomains,
   allowedDomains,
   baseUrl,
+  baseTelemetryUrl,
   allowLocalUrls,
   allowIpAddresses,
   isWithinContext: isWithinContext = () => true,
@@ -17,6 +18,7 @@ export function isInterceptable({
   ignoredDomains: string[];
   allowedDomains: string[];
   baseUrl: string;
+  baseTelemetryUrl: string;
   allowLocalUrls: boolean;
   allowIpAddresses: boolean;
   isWithinContext: () => boolean;
@@ -30,7 +32,7 @@ export function isInterceptable({
   const hostname = url.hostname;
   const [, tld] = hostname.split('.');
 
-  if (baseOrigin === url.origin || containsAnyPartial(['supergood.ai'], hostname)) {
+  if (baseOrigin === url.origin || containsAnyPartial(['supergood.ai', baseTelemetryUrl, baseUrl], hostname)) {
     return false;
   }
 
