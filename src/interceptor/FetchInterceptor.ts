@@ -28,6 +28,7 @@ export class FetchInterceptor extends Interceptor {
         ignoredDomains: this.options.ignoredDomains ?? [],
         allowedDomains: this.options.allowedDomains ?? [],
         baseUrl: this.options.baseUrl ?? '',
+        baseTelemetryUrl: this.options.baseTelemetryUrl ?? '',
         allowLocalUrls: this.options.allowLocalUrls ?? false,
         allowIpAddresses: this.options.allowIpAddresses ?? false,
         isWithinContext: isWithinContext ?? (() => true),
