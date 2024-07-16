@@ -7,7 +7,8 @@ import {
   prepareData,
   sleep,
   processRemoteConfig,
-  getEndpointConfigForRequest
+  getEndpointConfigForRequest,
+  parseAsSSE
 } from './utils';
 import { postEvents, fetchRemoteConfig, postTelemetry } from './api';
 import {
@@ -216,13 +217,16 @@ const Supergood = () => {
 
               const endpointConfig = getEndpointConfigForRequest(requestData.request, supergoodConfig.remoteConfig);
               if (endpointConfig?.ignored) return;
+              const contentType = response.headers.get('content-type') || '';
+              const rawResponseBody = supergoodConfig.logResponseBody ? (response.body || '') : '';
+              const responseBody = contentType.includes('text/event-stream') ? safeParseJson(parseAsSSE(rawResponseBody)) : safeParseJson(rawResponseBody);
 
               const responseData = {
                 response: {
                   headers: supergoodConfig.logResponseHeaders ? Object.fromEntries(response.headers.entries()) : {},
                   status: response.status,
                   statusText: response.statusText,
-                  body: supergoodConfig.logResponseBody ? response.body && safeParseJson(response.body) : {},
+                  body: responseBody,
                   respondedAt: new Date()
                 },
                 ...requestData

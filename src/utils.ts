@@ -265,6 +265,111 @@ const redactValuesFromKeys = (
   }
 };
 
+const partition = (s: string, seperator: string) => {
+  const index = s.indexOf(seperator);
+  if (index === -1) {
+    return [s, '', '']
+  } else {
+    return [s.slice(0, index), seperator, s.slice(index+seperator.length)];
+  }
+}
+
+const parseOneAsSSE = (chunk: string) => {
+  // IF chunk is a single valid SSE event, returns chunk as an SSE object
+  // if not, returns null
+  const data: any[] = [];
+  let event;
+  let id;
+  let retry;
+  const splits = chunk.split(/\r?\n/);
+  for (let i = 0; i < splits.length; i++) {
+    const line = splits[i];
+    if (line === '') {
+      // empty newline = dispatch
+      return {
+        event,
+        id,
+        data,
+        retry
+      }
+    }
+    // otherwise keep building SSE
+    if (line.startsWith(":")) {
+      // per SSE spec, this is invalid.
+      return null;
+    }
+    let [fieldName, separator, value] = partition(line, ':');
+    if (separator === '') {
+      // indicates the partition failed. can't be a SSE
+      return null;
+    }
+    if (value.startsWith(' ')) {
+      value = value.slice(1);
+    }
+    if (fieldName === 'event') {
+      event = value;
+    }
+    else if (fieldName === 'data') {
+      // if the data field is valid JSON, JSON-ify it. Otherwise keep as string
+      let parsed;
+      try {
+        parsed = JSON.parse(value);
+      } catch (err) {
+        parsed = value;
+      }
+
+      data.push(parsed);
+    }
+    else if (fieldName === 'id') {
+      if (!value.includes("\0")) {
+        id = value;
+      }
+    }
+    else if (fieldName === 'retry') {
+      try {
+        const parsed = parseInt(value);
+        if (!isNaN(parsed)) {
+          retry = parsed;
+        }
+      } catch (err) {
+        // If the field is not interpretable as an integer, it should be ignored
+        // pass
+      }
+    }
+  }
+  // No dispatch instruction, currently not a valid SSE
+  return null;
+}
+
+const parseAsSSE = (stream: string) => {
+  // If `stream` is a valid stream of server side events,
+  //    returns an array of JSON-parsed server side events
+  // Else
+  //    returns back the stream as a string
+  const splits = stream.split(/(?<=\n)/);
+  if (splits.length === 0) {
+    // SSE streams require newlines
+    return stream;
+  }
+  let data = '';
+  let responseBody = [];
+  for (let i = 0; i < splits.length; i++) {
+    const split = splits[i];
+    data += split;
+    if (data.endsWith('\n\n') || data.endsWith('\r\r') || data.endsWith('\r\n\r\n')) {
+      // Check if data is a valid SSE
+      const sse = parseOneAsSSE(data)
+      if (sse) {
+        responseBody.push(sse);
+        // reset data to start building the next SSE
+        data = '';
+      }
+  }
+  // if there were no valid server sent events, return the original string
+  // otherwise, return an array of SSE
+  return responseBody.length > 0 ? responseBody : stream;
+}
+
 const safeParseJson = (json: string) => {
   try {
     return JSON.parse(json);
@@ -499,5 +604,6 @@ export {
   post,
   get,
   getEndpointConfigForRequest,
-  expandSensitiveKeySetForArrays
+  expandSensitiveKeySetForArrays,
+  parseAsSSE
 };
