@@ -345,11 +345,11 @@ const parseAsSSE = (stream: string) => {
   // If `stream` is a valid stream of server side events,
   //    returns an array of JSON-parsed server side events
   // Else
-  //    returns back the stream as a string
+  //    returns null
   const splits = stream.split(/(?<=\n)/);
   if (splits.length === 0) {
     // SSE streams require newlines
-    return stream;
+    return null;
   }
   let data = '';
   let responseBody = [];
@@ -364,10 +364,11 @@ const parseAsSSE = (stream: string) => {
         // reset data to start building the next SSE
         data = '';
       }
+    }
   }
   // if there were no valid server sent events, return the original string
   // otherwise, return an array of SSE
-  return responseBody.length > 0 ? responseBody : stream;
+  return responseBody.length > 0 ? responseBody : null;
 }
 
 const safeParseJson = (json: string) => {

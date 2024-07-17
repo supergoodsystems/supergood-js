@@ -219,7 +219,14 @@ const Supergood = () => {
               if (endpointConfig?.ignored) return;
               const contentType = response.headers.get('content-type') || '';
               const rawResponseBody = supergoodConfig.logResponseBody ? (response.body || '') : '';
-              const responseBody = contentType.includes('text/event-stream') ? safeParseJson(parseAsSSE(rawResponseBody)) : safeParseJson(rawResponseBody);
+              let responseBody;
+              if (contentType.includes('text/event-stream')) {
+                // Try to resolve as SSE stream, fall back to string
+                const SSEStream = parseAsSSE(rawResponseBody);
+                responseBody = SSEStream || safeParseJson(rawResponseBody);
+              } else {
+                responseBody = safeParseJson(rawResponseBody);
+              }
 
               const responseData = {
                 response: {
