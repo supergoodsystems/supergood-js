@@ -17,7 +17,7 @@ import { postError } from './api';
 import { name, version } from '../package.json';
 import https from 'https';
 import http from 'http';
-import { errors } from './constants';
+import { errors, ContentType } from './constants';
 import { get as _get, set as _set } from 'lodash';
 import { SensitiveKeyActions, EndpointActions } from './constants';
 
@@ -265,6 +265,96 @@ const redactValuesFromKeys = (
   }
 };
 
+const partition = (s: string, seperator: string) => {
+  const index = s.indexOf(seperator);
+  if (index === -1) {
+    return [s, '', '']
+  } else {
+    return [s.slice(0, index), seperator, s.slice(index+seperator.length)];
+  }
+}
+
+const parseOneAsSSE = (chunk: string) => {
+  // IF chunk is a single valid SSE event, returns chunk as an SSE object
+  // if not, returns null
+  const data: any[] = [];
+  let event;
+  let id;
+  let retry;
+  const splits = chunk.split(/\r?\n/);
+  for (let i = 0; i < splits.length; i++) {
+    const line = splits[i];
+    if (line === '') {
+      // empty newline = dispatch
+      return {
+        event,
+        id,
+        data,
+        retry
+      }
+    }
+    // otherwise keep building SSE
+    if (line.startsWith(":")) {
+      // per SSE spec, this is invalid.
+      return null;
+    }
+    let [fieldName, separator, value] = partition(line, ':');
+    if (separator === '') {
+      // indicates the partition failed. can't be a SSE
+      return null;
+    }
+
+    value = value.trimStart();
+    switch(fieldName) {
+      case 'event':
+        event = value;
+        break;
+      case 'data':
+        data.push(safeParseJson(value));
+        break;
+      case 'id':
+        if (!value.includes("\0")) {
+          id = value;
+        }
+        break;
+      case 'retry':
+        retry = safeParseInt(value);
+        break;
+    }
+  }
+  // No dispatch instruction, currently not a valid SSE
+  return null;
+}
+
+const parseAsSSE = (stream: string) => {
+  // If `stream` is a valid stream of server side events,
+  //    returns an array of JSON-parsed server side events
+  // Else
+  //    returns null
+  const splits = stream.split(/(?<=\n)/);
+  if (splits.length === 0) {
+    // SSE streams require newlines
+    return null;
+  }
+
+  let data = '';
+  const responseBody = splits.map((split) => {
+    data += split;
+    if (data.endsWith('\n\n') || data.endsWith('\r\r') || data.endsWith('\r\n\r\n')) {
+      // Check if data is a valid SSE
+      const sse = parseOneAsSSE(data)
+      if (sse) {
+        // reset data to start building the next SSE
+        data = '';
+        return sse;
+      }
+    }
+  }).filter((sse) => !!sse);
+  // if there were no valid server sent events, return the original string
+  // otherwise, return an array of SSE
+  return responseBody?.length ? responseBody : null;
+}
+
 const safeParseJson = (json: string) => {
   try {
     return JSON.parse(json);
@@ -272,6 +362,27 @@ const safeParseJson = (json: string) => {
     return json;
   }
 };
+
+const safeParseInt = (int: string) => {
+  try {
+    const parsed = parseInt(int, 10);
+    if (!isNaN(parsed)) {
+      return int;
+    }
+  } finally {
+    return null;
+  }
+}
+
+const parseResponseBody = (rawResponseBody: string, contentType?: string) => {
+
+  if(contentType?.includes(ContentType.EventStream)) {
+    return parseAsSSE(rawResponseBody);
+  } else {
+    return safeParseJson(rawResponseBody);
+  }
+}
+
 
 const redactValue = (
   input: string | Record<string, string> | [Record<string, string>] | undefined
@@ -499,5 +610,7 @@ export {
   post,
   get,
   getEndpointConfigForRequest,
-  expandSensitiveKeySetForArrays
+  expandSensitiveKeySetForArrays,
+  parseAsSSE,
+  parseResponseBody
 };
