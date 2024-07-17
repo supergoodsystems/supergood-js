@@ -349,7 +349,7 @@ const parseAsSSE = (stream: string) => {
         return sse;
       }
     }
-  });
+  }).filter((sse) => !!sse);
   // if there were no valid server sent events, return the original string
   // otherwise, return an array of SSE
   return responseBody?.length ? responseBody : null;
@@ -375,12 +375,11 @@ const safeParseInt = (int: string) => {
 }
 
 const parseResponseBody = (rawResponseBody: string, contentType?: string) => {
-  if(contentType?.includes(ContentType.Json)) {
-    return safeParseJson(rawResponseBody);
-  } else if(contentType?.includes(ContentType.EventStream)) {
+
+  if(contentType?.includes(ContentType.EventStream)) {
     return parseAsSSE(rawResponseBody);
   } else {
-    return rawResponseBody;
+    return safeParseJson(rawResponseBody);
   }
 }
 
