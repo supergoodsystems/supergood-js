@@ -8,7 +8,7 @@ import {
   sleep,
   processRemoteConfig,
   getEndpointConfigForRequest,
-  parseAsSSE
+  parseResponseBody
 } from './utils';
 import { postEvents, fetchRemoteConfig, postTelemetry } from './api';
 import {
@@ -25,7 +25,8 @@ import {
   errors,
   TestErrorPath,
   LocalClientId,
-  LocalClientSecret
+  LocalClientSecret,
+  ContentType
 } from './constants';
 import onExit from 'signal-exit';
 import { NodeRequestInterceptor } from './interceptor/NodeRequestInterceptor';
@@ -217,23 +218,13 @@ const Supergood = () => {
 
               const endpointConfig = getEndpointConfigForRequest(requestData.request, supergoodConfig.remoteConfig);
               if (endpointConfig?.ignored) return;
-              const contentType = response.headers.get('content-type') || '';
-              const rawResponseBody = supergoodConfig.logResponseBody ? (response.body || '') : '';
-              let responseBody;
-              if (contentType.includes('text/event-stream')) {
-                // Try to resolve as SSE stream, fall back to string
-                const SSEStream = parseAsSSE(rawResponseBody);
-                responseBody = SSEStream || safeParseJson(rawResponseBody);
-              } else {
-                responseBody = safeParseJson(rawResponseBody);
-              }
-
+              const contentType = response.headers.get('content-type') ?? ContentType.Text;
               const responseData = {
                 response: {
                   headers: supergoodConfig.logResponseHeaders ? Object.fromEntries(response.headers.entries()) : {},
                   status: response.status,
                   statusText: response.statusText,
-                  body: responseBody,
+                  body: supergoodConfig.logResponseBody ? parseResponseBody(response.body, contentType) : {},
                   respondedAt: new Date()
                 },
                 ...requestData

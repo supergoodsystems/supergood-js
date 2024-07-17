@@ -17,7 +17,7 @@ import { postError } from './api';
 import { name, version } from '../package.json';
 import https from 'https';
 import http from 'http';
-import { errors } from './constants';
+import { errors, ContentType } from './constants';
 import { get as _get, set as _set } from 'lodash';
 import { SensitiveKeyActions, EndpointActions } from './constants';
 
@@ -303,38 +303,23 @@ const parseOneAsSSE = (chunk: string) => {
       // indicates the partition failed. can't be a SSE
       return null;
     }
-    if (value.startsWith(' ')) {
-      value = value.slice(1);
-    }
-    if (fieldName === 'event') {
-      event = value;
-    }
-    else if (fieldName === 'data') {
-      // if the data field is valid JSON, JSON-ify it. Otherwise keep as string
-      let parsed;
-      try {
-        parsed = JSON.parse(value);
-      } catch (err) {
-        parsed = value;
-      }
 
-      data.push(parsed);
-    }
-    else if (fieldName === 'id') {
-      if (!value.includes("\0")) {
-        id = value;
-      }
-    }
-    else if (fieldName === 'retry') {
-      try {
-        const parsed = parseInt(value);
-        if (!isNaN(parsed)) {
-          retry = parsed;
+    value = value.trimStart();
+    switch(fieldName) {
+      case 'event':
+        event = value;
+        break;
+      case 'data':
+        data.push(safeParseJson(value));
+        break;
+      case 'id':
+        if (!value.includes("\0")) {
+          id = value;
         }
-      } catch (err) {
-        // If the field is not interpretable as an integer, it should be ignored
-        // pass
-      }
+        break;
+      case 'retry':
+        retry = safeParseInt(value);
+        break;
     }
   }
   // No dispatch instruction, currently not a valid SSE
@@ -351,24 +336,23 @@ const parseAsSSE = (stream: string) => {
     // SSE streams require newlines
     return null;
   }
+
   let data = '';
-  let responseBody = [];
-  for (let i = 0; i < splits.length; i++) {
-    const split = splits[i];
+  const responseBody = splits.map((split) => {
     data += split;
     if (data.endsWith('\n\n') || data.endsWith('\r\r') || data.endsWith('\r\n\r\n')) {
       // Check if data is a valid SSE
       const sse = parseOneAsSSE(data)
       if (sse) {
-        responseBody.push(sse);
         // reset data to start building the next SSE
         data = '';
+        return sse;
       }
     }
-  }
+  });
   // if there were no valid server sent events, return the original string
   // otherwise, return an array of SSE
-  return responseBody.length > 0 ? responseBody : null;
+  return responseBody?.length ? responseBody : null;
 }
 
 const safeParseJson = (json: string) => {
@@ -378,6 +362,28 @@ const safeParseJson = (json: string) => {
     return json;
   }
 };
+
+const safeParseInt = (int: string) => {
+  try {
+    const parsed = parseInt(int, 10);
+    if (!isNaN(parsed)) {
+      return int;
+    }
+  } finally {
+    return null;
+  }
+}
+
+const parseResponseBody = (rawResponseBody: string, contentType?: string) => {
+  if(contentType?.includes(ContentType.Json)) {
+    return safeParseJson(rawResponseBody);
+  } else if(contentType?.includes(ContentType.EventStream)) {
+    return parseAsSSE(rawResponseBody);
+  } else {
+    return rawResponseBody;
+  }
+}
+
 
 const redactValue = (
   input: string | Record<string, string> | [Record<string, string>] | undefined
@@ -606,5 +612,6 @@ export {
   get,
   getEndpointConfigForRequest,
   expandSensitiveKeySetForArrays,
-  parseAsSSE
+  parseAsSSE,
+  parseResponseBody
 };
