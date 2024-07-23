@@ -37,6 +37,7 @@ describe('remote config functionality', () => {
         endpoints: [
           {
             name: '/posts',
+            method: 'GET',
             matchingRegex: {
               regex: '/posts',
               location: 'path'
@@ -72,6 +73,7 @@ describe('remote config functionality', () => {
         endpoints: [
           {
             name: '/profile',
+            method: 'GET',
             matchingRegex: {
               regex: '/profile',
               location: 'path'
@@ -111,6 +113,7 @@ describe('remote config functionality', () => {
         endpoints: [
           {
             name: '/posts',
+            method: 'GET',
             matchingRegex: {
               regex: '/posts',
               location: 'path'

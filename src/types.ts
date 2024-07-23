@@ -13,7 +13,7 @@ interface JSONObject {
   [key: string]: JSONValue;
 }
 
-type BodyType = JSONObject
+type BodyType = JSONObject;
 
 interface RequestType {
   id: string;
@@ -68,16 +68,17 @@ interface TelemetryType {
 
 interface EndpointConfigType {
   location: string;
+  method: string;
   regex: string;
   ignored: boolean;
-  sensitiveKeys: Array<{ keyPath: string, action: string }>;
+  sensitiveKeys: Array<{ keyPath: string; action: string }>;
 }
 
 interface RemoteConfigType {
   [domain: string]: {
     [endpointName: string]: EndpointConfigType;
   };
-};
+}
 
 interface MetadataType {
   keys?: number;
@@ -141,18 +142,18 @@ type RemoteConfigPayloadType = Array<{
   domain: string;
   endpoints: Array<{
     name: string;
+    method: string;
     matchingRegex: {
       regex: string;
       location: string;
     };
     endpointConfiguration: {
       action: string;
-      sensitiveKeys: Array<
-        {
-          keyPath: string;
-          action: string;
-        }>;
-    }
+      sensitiveKeys: Array<{
+        keyPath: string;
+        action: string;
+      }>;
+    };
   }>;
 }>;
 
