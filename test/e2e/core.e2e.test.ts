@@ -15,6 +15,7 @@ import {
 } from '../consts';
 import { mockApi } from '../utils/mock-api';
 import { checkPostedEvents } from '../utils/function-call-args';
+import { MockServer } from 'jest-mock-server';
 
 describe('core functionality', () => {
   const { postEventsMock, postErrorMock } = mockApi();
@@ -71,6 +72,46 @@ describe('core functionality', () => {
       });
     });
   });
+
+  describe('success streaming states', () => {
+    const server = new MockServer();
+    beforeAll(() => server.start());
+    afterAll(() => server.stop());
+    beforeEach(() => server.reset());
+    const { postEventsMock } = mockApi();
+
+    it('handles SSE streams gracefully', async () => {
+      const route = server.get('/').mockImplementationOnce((ctx) => {
+        ctx.response.body = 'data: {"id":"chatcmpl-1"}\n\ndata: {"id":"chatcmpl-2"}\n\ndata: [DONE]\n\n';
+        ctx.set('content-type', 'text/event-stream; charset=utf-8');
+      })
+      await Supergood.init(
+        {
+          config: { ...SUPERGOOD_CONFIG, allowLocalUrls: true },
+          clientId: SUPERGOOD_CLIENT_ID,
+          clientSecret: SUPERGOOD_CLIENT_SECRET
+        },
+        SUPERGOOD_SERVER
+      );
+
+      const url = server.getURL();
+      await fetch(url);
+
+      await Supergood.close();
+
+      expect(route).toHaveBeenCalledTimes(1);
+
+      checkPostedEvents(postEventsMock, 1, {
+        response: expect.objectContaining({
+          headers: expect.objectContaining({
+            'content-type': expect.toBeOneOf(['text/event-stream; charset=utf-8'])
+          }),
+          body: expect.toBeArrayOfSize(3) // array instead of string = SSE detected properly
+        })
+      });
+
+    });
+  })
 
   describe('failure states', () => {
     it('hanging response', async () => {

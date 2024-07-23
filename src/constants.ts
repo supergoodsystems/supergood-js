@@ -56,6 +56,12 @@ const TestErrorPath = '/api/supergood-test-error';
 const LocalClientId = 'local-client-id';
 const LocalClientSecret = 'local-client-secret';
 
+const ContentType = {
+  Json: 'application/json',
+  Text: 'text/plain',
+  EventStream: 'text/event-stream',
+};
+
 export {
   defaultConfig,
   errors,
@@ -63,5 +69,6 @@ export {
   LocalClientId,
   LocalClientSecret,
   SensitiveKeyActions,
-  EndpointActions
+  EndpointActions,
+  ContentType
 };
