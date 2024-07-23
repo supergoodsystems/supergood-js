@@ -116,7 +116,8 @@ const Supergood = () => {
       ignoredDomains: supergoodConfig.ignoredDomains,
       allowLocalUrls: supergoodConfig.allowLocalUrls,
       allowIpAddresses: supergoodConfig.allowIpAddresses,
-      baseUrl
+      baseUrl,
+      baseTelemetryUrl
     };
 
     interceptor = new BatchInterceptor([

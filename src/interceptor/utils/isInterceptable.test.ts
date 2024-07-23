@@ -8,6 +8,7 @@ describe('isInterceptable', () => {
     const ignoredDomains: string[] = [];
     const allowedDomains: string[] = [];
     const baseUrl = 'https://api.supergood.ai';
+    const baseTelemetryUrl = "https://telemetry.supergood.ai"
     const allowLocalUrls = false;
     const allowIpAddresses = false;
 
@@ -16,6 +17,7 @@ describe('isInterceptable', () => {
       ignoredDomains,
       allowedDomains,
       baseUrl,
+      baseTelemetryUrl,
       allowLocalUrls,
       allowIpAddresses,
       isWithinContext
@@ -29,6 +31,7 @@ describe('isInterceptable', () => {
     const ignoredDomains: string[] = [];
     const allowedDomains: string[] = [];
     const baseUrl = 'https://api.supergood.ai';
+    const baseTelemetryUrl = "https://telemetry.supergood.ai"
     const allowLocalUrls = false;
     const allowIpAddresses = false;
 
@@ -38,6 +41,7 @@ describe('isInterceptable', () => {
       ignoredDomains,
       allowedDomains,
       baseUrl,
+      baseTelemetryUrl,
       allowLocalUrls,
       allowIpAddresses,
       isWithinContext
@@ -51,6 +55,7 @@ describe('isInterceptable', () => {
     const ignoredDomains: string[] = [];
     const allowedDomains: string[] = [];
     const baseUrl = 'https://api.supergood.ai';
+    const baseTelemetryUrl = "https://telemetry.supergood.ai"
     const allowLocalUrls = true;
     const allowIpAddresses = false;
 
@@ -59,6 +64,7 @@ describe('isInterceptable', () => {
       ignoredDomains,
       allowedDomains,
       baseUrl,
+      baseTelemetryUrl,
       allowLocalUrls,
       allowIpAddresses,
       isWithinContext
@@ -72,6 +78,7 @@ describe('isInterceptable', () => {
     const ignoredDomains: string[] = [];
     const allowedDomains: string[] = [];
     const baseUrl = 'https://api.supergood.ai';
+    const baseTelemetryUrl = "https://telemetry.supergood.ai"
     const allowLocalUrls = false;
     const allowIpAddresses = false;
 
@@ -80,6 +87,7 @@ describe('isInterceptable', () => {
       ignoredDomains,
       allowedDomains,
       baseUrl,
+      baseTelemetryUrl,
       allowLocalUrls,
       allowIpAddresses,
       isWithinContext
@@ -93,6 +101,7 @@ describe('isInterceptable', () => {
     const ignoredDomains: string[] = [];
     const allowedDomains: string[] = [];
     const baseUrl = 'https://api.supergood.ai';
+    const baseTelemetryUrl = "https://telemetry.supergood.ai"
     const allowLocalUrls = true;
     const allowIpAddresses = false;
 
@@ -101,6 +110,7 @@ describe('isInterceptable', () => {
       ignoredDomains,
       allowedDomains,
       baseUrl,
+      baseTelemetryUrl,
       allowLocalUrls,
       allowIpAddresses,
       isWithinContext
@@ -114,6 +124,7 @@ describe('isInterceptable', () => {
     const ignoredDomains: string[] = ['somedomain.com'];
     const allowedDomains: string[] = [];
     const baseUrl = 'https://api.supergood.ai';
+    const baseTelemetryUrl = "https://telemetry.supergood.ai"
     const allowLocalUrls = false;
     const allowIpAddresses = false;
 
@@ -122,6 +133,7 @@ describe('isInterceptable', () => {
       ignoredDomains,
       allowedDomains,
       baseUrl,
+      baseTelemetryUrl,
       allowLocalUrls,
       allowIpAddresses,
       isWithinContext
@@ -135,6 +147,7 @@ describe('isInterceptable', () => {
     const ignoredDomains: string[] = ['someotherdomain.com'];
     const allowedDomains: string[] = ['somedomain.com'];
     const baseUrl = 'https://api.supergood.ai';
+    const baseTelemetryUrl = "https://telemetry.supergood.ai"
     const allowLocalUrls = false;
     const allowIpAddresses = false;
 
@@ -143,6 +156,7 @@ describe('isInterceptable', () => {
       ignoredDomains,
       allowedDomains,
       baseUrl,
+      baseTelemetryUrl,
       allowLocalUrls,
       allowIpAddresses,
       isWithinContext
@@ -156,6 +170,7 @@ describe('isInterceptable', () => {
     const ignoredDomains: string[] = ['somedomain.com'];
     const allowedDomains: string[] = ['someotherdomain.com'];
     const baseUrl = 'https://api.supergood.ai';
+    const baseTelemetryUrl = "https://telemetry.supergood.ai"
     const allowLocalUrls = false;
     const allowIpAddresses = false;
 
@@ -164,6 +179,7 @@ describe('isInterceptable', () => {
       ignoredDomains,
       allowedDomains,
       baseUrl,
+      baseTelemetryUrl,
       allowLocalUrls,
       allowIpAddresses,
       isWithinContext
@@ -177,6 +193,7 @@ describe('isInterceptable', () => {
     const ignoredDomains: string[] = ['somedomain.com'];
     const allowedDomains: string[] = ['somedomain'];
     const baseUrl = 'https://api.supergood.ai';
+    const baseTelemetryUrl = "https://telemetry.supergood.ai"
     const allowLocalUrls = false;
     const allowIpAddresses = false;
 
@@ -185,6 +202,7 @@ describe('isInterceptable', () => {
       ignoredDomains,
       allowedDomains,
       baseUrl,
+      baseTelemetryUrl,
       allowLocalUrls,
       allowIpAddresses,
       isWithinContext

@@ -88,7 +88,7 @@ const getHeaderOptions = (
         clientId + ':' + clientSecret
       ).toString('base64')}`
     },
-    timeout,
+    timeout
   };
 };
 
@@ -119,9 +119,11 @@ const unmarshalKeyPath = (keypath: string) => {
 const expandSensitiveKeySetForArrays = (
   obj: any,
   sensitiveKeys: Array<{ keyPath: string; action: string }>
-): Array<{ keyPath: string, action: string }> => {
-
-  const expandKey = (key: { keyPath: string; action: string }, obj: any): Array<{ keyPath: string; action: string }> => {
+): Array<{ keyPath: string; action: string }> => {
+  const expandKey = (
+    key: { keyPath: string; action: string },
+    obj: any
+  ): Array<{ keyPath: string; action: string }> => {
     // Split the key by dots, considering the array brackets as part of the key
     const parts = key?.keyPath.match(/[^.\[\]]+|\[\d*\]|\[\*\]/g) || [];
     // Recursively expand the key
@@ -133,7 +135,6 @@ const expandSensitiveKeySetForArrays = (
     obj: any,
     key: { keyPath: string; action: string }
   ): Array<{ keyPath: string; action: string }> => {
-
     const path = key.keyPath;
     if (parts.length === 0) {
       return [{ keyPath: path, action: key.action }]; // Remove trailing dot
@@ -150,22 +151,29 @@ const expandSensitiveKeySetForArrays = (
       }
       // Expand for each element in the array
       return obj.flatMap((_, index) =>
-        expand(parts.slice(1), obj[index], { keyPath: `${path}${separator}[${index}]`, action: key.action })
+        expand(parts.slice(1), obj[index], {
+          keyPath: `${path}${separator}[${index}]`,
+          action: key.action
+        })
       );
-
     } else if (part.startsWith('[') && part.endsWith(']')) {
       // Specific index in the array
       const index = parseInt(part.slice(1, -1), 10);
       if (!isNaN(index) && index < obj.length) {
-        return expand(parts.slice(1), obj[index], { keyPath: `${path}${separator}${part}`, action: key.action });
+        return expand(parts.slice(1), obj[index], {
+          keyPath: `${path}${separator}${part}`,
+          action: key.action
+        });
       } else {
         return [];
       }
-
     } else {
       // Regular object property
       if (obj && typeof obj === 'object' && part in obj) {
-        return expand(parts.slice(1), obj[part], { keyPath: `${path}${separator}${part}`, action: key.action });
+        return expand(parts.slice(1), obj[part], {
+          keyPath: `${path}${separator}${part}`,
+          action: key.action
+        });
       } else {
         return [];
       }
@@ -180,9 +188,11 @@ function getKeyPaths(obj: any, path: string = ''): string[] {
 
   if (typeof obj === 'object' && obj !== null) {
     // Object.keys returns indices for arrays
-    Object.keys(obj).forEach(key => {
+    Object.keys(obj).forEach((key) => {
       const value = obj[key];
-      const newPath = Array.isArray(obj) ? `${path}[${key}]` : `${path}${path ? '.' : ''}${key}`;
+      const newPath = Array.isArray(obj)
+        ? `${path}[${key}]`
+        : `${path}${path ? '.' : ''}${key}`;
       if (typeof value === 'object' && value !== null) {
         paths = paths.concat(getKeyPaths(value, newPath));
       } else {
@@ -196,15 +206,19 @@ function getKeyPaths(obj: any, path: string = ''): string[] {
   return paths;
 }
 
-const getAllKeyPathsForLeavesOnEvent = (event: { request?: RequestType; response?: ResponseType }) => [
-  ...getKeyPaths(event.request?.headers, 'request.headers'),
-  ...getKeyPaths(event.request?.body, 'request.body'),
-  ...getKeyPaths(event.response?.headers, 'response.headers'),
-  ...getKeyPaths(event.response?.body, 'response.body')
-].map((key) => ({ keyPath: key, action: SensitiveKeyActions.REDACT }));
+const getAllKeyPathsForLeavesOnEvent = (event: {
+  request?: RequestType;
+  response?: ResponseType;
+}) =>
+  [
+    ...getKeyPaths(event.request?.headers, 'request.headers'),
+    ...getKeyPaths(event.request?.body, 'request.body'),
+    ...getKeyPaths(event.response?.headers, 'response.headers'),
+    ...getKeyPaths(event.response?.body, 'response.body')
+  ].map((key) => ({ keyPath: key, action: SensitiveKeyActions.REDACT }));
 
 const redactValuesFromKeys = (
-  event: { request?: RequestType; response?: ResponseType, tags?: TagType },
+  event: { request?: RequestType; response?: ResponseType; tags?: TagType },
   config: ConfigType
 ): {
   event: { request?: RequestType; response?: ResponseType };
@@ -212,10 +226,10 @@ const redactValuesFromKeys = (
   tags: TagType;
 } => {
   const { redactByDefault, forceRedactAll } = config;
-  const remoteConfig = config?.remoteConfig || {} as RemoteConfigType;
+  const remoteConfig = config?.remoteConfig || ({} as RemoteConfigType);
   // Move the tags off the event object and into the metadata object
   let tags = {};
-  if(event.tags) {
+  if (event.tags) {
     tags = event.tags;
     delete event.tags;
   }
@@ -226,14 +240,19 @@ const redactValuesFromKeys = (
     remoteConfig
   );
 
-  if ((!endpointConfig || !endpointConfig?.sensitiveKeys?.length) && (!redactByDefault && !forceRedactAll)) {
+  if (
+    (!endpointConfig || !endpointConfig?.sensitiveKeys?.length) &&
+    !redactByDefault &&
+    !forceRedactAll
+  ) {
     return { event, sensitiveKeyMetadata, tags };
   } else {
-
-
     let sensitiveKeys = expandSensitiveKeySetForArrays(
       event,
-      (endpointConfig?.sensitiveKeys || []).map((key) => ({ keyPath: marshalKeyPath(key.keyPath), action: key.action }))
+      (endpointConfig?.sensitiveKeys || []).map((key) => ({
+        keyPath: marshalKeyPath(key.keyPath),
+        action: key.action
+      }))
     );
 
     if (forceRedactAll) {
@@ -242,10 +261,17 @@ const redactValuesFromKeys = (
     } else if (redactByDefault) {
       // Sensitive keys = All of the leaves on the event EXCEPT the ones marked allwoed from the remote config
       sensitiveKeys = (getAllKeyPathsForLeavesOnEvent(event) || []).filter(
-        (key) => !sensitiveKeys.some(sk => sk.keyPath === key.keyPath && sk.action === SensitiveKeyActions.ALLOW)
+        (key) =>
+          !sensitiveKeys.some(
+            (sk) =>
+              sk.keyPath === key.keyPath &&
+              sk.action === SensitiveKeyActions.ALLOW
+          )
       );
     } else {
-      sensitiveKeys = sensitiveKeys.filter((sk) => sk.action !== SensitiveKeyActions.ALLOW);
+      sensitiveKeys = sensitiveKeys.filter(
+        (sk) => sk.action !== SensitiveKeyActions.ALLOW
+      );
     }
 
     for (let i = 0; i < sensitiveKeys.length; i++) {
@@ -414,7 +440,7 @@ const redactValue = (
 
 const prepareData = (
   events: Array<EventRequestType>,
-  supergoodConfig: ConfigType,
+  supergoodConfig: ConfigType
 ) => {
   return events.map((e) => {
     const { event, sensitiveKeyMetadata, tags } = redactValuesFromKeys(
@@ -487,7 +513,11 @@ const post = (
   });
 };
 
-const get = (url: string, authorization: string, timeout: number): Promise<string> => {
+const get = (
+  url: string,
+  authorization: string,
+  timeout: number
+): Promise<string> => {
   const packageVersion = version;
 
   const options = {
@@ -538,14 +568,18 @@ const processRemoteConfig = (remoteConfigPayload: RemoteConfigPayloadType) => {
   return (remoteConfigPayload || []).reduce((remoteConfig, domainConfig) => {
     const { domain, endpoints } = domainConfig;
     const endpointConfig = endpoints.reduce((endpointConfig, endpoint) => {
-      const { matchingRegex, endpointConfiguration } = endpoint;
+      const { matchingRegex, endpointConfiguration, method } = endpoint;
       const { regex, location } = matchingRegex;
       const { action, sensitiveKeys } = endpointConfiguration;
       endpointConfig[regex] = {
         location,
         regex,
+        method,
         ignored: action === EndpointActions.IGNORE,
-        sensitiveKeys: (sensitiveKeys || []).map((key) => ({ keyPath: key.keyPath, action: key.action }))
+        sensitiveKeys: (sensitiveKeys || []).map((key) => ({
+          keyPath: key.keyPath,
+          action: key.action
+        }))
       };
       return endpointConfig;
     }, {} as { [endpointName: string]: EndpointConfigType });
@@ -584,7 +618,10 @@ const getEndpointConfigForRequest = (
 
   for (let i = 0; i < Object.keys(endpointConfigs).length; i++) {
     const endpointConfig = endpointConfigs[Object.keys(endpointConfigs)[i]];
-    const { regex, location } = endpointConfig;
+    const { regex, location, method } = endpointConfig;
+    if (request.method !== method) {
+      continue;
+    }
     const regexObj = new RegExp(regex);
     const strRepresentation = getStrRepresentationFromPath(request, location);
     if (!strRepresentation) continue;

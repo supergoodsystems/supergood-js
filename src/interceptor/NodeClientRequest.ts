@@ -13,11 +13,13 @@ import { getArrayBuffer } from './utils/bufferUtils';
 import { isInterceptable } from './utils/isInterceptable';
 import { IsomorphicResponse } from './utils/IsomorphicResponse';
 import { cloneIncomingMessage } from './utils/cloneIncomingMessage';
+import { logger } from '../utils'
 
 export type NodeClientOptions = {
   emitter: EventEmitter;
   allowLocalUrls?: boolean;
   baseUrl?: string;
+  baseTelemetryUrl?: string;
   ignoredDomains?: string[];
   allowedDomains?: string[];
   allowIpAddresses?: boolean;
@@ -53,6 +55,7 @@ export class NodeClientRequest extends ClientRequest {
       ignoredDomains: options.ignoredDomains ?? [],
       allowedDomains: options.allowedDomains ?? [],
       baseUrl: options.baseUrl ?? '',
+      baseTelemetryUrl: options.baseTelemetryUrl ?? '',
       allowLocalUrls: options.allowLocalUrls ?? false,
       allowIpAddresses: options.allowIpAddresses ?? false,
       isWithinContext: options.isWithinContext ?? (() => true)
@@ -115,6 +118,7 @@ export class NodeClientRequest extends ClientRequest {
   emit(event: string | symbol, ...args: any[]) {
     if (event === 'response' && this.isInterceptable) {
       try {
+        const debugLogger = logger({errorSinkUrl: '', headerOptions: {headers: {'Content-Type': '', Authorization: ''}, timeout: 0}})
         const response = args[0] as IncomingMessage;
         const firstClone = cloneIncomingMessage(response);
         const secondClone = cloneIncomingMessage(response);
