@@ -4,7 +4,11 @@ import {
   expandSensitiveKeySetForArrays,
   redactValuesFromKeys
 } from './utils';
-import { defaultConfig, SensitiveKeyActions, EndpointActions } from './constants';
+import {
+  defaultConfig,
+  SensitiveKeyActions,
+  EndpointActions
+} from './constants';
 import { get as _get } from 'lodash';
 
 it('generates multiple sensitive key paths for an array', () => {
@@ -35,13 +39,17 @@ it('generates multiple sensitive key paths for an array', () => {
       ]
     }
   };
-  const sensitiveKeys = [{ keyPath: 'blog.posts[].title', action: SensitiveKeyActions.REDACT}];
-  expect(expandSensitiveKeySetForArrays(obj, sensitiveKeys)).toEqual([
-    'blog.posts[0].title',
-    'blog.posts[1].title',
-    'blog.posts[2].title',
-    'blog.posts[3].title'
-  ].map((key) => ({ keyPath: key, action: SensitiveKeyActions.REDACT })));
+  const sensitiveKeys = [
+    { keyPath: 'blog.posts[].title', action: SensitiveKeyActions.REDACT }
+  ];
+  expect(expandSensitiveKeySetForArrays(obj, sensitiveKeys)).toEqual(
+    [
+      'blog.posts[0].title',
+      'blog.posts[1].title',
+      'blog.posts[2].title',
+      'blog.posts[3].title'
+    ].map((key) => ({ keyPath: key, action: SensitiveKeyActions.REDACT }))
+  );
 });
 
 it('generates multiple sensitive key paths for an object with nested arrays', () => {
@@ -130,19 +138,26 @@ it('generates multiple sensitive key paths for an object with nested arrays', ()
       ]
     }
   };
-  const sensitiveKeys = [{ keyPath: 'blog.posts[].comments[].body', action: SensitiveKeyActions.REDACT }];
-  expect(expandSensitiveKeySetForArrays(obj, sensitiveKeys)).toEqual([
-    'blog.posts[0].comments[0].body',
-    'blog.posts[0].comments[1].body',
-    'blog.posts[0].comments[2].body',
-    'blog.posts[0].comments[3].body',
-    'blog.posts[1].comments[0].body',
-    'blog.posts[1].comments[1].body',
-    'blog.posts[1].comments[2].body',
-    'blog.posts[2].comments[0].body',
-    'blog.posts[2].comments[1].body',
-    'blog.posts[3].comments[0].body'
-  ].map((key) => ({ keyPath: key, action: SensitiveKeyActions.REDACT })));
+  const sensitiveKeys = [
+    {
+      keyPath: 'blog.posts[].comments[].body',
+      action: SensitiveKeyActions.REDACT
+    }
+  ];
+  expect(expandSensitiveKeySetForArrays(obj, sensitiveKeys)).toEqual(
+    [
+      'blog.posts[0].comments[0].body',
+      'blog.posts[0].comments[1].body',
+      'blog.posts[0].comments[2].body',
+      'blog.posts[0].comments[3].body',
+      'blog.posts[1].comments[0].body',
+      'blog.posts[1].comments[1].body',
+      'blog.posts[1].comments[2].body',
+      'blog.posts[2].comments[0].body',
+      'blog.posts[2].comments[1].body',
+      'blog.posts[3].comments[0].body'
+    ].map((key) => ({ keyPath: key, action: SensitiveKeyActions.REDACT }))
+  );
 });
 
 it('redacts values from keys with proper marshalling', () => {
@@ -189,8 +204,14 @@ it('redacts values from keys with proper marshalling', () => {
       '/posts': {
         location: 'path',
         regex: '/posts',
+        method: 'GET',
         ignored: false,
-        sensitiveKeys: [{ keyPath: 'requestBody.posts[].title', action: SensitiveKeyActions.REDACT }]
+        sensitiveKeys: [
+          {
+            keyPath: 'requestBody.posts[].title',
+            action: SensitiveKeyActions.REDACT
+          }
+        ]
       }
     }
   };
@@ -307,8 +328,14 @@ it('redacts values from keys of nested array', () => {
       '/posts': {
         location: 'path',
         regex: '/posts',
+        method: 'GET',
         ignored: false,
-        sensitiveKeys: [{ keyPath: 'requestBody.posts[].comments[].body', action: SensitiveKeyActions.REDACT }]
+        sensitiveKeys: [
+          {
+            keyPath: 'requestBody.posts[].comments[].body',
+            action: SensitiveKeyActions.REDACT
+          }
+        ]
       }
     }
   };
@@ -347,8 +374,14 @@ it('will not blow up or redact anything if the sensitive key is bad', () => {
       '/posts': {
         location: 'path',
         regex: '/posts',
+        method: 'GET',
         ignored: false,
-        sensitiveKeys: [{ keyPath: 'request_body.posts[].title[]', action: SensitiveKeyActions.REDACT }]
+        sensitiveKeys: [
+          {
+            keyPath: 'request_body.posts[].title[]',
+            action: SensitiveKeyActions.REDACT
+          }
+        ]
       }
     }
   };
@@ -396,10 +429,17 @@ it('will prepare the data appropriately for posting to the server', () => {
       '/posts': {
         location: 'path',
         regex: '/posts',
+        method: 'GET',
         ignored: false,
         sensitiveKeys: [
-          { keyPath: 'responseBody.user.email', action: SensitiveKeyActions.REDACT},
-          { keyPath: 'requestBody.blogType.name', action: SensitiveKeyActions.REDACT}
+          {
+            keyPath: 'responseBody.user.email',
+            action: SensitiveKeyActions.REDACT
+          },
+          {
+            keyPath: 'requestBody.blogType.name',
+            action: SensitiveKeyActions.REDACT
+          }
         ]
       }
     }
@@ -439,7 +479,10 @@ it('will force redact all keys if the config is set to do so', () => {
           name: 'John Doe',
           email: 'john@doe.com'
         },
-        comments: [{ id: 7, comment: 'good blog'}, { id: 8, comment: 'bad blog'}]
+        comments: [
+          { id: 7, comment: 'good blog' },
+          { id: 8, comment: 'bad blog' }
+        ]
       }
     }
   };
@@ -447,13 +490,18 @@ it('will force redact all keys if the config is set to do so', () => {
     [new URL(MOCK_DATA_SERVER).hostname]: {
       '/posts': {
         location: 'path',
+        method: 'GET',
         regex: '/posts',
         ignored: false,
         sensitiveKeys: []
       }
     }
   };
-  const config = { remoteConfig, ...defaultConfig, forceRedactAll: true } as ConfigType;
+  const config = {
+    remoteConfig,
+    ...defaultConfig,
+    forceRedactAll: true
+  } as ConfigType;
   const events = prepareData([obj], config);
   expect(_get(events[0], 'request.body.blogType.name')).toBeFalsy();
   expect(_get(events[0], 'response.body.name')).toBeFalsy();
@@ -494,7 +542,10 @@ it('will redact by default if the config is set to do so', () => {
           name: 'John Doe',
           email: 'john@doe.com'
         },
-        comments: [{ id: 7, comment: 'good blog'}, { id: 8, comment: 'bad blog'}]
+        comments: [
+          { id: 7, comment: 'good blog' },
+          { id: 8, comment: 'bad blog' }
+        ]
       }
     }
   };
@@ -502,17 +553,31 @@ it('will redact by default if the config is set to do so', () => {
     [new URL(MOCK_DATA_SERVER).hostname]: {
       '/posts': {
         location: 'path',
+        method: 'GET',
         regex: '/posts',
         ignored: false,
         sensitiveKeys: [
-          { keyPath: 'responseBody.user.email', action: SensitiveKeyActions.ALLOW },
-          { keyPath: 'requestBody.blogType.name', action: SensitiveKeyActions.REDACT },
-          { keyPath: 'responseBody.comments[].id', action: SensitiveKeyActions.ALLOW }
+          {
+            keyPath: 'responseBody.user.email',
+            action: SensitiveKeyActions.ALLOW
+          },
+          {
+            keyPath: 'requestBody.blogType.name',
+            action: SensitiveKeyActions.REDACT
+          },
+          {
+            keyPath: 'responseBody.comments[].id',
+            action: SensitiveKeyActions.ALLOW
+          }
         ]
       }
     }
   };
-  const config = { remoteConfig, ...defaultConfig, redactByDefault: true } as ConfigType;
+  const config = {
+    remoteConfig,
+    ...defaultConfig,
+    redactByDefault: true
+  } as ConfigType;
   const events = prepareData([obj], config);
   expect(_get(events[0], 'request.body.blogType.name')).toBeFalsy();
   expect(_get(events[0], 'response.body.name')).toBeFalsy();
@@ -562,16 +627,27 @@ it('will redact by default for an array of strings', () => {
       '/posts': {
         location: 'path',
         regex: '/posts',
+        method: 'GET',
         ignored: false,
         sensitiveKeys: [
-          { keyPath: 'responseBody.user.email', action: SensitiveKeyActions.ALLOW },
-          { keyPath: 'requestBody.blogType.name', action: SensitiveKeyActions.REDACT },
+          {
+            keyPath: 'responseBody.user.email',
+            action: SensitiveKeyActions.ALLOW
+          },
+          {
+            keyPath: 'requestBody.blogType.name',
+            action: SensitiveKeyActions.REDACT
+          },
           { keyPath: 'responseBody.tags[]', action: SensitiveKeyActions.ALLOW }
         ]
       }
     }
   };
-  const config = { remoteConfig, ...defaultConfig, redactByDefault: true } as ConfigType;
+  const config = {
+    remoteConfig,
+    ...defaultConfig,
+    redactByDefault: true
+  } as ConfigType;
   const events = prepareData([obj], config);
   expect(_get(events[0], 'request.body.blogType.name')).toBeFalsy();
   expect(_get(events[0], 'response.body.name')).toBeFalsy();
@@ -611,7 +687,10 @@ it('will redact ONLY sensitive keys marked as redact, without either option enab
           name: 'John Doe',
           email: 'john@doe.com'
         },
-        comments: [{ id: 7, comment: 'good blog'}, { id: 8, comment: 'bad blog'}]
+        comments: [
+          { id: 7, comment: 'good blog' },
+          { id: 8, comment: 'bad blog' }
+        ]
       }
     }
   };
@@ -620,11 +699,21 @@ it('will redact ONLY sensitive keys marked as redact, without either option enab
       '/posts': {
         location: 'path',
         regex: '/posts',
+        method: 'GET',
         ignored: false,
         sensitiveKeys: [
-          { keyPath: 'responseBody.user.email', action: SensitiveKeyActions.ALLOW },
-          { keyPath: 'requestBody.blogType.name', action: SensitiveKeyActions.REDACT },
-          { keyPath: 'responseBody.comments[].id', action: SensitiveKeyActions.ALLOW }
+          {
+            keyPath: 'responseBody.user.email',
+            action: SensitiveKeyActions.ALLOW
+          },
+          {
+            keyPath: 'requestBody.blogType.name',
+            action: SensitiveKeyActions.REDACT
+          },
+          {
+            keyPath: 'responseBody.comments[].id',
+            action: SensitiveKeyActions.ALLOW
+          }
         ]
       }
     }
