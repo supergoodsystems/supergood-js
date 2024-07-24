@@ -623,7 +623,7 @@ const getEndpointConfigForRequest = (
   for (let i = 0; i < Object.keys(endpointConfigs).length; i++) {
     const endpointConfig = endpointConfigs[Object.keys(endpointConfigs)[i]];
     const { regex, location, method } = endpointConfig;
-    if (request.method !== method) {
+    if (request.method.toLocaleLowerCase() !== method.toLocaleLowerCase()) {
       continue;
     }
     const regexObj = new RegExp(regex);
