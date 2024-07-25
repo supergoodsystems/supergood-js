@@ -534,6 +534,7 @@ const Supergood = () => {
             clientSecret,
             config,
             tags,
+            trace,
             isWithinContext: () =>
               supergoodAsyncLocalStorage.getStore()?.instanceId === instanceId
           },
