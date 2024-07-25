@@ -487,13 +487,18 @@ const Supergood = () => {
   };
 
   const withTags = async <TRet>(
-    tags: Record<string, string | number | string[]>,
-    trace: string = '',
+    options: {
+      tags: Record<string, string | number | string[]>;
+      trace?: string;
+    },
     fn: () => Promise<TRet>
   ): Promise<TRet> => {
     const existingTags = supergoodAsyncLocalStorage.getStore()?.tags || {};
     return supergoodAsyncLocalStorage.run(
-      { tags: { ...tags, ...existingTags }, trace },
+      {
+        tags: { ...(options?.tags || {}), ...existingTags },
+        trace: options?.trace
+      },
       fn
     );
   };
@@ -552,7 +557,7 @@ const Supergood = () => {
     clientSecret?: string;
     config?: Partial<ConfigType>;
     tags?: Record<string, string | number | string[]>;
-    trace: string;
+    trace?: string;
     baseUrl?: string;
     baseTelemetryUrl?: string;
   }) => {
