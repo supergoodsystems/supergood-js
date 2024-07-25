@@ -90,4 +90,37 @@ describe('Custom tags', () => {
     expect(get(eventsPosted[2], 'metadata.tags.company')).toEqual('B');
     expect(get(eventsPosted[2], 'metadata.tags.office')).toEqual('C');
   });
+
+  it('should support traces', async () => {
+    const { postEventsMock } = mockApi();
+    await Supergood.init(
+      {
+        config: { ...SUPERGOOD_CONFIG, allowLocalUrls: true },
+        clientId: SUPERGOOD_CLIENT_ID,
+        clientSecret: SUPERGOOD_CLIENT_SECRET
+      },
+      SUPERGOOD_SERVER
+    );
+
+    await Supergood.withTags(
+      { tags: { person: 'A' }, trace: '123' },
+      async () => {
+        await fetch(`${MOCK_DATA_SERVER}/profile`);
+        await Supergood.withTags({ tags: { company: 'B' } }, async () => {
+          await fetch(`${MOCK_DATA_SERVER}/profile`);
+          await Supergood.withTags({ tags: { office: 'C' } }, async () => {
+            await fetch(`${MOCK_DATA_SERVER}/profile`);
+          });
+        });
+      }
+    );
+
+    await Supergood.close();
+
+    const eventsPosted = getEvents(postEventsMock);
+    expect(eventsPosted.length).toEqual(3);
+    expect(get(eventsPosted[0], 'metadata.trace')).toEqual('123');
+    expect(get(eventsPosted[1], 'metadata.trace')).toEqual('123');
+    expect(get(eventsPosted[2], 'metadata.trace')).toEqual('123');
+  });
 });

@@ -494,10 +494,11 @@ const Supergood = () => {
     fn: () => Promise<TRet>
   ): Promise<TRet> => {
     const existingTags = supergoodAsyncLocalStorage.getStore()?.tags || {};
+    const existingTrace = supergoodAsyncLocalStorage.getStore()?.trace;
     return supergoodAsyncLocalStorage.run(
       {
         tags: { ...(options?.tags || {}), ...existingTags },
-        trace: options?.trace
+        trace: options?.trace || existingTrace
       },
       fn
     );
