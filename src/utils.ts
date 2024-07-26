@@ -218,20 +218,31 @@ const getAllKeyPathsForLeavesOnEvent = (event: {
   ].map((key) => ({ keyPath: key, action: SensitiveKeyActions.REDACT }));
 
 const redactValuesFromKeys = (
-  event: { request?: RequestType; response?: ResponseType; tags?: TagType },
+  event: {
+    request?: RequestType;
+    response?: ResponseType;
+    tags?: TagType;
+    trace?: string;
+  },
   config: ConfigType
 ): {
   event: { request?: RequestType; response?: ResponseType };
   sensitiveKeyMetadata: Array<SensitiveKeyMetadata>;
   tags: TagType;
+  trace?: string;
 } => {
   const { redactByDefault, forceRedactAll } = config;
   const remoteConfig = config?.remoteConfig || ({} as RemoteConfigType);
   // Move the tags off the event object and into the metadata object
   let tags = {};
+  let trace;
   if (event.tags) {
     tags = event.tags;
     delete event.tags;
+  }
+  if (event?.trace) {
+    trace = event.trace;
+    delete event.trace;
   }
 
   let sensitiveKeyMetadata: Array<SensitiveKeyMetadata> = [];
@@ -245,7 +256,7 @@ const redactValuesFromKeys = (
     !redactByDefault &&
     !forceRedactAll
   ) {
-    return { event, sensitiveKeyMetadata, tags };
+    return { event, sensitiveKeyMetadata, tags, trace };
   } else {
     let sensitiveKeys = expandSensitiveKeySetForArrays(
       event,
@@ -287,7 +298,7 @@ const redactValuesFromKeys = (
         });
       }
     }
-    return { event, sensitiveKeyMetadata, tags };
+    return { event, sensitiveKeyMetadata, tags, trace };
   }
 };
 
@@ -447,13 +458,13 @@ const prepareData = (
   supergoodConfig: ConfigType
 ) => {
   return events.map((e) => {
-    const { event, sensitiveKeyMetadata, tags } = redactValuesFromKeys(
+    const { event, sensitiveKeyMetadata, tags, trace } = redactValuesFromKeys(
       e,
       supergoodConfig
     );
     return {
       ...event,
-      metadata: { sensitiveKeys: sensitiveKeyMetadata, tags }
+      metadata: { sensitiveKeys: sensitiveKeyMetadata, tags, trace }
     };
   });
 };

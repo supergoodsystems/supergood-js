@@ -25,11 +25,12 @@ describe('capture functionality', () => {
           clientSecret: SUPERGOOD_CLIENT_SECRET,
           baseUrl: SUPERGOOD_SERVER
         },
-      async () => {
-        for (let i = 0; i < numberOfHttpCalls; i++) {
-          await axios.get(`${MOCK_DATA_SERVER}/posts`);
+        async () => {
+          for (let i = 0; i < numberOfHttpCalls; i++) {
+            await axios.get(`${MOCK_DATA_SERVER}/posts`);
+          }
         }
-      })
+      );
       await Supergood.close();
       await axios.get(`${MOCK_DATA_SERVER}/posts`);
       checkPostedEvents(postEventsMock, numberOfHttpCalls, {
@@ -46,7 +47,7 @@ describe('capture functionality', () => {
       const numberOfHttpCalls = 5;
 
       const getInterval = setInterval(async () => {
-        await axios.get(`${MOCK_DATA_SERVER}/posts`), 250
+        await axios.get(`${MOCK_DATA_SERVER}/posts`), 250;
       });
       getInterval.unref();
 
@@ -57,11 +58,12 @@ describe('capture functionality', () => {
           clientSecret: SUPERGOOD_CLIENT_SECRET,
           baseUrl: SUPERGOOD_SERVER
         },
-      async () => {
-        for (let i = 0; i < numberOfHttpCalls; i++) {
-          await axios.get(`${MOCK_DATA_SERVER}/posts`);
+        async () => {
+          for (let i = 0; i < numberOfHttpCalls; i++) {
+            await axios.get(`${MOCK_DATA_SERVER}/posts`);
+          }
         }
-      })
+      );
       await Supergood.close();
 
       clearInterval(getInterval);
@@ -82,13 +84,12 @@ describe('capture functionality', () => {
       const numberOfHttpCalls = 5;
       await axios.get(`${MOCK_DATA_SERVER}/posts`);
 
-      await Supergood.startCapture(
-        {
-          config: { ...SUPERGOOD_CONFIG, allowLocalUrls: true },
-          clientId: SUPERGOOD_CLIENT_ID,
-          clientSecret: SUPERGOOD_CLIENT_SECRET,
-          baseUrl: SUPERGOOD_SERVER
-        });
+      await Supergood.startCapture({
+        config: { ...SUPERGOOD_CONFIG, allowLocalUrls: true },
+        clientId: SUPERGOOD_CLIENT_ID,
+        clientSecret: SUPERGOOD_CLIENT_SECRET,
+        baseUrl: SUPERGOOD_SERVER
+      });
 
       for (let i = 0; i < numberOfHttpCalls; i++) {
         await axios.get(`${MOCK_DATA_SERVER}/posts`);
@@ -113,18 +114,16 @@ describe('capture functionality', () => {
       const numberOfHttpCalls = 5;
 
       const getInterval = setInterval(async () => {
-        await axios.get(`${MOCK_DATA_SERVER}/posts`), 250
+        await axios.get(`${MOCK_DATA_SERVER}/posts`), 250;
       });
 
       getInterval.unref();
-      await Supergood.startCapture(
-        {
-          config: { ...SUPERGOOD_CONFIG, allowLocalUrls: true },
-          clientId: SUPERGOOD_CLIENT_ID,
-          clientSecret: SUPERGOOD_CLIENT_SECRET,
-          baseUrl: SUPERGOOD_SERVER
-        });
-
+      await Supergood.startCapture({
+        config: { ...SUPERGOOD_CONFIG, allowLocalUrls: true },
+        clientId: SUPERGOOD_CLIENT_ID,
+        clientSecret: SUPERGOOD_CLIENT_SECRET,
+        baseUrl: SUPERGOOD_SERVER
+      });
 
       for (let i = 0; i < numberOfHttpCalls; i++) {
         await axios.get(`${MOCK_DATA_SERVER}/posts`);
@@ -152,17 +151,19 @@ describe('capture functionality', () => {
     const numberOfHttpCalls = 5;
 
     const getInterval = setInterval(async () => {
-      await axios.get(`${MOCK_DATA_SERVER}/posts`), 250
+      await axios.get(`${MOCK_DATA_SERVER}/posts`), 250;
     });
     getInterval.unref();
-    Supergood.startCapture(
-      {
-        config: { ...SUPERGOOD_CONFIG, allowLocalUrls: true, useRemoteConfig: false },
-        clientId: SUPERGOOD_CLIENT_ID,
-        clientSecret: SUPERGOOD_CLIENT_SECRET,
-        baseUrl: SUPERGOOD_SERVER
-      });
-
+    Supergood.startCapture({
+      config: {
+        ...SUPERGOOD_CONFIG,
+        allowLocalUrls: true,
+        useRemoteConfig: false
+      },
+      clientId: SUPERGOOD_CLIENT_ID,
+      clientSecret: SUPERGOOD_CLIENT_SECRET,
+      baseUrl: SUPERGOOD_SERVER
+    });
 
     for (let i = 0; i < numberOfHttpCalls; i++) {
       await axios.get(`${MOCK_DATA_SERVER}/posts`);
@@ -187,25 +188,31 @@ describe('capture functionality', () => {
   it('should support multiple start and stop captures', async () => {
     const numberOfHttpCalls = 5;
     const supergoodArgs = {
-      config: { ...SUPERGOOD_CONFIG, allowLocalUrls: true, useRemoteConfig: false },
+      config: {
+        ...SUPERGOOD_CONFIG,
+        allowLocalUrls: true,
+        useRemoteConfig: false
+      },
       clientId: SUPERGOOD_CLIENT_ID,
       clientSecret: SUPERGOOD_CLIENT_SECRET,
       baseUrl: SUPERGOOD_SERVER
     };
 
     const getInterval = setInterval(async () => {
-      await axios.get(`${MOCK_DATA_SERVER}/posts`), 250
+      await axios.get(`${MOCK_DATA_SERVER}/posts`), 250;
     });
     getInterval.unref();
 
     Supergood.startCapture(supergoodArgs);
-    await axios.get('https://supergood-testbed.herokuapp.com/200?say=capture1')
+    await axios.get('https://supergood-testbed.herokuapp.com/200?say=capture1');
     Supergood.stopCapture();
 
-    await axios.get('https://supergood-testbed.herokuapp.com/200?say=dontcapture')
+    await axios.get(
+      'https://supergood-testbed.herokuapp.com/200?say=dontcapture'
+    );
 
     Supergood.startCapture(supergoodArgs);
-    await axios.get('https://supergood-testbed.herokuapp.com/200?say=capture2')
+    await axios.get('https://supergood-testbed.herokuapp.com/200?say=capture2');
     Supergood.stopCapture();
 
     await Supergood.close();

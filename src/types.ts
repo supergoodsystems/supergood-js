@@ -102,6 +102,7 @@ interface EventRequestType {
 type SupergoodContext = {
   instanceId?: string;
   tags?: TagType;
+  trace?: string;
 };
 
 // interface EventResponseType {}
