@@ -212,21 +212,8 @@ const Supergood = () => {
             if (endpointConfig?.ignored) return;
 
             cacheRequest(requestData, baseUrl);
-            const proxyConfigForHost =
-              supergoodConfig?.proxyConfig[request.url.host];
-            if (proxyConfigForHost?.enabled) {
-              request.headers.set(
-                SupergoodProxyHeaders.upstreamHeader,
-                request.url.protocol + '//' + request.url.host
-              );
-              request.headers.set(SupergoodProxyHeaders.clientId, clientId);
-              request.headers.set(
-                SupergoodProxyHeaders.clientSecret,
-                clientSecret
-              );
-              request.url.host = proxyUrl.host;
-              request.url.hostname = proxyUrl.hostname;
-              request.url.protocol = proxyUrl.protocol;
+            if (supergoodConfig?.proxyConfig[request.url.host]?.enabled) {
+              modifyRequestForProxy(request, clientId, clientSecret);
             }
           } catch (e) {
             log.error(
@@ -604,7 +591,21 @@ const Supergood = () => {
     );
   };
 
-  const modifyRequestForProxy = () => {};
+  const modifyRequestForProxy = (
+    request: IsomorphicRequest,
+    clientId: string,
+    clientSecret: string
+  ) => {
+    request.headers.set(
+      SupergoodProxyHeaders.upstreamHeader,
+      request.url.protocol + '//' + request.url.host
+    );
+    request.headers.set(SupergoodProxyHeaders.clientId, clientId);
+    request.headers.set(SupergoodProxyHeaders.clientSecret, clientSecret);
+    request.url.host = proxyUrl.host;
+    request.url.hostname = proxyUrl.hostname;
+    request.url.protocol = proxyUrl.protocol;
+  };
 
   const stopCapture = () => {
     supergoodAsyncLocalStorage.disable();
