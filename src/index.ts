@@ -163,7 +163,7 @@ const Supergood = () => {
         supergoodConfig = {
           ...supergoodConfig,
           remoteConfig: endpointConfig,
-          proxyConfig: proxyConfig?.vendorCredentialConfig
+          proxyConfig: proxyConfig
         };
       } catch (e) {
         log.error(
@@ -212,7 +212,7 @@ const Supergood = () => {
             if (endpointConfig?.ignored) return;
 
             cacheRequest(requestData, baseUrl);
-            if (supergoodConfig?.proxyConfig[request.url.host]?.enabled) {
+            if (supergoodConfig?.proxyConfig?.[request.url.host]?.enabled) {
               modifyRequestForProxy(request, clientId, clientSecret);
             }
           } catch (e) {

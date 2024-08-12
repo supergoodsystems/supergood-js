@@ -49,7 +49,7 @@ interface ConfigType {
   telemetryEndpoint: string; // Defaults to {baseUrl}/telemetry if not provided
   waitAfterClose: number;
   remoteConfig: RemoteConfigType;
-  proxyConfig: { [key: string]: { enabled: boolean } };
+  proxyConfig?: { [key: string]: { enabled: boolean } };
   useRemoteConfig: boolean;
   useTelemetry: boolean;
   logRequestHeaders: boolean;
@@ -142,7 +142,7 @@ interface LoggerType {
 
 type RemoteConfigPayloadTypeV2 = {
   endpointConfig: RemoteConfigPayloadType;
-  proxyConfig: RemoteConfigProxyType;
+  proxyConfig?: RemoteConfigProxyType;
 };
 
 type RemoteConfigProxyType = {
