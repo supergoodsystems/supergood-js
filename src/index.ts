@@ -26,7 +26,8 @@ import {
   TestErrorPath,
   LocalClientId,
   LocalClientSecret,
-  ContentType
+  ContentType,
+  SupergoodProxyHeaders
 } from './constants';
 import onExit from 'signal-exit';
 import { NodeRequestInterceptor } from './interceptor/NodeRequestInterceptor';
@@ -44,6 +45,7 @@ const Supergood = () => {
   let errorSinkUrl: string;
   let remoteConfigFetchUrl: string;
   let telemetryUrl: string;
+  let proxyUrl: URL;
 
   let headerOptions: HeaderOptionType;
   let supergoodConfig: ConfigType;
@@ -88,7 +90,9 @@ const Supergood = () => {
     },
     baseUrl = process.env.SUPERGOOD_BASE_URL || 'https://api.supergood.ai',
     baseTelemetryUrl = process.env.SUPERGOOD_TELEMETRY_BASE_URL ||
-      'https://telemetry.supergood.ai'
+      'https://telemetry.supergood.ai',
+    baseProxyURL = process.env.SUPERGOOD_PROXY_BASE_URL ||
+      'https://proxy.supergood.ai'
   ): TConfig extends { useRemoteConfig: false } ? void : Promise<void> => {
     if (!clientId) throw new Error(errors.NO_CLIENT_ID);
     if (!clientSecret) throw new Error(errors.NO_CLIENT_SECRET);
@@ -139,6 +143,7 @@ const Supergood = () => {
 
     telemetryUrl = `${baseTelemetryUrl}${supergoodConfig.telemetryEndpoint}`;
     errorSinkUrl = `${baseTelemetryUrl}${supergoodConfig.errorSinkEndpoint}`;
+    proxyUrl = new URL(baseProxyURL);
 
     headerOptions = getHeaderOptions(
       clientId,
@@ -153,9 +158,12 @@ const Supergood = () => {
           remoteConfigFetchUrl,
           headerOptions
         );
+        const { endpointConfig, proxyConfig } =
+          processRemoteConfig(remoteConfigPayload);
         supergoodConfig = {
           ...supergoodConfig,
-          remoteConfig: processRemoteConfig(remoteConfigPayload)
+          remoteConfig: endpointConfig,
+          proxyConfig: proxyConfig?.vendorCredentialConfig
         };
       } catch (e) {
         log.error(
@@ -204,6 +212,22 @@ const Supergood = () => {
             if (endpointConfig?.ignored) return;
 
             cacheRequest(requestData, baseUrl);
+            const proxyConfigForHost =
+              supergoodConfig?.proxyConfig[request.url.host];
+            if (proxyConfigForHost?.enabled) {
+              request.headers.set(
+                SupergoodProxyHeaders.upstreamHeader,
+                request.url.protocol + '//' + request.url.host
+              );
+              request.headers.set(SupergoodProxyHeaders.clientId, clientId);
+              request.headers.set(
+                SupergoodProxyHeaders.clientSecret,
+                clientSecret
+              );
+              request.url.host = proxyUrl.host;
+              request.url.hostname = proxyUrl.hostname;
+              request.url.protocol = proxyUrl.protocol;
+            }
           } catch (e) {
             log.error(
               errors.CACHING_REQUEST,
@@ -579,6 +603,8 @@ const Supergood = () => {
       baseTelemetryUrl
     );
   };
+
+  const modifyRequestForProxy = () => {};
 
   const stopCapture = () => {
     supergoodAsyncLocalStorage.disable();
