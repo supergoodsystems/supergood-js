@@ -3,7 +3,7 @@ import crypto from 'crypto';
 import { IsomorphicRequest } from './utils/IsomorphicRequest';
 import { IsomorphicResponse } from './utils/IsomorphicResponse';
 import { isInterceptable } from './utils/isInterceptable';
-import { SupergoodProxyHeaders } from './utils/proxyUtils';
+import { SupergoodProxyHeaders, shouldProxyRequest } from './utils/proxyUtils';
 import { Interceptor, NodeRequestInterceptorOptions } from './Interceptor';
 import { ProxyConfigType } from '../types';
 
@@ -43,11 +43,8 @@ export class FetchInterceptor extends Interceptor {
         this.emitter.emit('request', isomorphicRequest, requestId);
       }
 
-      if (
-        this.options?.proxyConfig?.vendorCredentialConfig?.[requestURL.hostname]
-          ?.enabled
-      ) {
-        request = modifyRequest(request, requestURL, this.options.proxyConfig);
+      if (shouldProxyRequest(requestURL, this.options.proxyConfig)) {
+        request = modifyRequest(request, requestURL, this.options?.proxyConfig);
       }
 
       return pureFetch(request).then(async (response) => {
@@ -70,7 +67,7 @@ export class FetchInterceptor extends Interceptor {
 const modifyRequest = (
   originalRequest: Request,
   originalRequestURL: URL,
-  proxyConfig: ProxyConfigType
+  proxyConfig?: ProxyConfigType
 ) => {
   const headers = originalRequest.headers;
   headers.set(

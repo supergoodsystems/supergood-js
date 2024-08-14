@@ -13,7 +13,7 @@ import { getArrayBuffer } from './utils/bufferUtils';
 import { isInterceptable } from './utils/isInterceptable';
 import { IsomorphicResponse } from './utils/IsomorphicResponse';
 import { cloneIncomingMessage } from './utils/cloneIncomingMessage';
-import { SupergoodProxyHeaders } from './utils/proxyUtils';
+import { shouldProxyRequest, SupergoodProxyHeaders } from './utils/proxyUtils';
 import { ProxyConfigType } from '../types';
 import { ResolvedRequestOptions } from './utils/getUrlByRequestOptions';
 
@@ -72,23 +72,21 @@ export class NodeClientRequest extends ClientRequest {
       isWithinContext: options.isWithinContext ?? (() => true)
     });
 
-    if (
-      options?.proxyConfig?.vendorCredentialConfig?.[this.url.hostname]?.enabled
-    ) {
+    if (shouldProxyRequest(this.url, options?.proxyConfig)) {
       this.modifyRequestWithProxyConfig(tmpURL, options?.proxyConfig);
     }
   }
 
   private modifyRequestWithProxyConfig(
     tmpUrl: URL,
-    proxyConfig: ProxyConfigType
+    proxyConfig?: ProxyConfigType
   ): void {
     this.originalUrl = tmpUrl;
     this.setHeader(
       SupergoodProxyHeaders.upstreamHeader,
       this.url.protocol + '//' + this.url.host
     );
-    this.setHeader(SupergoodProxyHeaders.clientId, proxyConfig.clientId || '');
+    this.setHeader(SupergoodProxyHeaders.clientId, proxyConfig?.clientId || '');
     this.setHeader(
       SupergoodProxyHeaders.clientSecret,
       proxyConfig?.clientSecret || ''
@@ -210,6 +208,8 @@ export class NodeClientRequest extends ClientRequest {
   }
 }
 
+// NOTE: this function lives outside of the class since it
+// must be run prior to calling super()
 const modifyRequestOptionsWithProxyConfig = (
   requestOptions: ResolvedRequestOptions,
   proxyConfig: ProxyConfigType,
