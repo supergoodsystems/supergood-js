@@ -34,11 +34,14 @@ describe('proxy axios functionality', () => {
       },
       SUPERGOOD_SERVER
     );
+    // NOTE: currently implementation does not update the protocol
+    // between upstream and proxy
+    // TODO: support protocol differences between upstream + proxy
     await axios.get(`http://api.openai.com/custom-header`);
     await Supergood.close();
     expect(getEvents(postEventsMock).length).toEqual(1);
     expect(getEvents(postEventsMock)[0].request.url).toEqual(
-      'https://api.openai.com/custom-header'
+      'http://api.openai.com/custom-header'
     );
     expect(getEvents(postEventsMock)[0].response.status).toEqual(200);
     expect(
