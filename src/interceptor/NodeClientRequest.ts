@@ -44,11 +44,11 @@ export class NodeClientRequest extends ClientRequest {
     options: NodeClientOptions
   ) {
     const tmpURL = new URL(url);
-    if (options?.proxyConfig?.vendorCredentialConfig?.[url.hostname]?.enabled) {
+    if (shouldProxyRequest(url, options.proxyConfig)) {
       requestOptions = modifyRequestOptionsWithProxyConfig(
         requestOptions,
-        options.proxyConfig,
-        url
+        url,
+        options?.proxyConfig
       );
     }
 
@@ -212,8 +212,8 @@ export class NodeClientRequest extends ClientRequest {
 // must be run prior to calling super()
 const modifyRequestOptionsWithProxyConfig = (
   requestOptions: ResolvedRequestOptions,
-  proxyConfig: ProxyConfigType,
-  url: URL
+  url: URL,
+  proxyConfig?: ProxyConfigType
 ): ResolvedRequestOptions => {
   const modifiedRequestOptions = { ...requestOptions };
   if (!modifiedRequestOptions.headers) {
