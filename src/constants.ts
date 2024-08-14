@@ -19,6 +19,7 @@ const defaultConfig = {
   redactByDefault: false,
   allowedDomains: [],
   cacheTtl: 0,
+  proxyConfig: {},
 
   // After the close command is sent, wait for this many milliseconds before
   // exiting. This gives any hanging responses a chance to return.

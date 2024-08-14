@@ -1,4 +1,5 @@
 import { EventEmitter } from 'events';
+import { ConfigType, ProxyConfigType } from '../types';
 
 export interface NodeRequestInterceptorOptions {
   ignoredDomains?: string[];
@@ -6,6 +7,7 @@ export interface NodeRequestInterceptorOptions {
   allowLocalUrls?: boolean;
   allowIpAddresses?: boolean;
   baseUrl?: string;
+  proxyConfig?: ProxyConfigType;
 }
 
 export class Interceptor {

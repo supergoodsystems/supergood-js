@@ -13,6 +13,9 @@ import { getArrayBuffer } from './utils/bufferUtils';
 import { isInterceptable } from './utils/isInterceptable';
 import { IsomorphicResponse } from './utils/IsomorphicResponse';
 import { cloneIncomingMessage } from './utils/cloneIncomingMessage';
+import { SupergoodProxyHeaders } from './utils/proxyUtils';
+import { ProxyConfigType } from '../types';
+import { ResolvedRequestOptions } from './utils/getUrlByRequestOptions';
 
 export type NodeClientOptions = {
   emitter: EventEmitter;
@@ -21,6 +24,7 @@ export type NodeClientOptions = {
   ignoredDomains?: string[];
   allowedDomains?: string[];
   allowIpAddresses?: boolean;
+  proxyConfig?: ProxyConfigType;
   isWithinContext?: () => boolean;
 };
 
@@ -33,11 +37,21 @@ export class NodeClientRequest extends ClientRequest {
   public requestBuffer: Buffer | null;
   public requestId: string | null = null;
   public isInterceptable: boolean;
+  private originalUrl?: URL;
 
   constructor(
     [url, requestOptions, callback]: NormalizedClientRequestArgs,
     options: NodeClientOptions
   ) {
+    const tmpURL = new URL(url);
+    if (options?.proxyConfig?.vendorCredentialConfig?.[url.hostname]?.enabled) {
+      requestOptions = modifyRequestOptionsWithProxyConfig(
+        requestOptions,
+        options.proxyConfig,
+        url
+      );
+    }
+
     super(requestOptions, callback);
 
     this.requestId = crypto.randomUUID();
@@ -57,6 +71,35 @@ export class NodeClientRequest extends ClientRequest {
       allowIpAddresses: options.allowIpAddresses ?? false,
       isWithinContext: options.isWithinContext ?? (() => true)
     });
+
+    if (
+      options?.proxyConfig?.vendorCredentialConfig?.[this.url.hostname]?.enabled
+    ) {
+      this.modifyRequestWithProxyConfig(tmpURL, options?.proxyConfig);
+    }
+  }
+
+  private modifyRequestWithProxyConfig(
+    tmpUrl: URL,
+    proxyConfig: ProxyConfigType
+  ): void {
+    this.originalUrl = tmpUrl;
+    this.setHeader(
+      SupergoodProxyHeaders.upstreamHeader,
+      this.url.protocol + '//' + this.url.host
+    );
+    this.setHeader(SupergoodProxyHeaders.clientId, proxyConfig.clientId || '');
+    this.setHeader(
+      SupergoodProxyHeaders.clientSecret,
+      proxyConfig?.clientSecret || ''
+    );
+    this.setHeader('host', proxyConfig?.proxyURL?.host || '');
+    if (proxyConfig?.proxyURL) {
+      this.url.hostname = proxyConfig?.proxyURL.hostname;
+      this.url.host = proxyConfig?.proxyURL.host;
+      this.url.protocol = proxyConfig.proxyURL.protocol;
+      this.url.port = proxyConfig.proxyURL.port;
+    }
   }
 
   private writeRequestBodyChunk(
@@ -124,14 +167,18 @@ export class NodeClientRequest extends ClientRequest {
           message: IncomingMessage,
           emitter: EventEmitter
         ) {
-          const isomorphicResponse = await IsomorphicResponse.fromIncomingMessage(
-            message
-          );
+          const isomorphicResponse =
+            await IsomorphicResponse.fromIncomingMessage(message);
           emitter.emit(event, isomorphicResponse, requestId);
         }
 
-        emitResponse('response', this.requestId as string, secondClone, this.emitter)
-        return super.emit(event, firstClone, ...args.slice(1))
+        emitResponse(
+          'response',
+          this.requestId as string,
+          secondClone,
+          this.emitter
+        );
+        return super.emit(event, firstClone, ...args.slice(1));
       } catch (e) {
         return super.emit(event as string, ...args);
       }
@@ -151,7 +198,8 @@ export class NodeClientRequest extends ClientRequest {
       headers.set(headerName.toLowerCase(), headerValue.toString());
     }
 
-    const isomorphicRequest = new IsomorphicRequest(this.url, {
+    const url = this.originalUrl || this.url;
+    const isomorphicRequest = new IsomorphicRequest(url, {
       body,
       method: this.method || 'GET',
       credentials: 'same-origin',
@@ -161,3 +209,26 @@ export class NodeClientRequest extends ClientRequest {
     return isomorphicRequest;
   }
 }
+
+const modifyRequestOptionsWithProxyConfig = (
+  requestOptions: ResolvedRequestOptions,
+  proxyConfig: ProxyConfigType,
+  url: URL
+): ResolvedRequestOptions => {
+  const modifiedRequestOptions = { ...requestOptions };
+  if (!modifiedRequestOptions.headers) {
+    modifiedRequestOptions.headers = {};
+  }
+
+  modifiedRequestOptions.headers[SupergoodProxyHeaders.upstreamHeader] =
+    url.protocol + '//' + url.host;
+  modifiedRequestOptions.headers[SupergoodProxyHeaders.clientId] =
+    proxyConfig?.clientId;
+  modifiedRequestOptions.headers[SupergoodProxyHeaders.clientSecret] =
+    proxyConfig?.clientSecret;
+
+  modifiedRequestOptions.host = proxyConfig?.proxyURL?.host;
+  modifiedRequestOptions.hostname = proxyConfig?.proxyURL?.hostname;
+  modifiedRequestOptions.port = proxyConfig?.proxyURL?.port;
+  return modifiedRequestOptions;
+};

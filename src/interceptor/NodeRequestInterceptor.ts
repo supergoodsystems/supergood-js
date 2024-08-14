@@ -6,8 +6,8 @@ import { Protocol } from './NodeClientRequest';
 import { Interceptor, NodeRequestInterceptorOptions } from './Interceptor';
 import {
   ClientRequestArgs,
-  normalizeClientRequestArgs,
-} from './utils/request-args'
+  normalizeClientRequestArgs
+} from './utils/request-args';
 
 export type ClientRequestModules = Map<Protocol, typeof http | typeof https>;
 
@@ -38,7 +38,8 @@ export class NodeRequestInterceptor extends Interceptor {
         allowLocalUrls: this.options.allowLocalUrls,
         allowIpAddresses: this.options.allowIpAddresses,
         baseUrl: this.options.baseUrl,
-        isWithinContext,
+        proxyConfig: this.options.proxyConfig,
+        isWithinContext
       };
 
       // @ts-ignore
@@ -46,7 +47,6 @@ export class NodeRequestInterceptor extends Interceptor {
 
       // @ts-ignore
       requestModule.get = get(protocol, options);
-
     }
   }
 }

@@ -45,7 +45,6 @@ const Supergood = () => {
   let errorSinkUrl: string;
   let remoteConfigFetchUrl: string;
   let telemetryUrl: string;
-  let proxyUrl: URL;
 
   let headerOptions: HeaderOptionType;
   let supergoodConfig: ConfigType;
@@ -128,6 +127,7 @@ const Supergood = () => {
       ignoredDomains: supergoodConfig.ignoredDomains,
       allowLocalUrls: supergoodConfig.allowLocalUrls,
       allowIpAddresses: supergoodConfig.allowIpAddresses,
+      proxyConfig: supergoodConfig.proxyConfig,
       baseUrl
     };
 
@@ -143,7 +143,6 @@ const Supergood = () => {
 
     telemetryUrl = `${baseTelemetryUrl}${supergoodConfig.telemetryEndpoint}`;
     errorSinkUrl = `${baseTelemetryUrl}${supergoodConfig.errorSinkEndpoint}`;
-    proxyUrl = new URL(baseProxyURL);
 
     headerOptions = getHeaderOptions(
       clientId,
@@ -160,11 +159,16 @@ const Supergood = () => {
         );
         const { endpointConfig, proxyConfig } =
           processRemoteConfig(remoteConfigPayload);
-        supergoodConfig = {
-          ...supergoodConfig,
-          remoteConfig: endpointConfig,
-          proxyConfig: proxyConfig
-        };
+
+        // NOTE: The supergood should not change its reference via spread
+        // e.g supergoodConfig = {...supergoodConfig, remoteConfig: endpointConfig, proxyConfig: ...proxyConfig }
+        // This is because we require reference to the mutated object for the proxy
+        supergoodConfig.remoteConfig = endpointConfig;
+        supergoodConfig.proxyConfig.vendorCredentialConfig =
+          proxyConfig?.vendorCredentialConfig;
+        supergoodConfig.proxyConfig.proxyURL = new URL(baseProxyURL);
+        supergoodConfig.proxyConfig.clientId = clientId;
+        supergoodConfig.proxyConfig.clientSecret = clientSecret;
       } catch (e) {
         log.error(
           errors.FETCHING_CONFIG,
@@ -212,9 +216,6 @@ const Supergood = () => {
             if (endpointConfig?.ignored) return;
 
             cacheRequest(requestData, baseUrl);
-            if (supergoodConfig?.proxyConfig?.[request.url.host]?.enabled) {
-              modifyRequestForProxy(request, clientId, clientSecret);
-            }
           } catch (e) {
             log.error(
               errors.CACHING_REQUEST,
@@ -589,22 +590,6 @@ const Supergood = () => {
       baseUrl,
       baseTelemetryUrl
     );
-  };
-
-  const modifyRequestForProxy = (
-    request: IsomorphicRequest,
-    clientId: string,
-    clientSecret: string
-  ) => {
-    request.headers.set(
-      SupergoodProxyHeaders.upstreamHeader,
-      request.url.protocol + '//' + request.url.host
-    );
-    request.headers.set(SupergoodProxyHeaders.clientId, clientId);
-    request.headers.set(SupergoodProxyHeaders.clientSecret, clientSecret);
-    request.url.host = proxyUrl.host;
-    request.url.hostname = proxyUrl.hostname;
-    request.url.protocol = proxyUrl.protocol;
   };
 
   const stopCapture = () => {

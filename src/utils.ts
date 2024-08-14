@@ -609,7 +609,9 @@ const processRemoteConfig = (
 
   return {
     endpointConfig,
-    proxyConfig: remoteConfigPayload?.proxyConfig?.vendorCredentialConfig || {}
+    proxyConfig: remoteConfigPayload?.proxyConfig || {
+      vendorCredentialConfig: {}
+    }
   };
 };
 
