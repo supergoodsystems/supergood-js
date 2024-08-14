@@ -10,7 +10,10 @@ import { RemoteConfigPayloadTypeV2 } from '../../src/types';
 import { getEvents } from '../utils/function-call-args';
 import { mockApi } from '../utils/mock-api';
 
-describe('proxy native fetch functionality', () => {
+const [major] = process.versions.node.split('.').map(Number);
+const describeIf = major >= 18 ? describe : describe.skip;
+
+describeIf('proxy native fetch functionality', () => {
   beforeAll(() => {
     process.env.SUPERGOOD_PROXY_BASE_URL = MOCK_DATA_SERVER;
   });
