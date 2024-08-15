@@ -35,6 +35,13 @@ interface ResponseType {
   duration?: number;
 }
 
+interface ProxyConfigType {
+  proxyURL?: URL;
+  vendorCredentialConfig?: { [key: string]: { enabled: boolean } };
+  clientId?: string;
+  clientSecret?: string;
+}
+
 interface ConfigType {
   flushInterval: number;
   remoteConfigFetchInterval: number;
@@ -49,6 +56,7 @@ interface ConfigType {
   telemetryEndpoint: string; // Defaults to {baseUrl}/telemetry if not provided
   waitAfterClose: number;
   remoteConfig: RemoteConfigType;
+  proxyConfig: ProxyConfigType;
   useRemoteConfig: boolean;
   useTelemetry: boolean;
   logRequestHeaders: boolean;
@@ -139,6 +147,17 @@ interface LoggerType {
   debug: (message: string, payload?: any) => void;
 }
 
+type RemoteConfigPayloadTypeV2 = {
+  endpointConfig: RemoteConfigPayloadType;
+  proxyConfig?: RemoteConfigProxyType;
+};
+
+type RemoteConfigProxyType = {
+  vendorCredentialConfig: {
+    [key: string]: { enabled: boolean };
+  };
+};
+
 type RemoteConfigPayloadType = Array<{
   domain: string;
   endpoints: Array<{
@@ -178,8 +197,10 @@ export type {
   RemoteConfigType,
   EndpointConfigType,
   RemoteConfigPayloadType,
+  RemoteConfigPayloadTypeV2,
   MetadataType,
   TelemetryType,
   SupergoodContext,
-  TagType
+  TagType,
+  ProxyConfigType
 };

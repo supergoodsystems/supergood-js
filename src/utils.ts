@@ -5,7 +5,7 @@ import {
   ResponseType,
   EventRequestType,
   ErrorPayloadType,
-  RemoteConfigPayloadType,
+  RemoteConfigPayloadTypeV2,
   RemoteConfigType,
   EndpointConfigType,
   SensitiveKeyMetadata,
@@ -579,28 +579,40 @@ const get = (
   });
 };
 
-const processRemoteConfig = (remoteConfigPayload: RemoteConfigPayloadType) => {
-  return (remoteConfigPayload || []).reduce((remoteConfig, domainConfig) => {
-    const { domain, endpoints } = domainConfig;
-    const endpointConfig = endpoints.reduce((endpointConfig, endpoint) => {
-      const { matchingRegex, endpointConfiguration, method } = endpoint;
-      const { regex, location } = matchingRegex;
-      const { action, sensitiveKeys } = endpointConfiguration;
-      endpointConfig[regex] = {
-        location,
-        regex,
-        method,
-        ignored: action === EndpointActions.IGNORE,
-        sensitiveKeys: (sensitiveKeys || []).map((key) => ({
-          keyPath: key.keyPath,
-          action: key.action
-        }))
-      };
-      return endpointConfig;
-    }, {} as { [endpointName: string]: EndpointConfigType });
-    remoteConfig[domain] = endpointConfig;
-    return remoteConfig;
-  }, {} as RemoteConfigType);
+const processRemoteConfig = (
+  remoteConfigPayload: RemoteConfigPayloadTypeV2
+) => {
+  const endpointConfig = (remoteConfigPayload?.endpointConfig || []).reduce(
+    (remoteConfig, domainConfig) => {
+      const { domain, endpoints } = domainConfig;
+      const endpointConfig = endpoints.reduce((endpointConfig, endpoint) => {
+        const { matchingRegex, endpointConfiguration, method } = endpoint;
+        const { regex, location } = matchingRegex;
+        const { action, sensitiveKeys } = endpointConfiguration;
+        endpointConfig[regex] = {
+          location,
+          regex,
+          method,
+          ignored: action === EndpointActions.IGNORE,
+          sensitiveKeys: (sensitiveKeys || []).map((key) => ({
+            keyPath: key.keyPath,
+            action: key.action
+          }))
+        };
+        return endpointConfig;
+      }, {} as { [endpointName: string]: EndpointConfigType });
+      remoteConfig[domain] = endpointConfig;
+      return remoteConfig;
+    },
+    {} as RemoteConfigType
+  );
+
+  return {
+    endpointConfig,
+    proxyConfig: remoteConfigPayload?.proxyConfig || {
+      vendorCredentialConfig: {}
+    }
+  };
 };
 
 const sleep = (ms: number) => {

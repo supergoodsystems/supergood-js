@@ -4,7 +4,7 @@ const defaultConfig = {
   timeout: 5000,
   eventSinkEndpoint: '/events',
   errorSinkEndpoint: '/errors',
-  remoteConfigFetchEndpoint: '/config',
+  remoteConfigFetchEndpoint: '/v2/config',
   telemetryEndpoint: '/telemetry',
   useRemoteConfig: true,
   useTelemetry: true,
@@ -19,10 +19,11 @@ const defaultConfig = {
   redactByDefault: false,
   allowedDomains: [],
   cacheTtl: 0,
+  proxyConfig: {},
 
   // After the close command is sent, wait for this many milliseconds before
   // exiting. This gives any hanging responses a chance to return.
-  waitAfterClose: 1000,
+  waitAfterClose: 1000
 };
 
 const errors = {
@@ -39,7 +40,7 @@ const errors = {
   NO_CLIENT_ID:
     'No Client ID Provided, set SUPERGOOD_CLIENT_ID or pass it as an argument',
   NO_CLIENT_SECRET:
-    'No Client Secret Provided, set SUPERGOOD_CLIENT_SECRET or pass it as an argument',
+    'No Client Secret Provided, set SUPERGOOD_CLIENT_SECRET or pass it as an argument'
 };
 
 const SensitiveKeyActions = {
@@ -50,7 +51,7 @@ const SensitiveKeyActions = {
 const EndpointActions = {
   ALLOW: 'Allow',
   IGNORE: 'Ignore'
-}
+};
 
 const TestErrorPath = '/api/supergood-test-error';
 const LocalClientId = 'local-client-id';
@@ -59,7 +60,7 @@ const LocalClientSecret = 'local-client-secret';
 const ContentType = {
   Json: 'application/json',
   Text: 'text/plain',
-  EventStream: 'text/event-stream',
+  EventStream: 'text/event-stream'
 };
 
 export {

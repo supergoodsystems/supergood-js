@@ -88,7 +88,9 @@ const Supergood = () => {
     },
     baseUrl = process.env.SUPERGOOD_BASE_URL || 'https://api.supergood.ai',
     baseTelemetryUrl = process.env.SUPERGOOD_TELEMETRY_BASE_URL ||
-      'https://telemetry.supergood.ai'
+      'https://telemetry.supergood.ai',
+    baseProxyURL = process.env.SUPERGOOD_PROXY_BASE_URL ||
+      'https://proxy.supergood.ai'
   ): TConfig extends { useRemoteConfig: false } ? void : Promise<void> => {
     if (!clientId) throw new Error(errors.NO_CLIENT_ID);
     if (!clientSecret) throw new Error(errors.NO_CLIENT_SECRET);
@@ -124,6 +126,7 @@ const Supergood = () => {
       ignoredDomains: supergoodConfig.ignoredDomains,
       allowLocalUrls: supergoodConfig.allowLocalUrls,
       allowIpAddresses: supergoodConfig.allowIpAddresses,
+      proxyConfig: supergoodConfig.proxyConfig,
       baseUrl
     };
 
@@ -153,10 +156,18 @@ const Supergood = () => {
           remoteConfigFetchUrl,
           headerOptions
         );
-        supergoodConfig = {
-          ...supergoodConfig,
-          remoteConfig: processRemoteConfig(remoteConfigPayload)
-        };
+        const { endpointConfig, proxyConfig } =
+          processRemoteConfig(remoteConfigPayload);
+
+        // NOTE: The supergood should not change its reference via spread
+        // e.g supergoodConfig = {...supergoodConfig, remoteConfig: endpointConfig, proxyConfig: ...proxyConfig }
+        // This is because we require reference to the mutated object for the proxy
+        supergoodConfig.remoteConfig = endpointConfig;
+        supergoodConfig.proxyConfig.vendorCredentialConfig =
+          proxyConfig?.vendorCredentialConfig;
+        supergoodConfig.proxyConfig.proxyURL = new URL(baseProxyURL);
+        supergoodConfig.proxyConfig.clientId = clientId;
+        supergoodConfig.proxyConfig.clientSecret = clientSecret;
       } catch (e) {
         log.error(
           errors.FETCHING_CONFIG,

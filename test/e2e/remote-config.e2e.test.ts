@@ -9,13 +9,15 @@ import {
   SUPERGOOD_CONFIG,
   SUPERGOOD_SERVER
 } from '../consts';
-import { RemoteConfigPayloadType } from '../../src/types';
+import { RemoteConfigPayloadTypeV2 } from '../../src/types';
 import { getEvents } from '../utils/function-call-args';
 import { mockApi } from '../utils/mock-api';
 
 describe('remote config functionality', () => {
   it('fetches remote config', async () => {
-    const fetchRemoteConfigResponse = [] as RemoteConfigPayloadType;
+    const fetchRemoteConfigResponse = {
+      endpointConfig: []
+    } as RemoteConfigPayloadTypeV2;
     const { postEventsMock } = mockApi({ fetchRemoteConfigResponse });
     await Supergood.init(
       {
@@ -31,25 +33,27 @@ describe('remote config functionality', () => {
   });
 
   it('fetches remote config and ignores some endpoints', async () => {
-    const fetchRemoteConfigResponse = [
-      {
-        domain: new URL(MOCK_DATA_SERVER).hostname,
-        endpoints: [
-          {
-            name: '/posts',
-            method: 'GET',
-            matchingRegex: {
-              regex: '/posts',
-              location: 'path'
-            },
-            endpointConfiguration: {
-              action: 'Ignore',
-              sensitiveKeys: []
+    const fetchRemoteConfigResponse = {
+      endpointConfig: [
+        {
+          domain: new URL(MOCK_DATA_SERVER).hostname,
+          endpoints: [
+            {
+              name: '/posts',
+              method: 'GET',
+              matchingRegex: {
+                regex: '/posts',
+                location: 'path'
+              },
+              endpointConfiguration: {
+                action: 'Ignore',
+                sensitiveKeys: []
+              }
             }
-          }
-        ]
-      }
-    ] as RemoteConfigPayloadType;
+          ]
+        }
+      ]
+    } as RemoteConfigPayloadTypeV2;
     const { postEventsMock } = mockApi({ fetchRemoteConfigResponse });
     await Supergood.init(
       {
@@ -67,29 +71,31 @@ describe('remote config functionality', () => {
   });
 
   it('fetches remote config and redacts sensitive keys', async () => {
-    const fetchRemoteConfigResponse = [
-      {
-        domain: new URL(MOCK_DATA_SERVER).hostname,
-        endpoints: [
-          {
-            name: '/profile',
-            method: 'GET',
-            matchingRegex: {
-              regex: '/profile',
-              location: 'path'
-            },
-            endpointConfiguration: {
-              action: 'Allow',
-              sensitiveKeys: [
-                {
-                  keyPath: 'responseBody.name'
-                }
-              ]
+    const fetchRemoteConfigResponse = {
+      endpointConfig: [
+        {
+          domain: new URL(MOCK_DATA_SERVER).hostname,
+          endpoints: [
+            {
+              name: '/profile',
+              method: 'GET',
+              matchingRegex: {
+                regex: '/profile',
+                location: 'path'
+              },
+              endpointConfiguration: {
+                action: 'Allow',
+                sensitiveKeys: [
+                  {
+                    keyPath: 'responseBody.name'
+                  }
+                ]
+              }
             }
-          }
-        ]
-      }
-    ] as RemoteConfigPayloadType;
+          ]
+        }
+      ]
+    } as RemoteConfigPayloadTypeV2;
     const { postEventsMock } = mockApi({ fetchRemoteConfigResponse });
     await Supergood.init(
       {
@@ -107,29 +113,31 @@ describe('remote config functionality', () => {
   });
 
   it('fetches remote config and redacts sensitive keys within an array', async () => {
-    const fetchRemoteConfigResponse = [
-      {
-        domain: new URL(MOCK_DATA_SERVER).hostname,
-        endpoints: [
-          {
-            name: '/posts',
-            method: 'GET',
-            matchingRegex: {
-              regex: '/posts',
-              location: 'path'
-            },
-            endpointConfiguration: {
-              action: 'Allow',
-              sensitiveKeys: [
-                {
-                  keyPath: 'response_body[0].title'
-                }
-              ]
+    const fetchRemoteConfigResponse = {
+      endpointConfig: [
+        {
+          domain: new URL(MOCK_DATA_SERVER).hostname,
+          endpoints: [
+            {
+              name: '/posts',
+              method: 'GET',
+              matchingRegex: {
+                regex: '/posts',
+                location: 'path'
+              },
+              endpointConfiguration: {
+                action: 'Allow',
+                sensitiveKeys: [
+                  {
+                    keyPath: 'response_body[0].title'
+                  }
+                ]
+              }
             }
-          }
-        ]
-      }
-    ] as RemoteConfigPayloadType;
+          ]
+        }
+      ]
+    } as RemoteConfigPayloadTypeV2;
     const { postEventsMock } = mockApi({ fetchRemoteConfigResponse });
     await Supergood.init(
       {
