@@ -93,6 +93,7 @@ export class NodeClientRequest extends ClientRequest {
     );
     this.setHeader('host', proxyConfig?.proxyURL?.host || '');
     if (proxyConfig?.proxyURL) {
+      this.url.protocol = proxyConfig?.proxyURL.protocol;
       this.url.hostname = proxyConfig?.proxyURL.hostname;
       this.url.host = proxyConfig?.proxyURL.host;
       this.url.protocol = proxyConfig.proxyURL.protocol;
@@ -227,6 +228,7 @@ const modifyRequestOptionsWithProxyConfig = (
   modifiedRequestOptions.headers[SupergoodProxyHeaders.clientSecret] =
     proxyConfig?.clientSecret;
 
+  modifiedRequestOptions.protocol = proxyConfig?.proxyURL?.protocol;
   modifiedRequestOptions.host = proxyConfig?.proxyURL?.host;
   modifiedRequestOptions.hostname = proxyConfig?.proxyURL?.hostname;
   modifiedRequestOptions.port = proxyConfig?.proxyURL?.port;

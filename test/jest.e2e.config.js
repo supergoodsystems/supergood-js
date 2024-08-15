@@ -10,5 +10,6 @@ module.exports = {
     '^.+\\.(js)$': 'babel-jest'
   },
   transformIgnorePatterns: [],
-  setupFilesAfterEnv: ['./setupTests.ts']
+  setupFilesAfterEnv: ['./setupTests.ts'],
+  testMatch: ['<rootDir>/e2e/proxy-node-fetch.e2e.test.ts']
 };
