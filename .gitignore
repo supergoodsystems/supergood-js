@@ -1,5 +1,6 @@
 node_modules/
 supergood-*.log
+dist/
 .env
 
 test/db.json
