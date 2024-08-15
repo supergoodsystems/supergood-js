@@ -63,12 +63,6 @@ const ContentType = {
   EventStream: 'text/event-stream'
 };
 
-const SupergoodProxyHeaders = {
-  upstreamHeader: 'X-Supergood-Upstream',
-  clientId: 'X-Supergood-ClientID',
-  clientSecret: 'X-Supergood-ClientSecret'
-};
-
 export {
   defaultConfig,
   errors,
@@ -77,6 +71,5 @@ export {
   LocalClientSecret,
   SensitiveKeyActions,
   EndpointActions,
-  ContentType,
-  SupergoodProxyHeaders
+  ContentType
 };

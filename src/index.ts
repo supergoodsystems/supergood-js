@@ -26,8 +26,7 @@ import {
   TestErrorPath,
   LocalClientId,
   LocalClientSecret,
-  ContentType,
-  SupergoodProxyHeaders
+  ContentType
 } from './constants';
 import onExit from 'signal-exit';
 import { NodeRequestInterceptor } from './interceptor/NodeRequestInterceptor';
