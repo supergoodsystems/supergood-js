@@ -5,8 +5,6 @@ We started off as an observability product for third-party APIs, and realized th
 Reach out to alex@supergood.ai if you'd like to learn more, or check us out at https://supergood.ai
 
 ---
-
----
 description: The Node.js client is written in Typescript and is non-blocking.
 ---
 
